@@ -7,7 +7,21 @@ const { z } = require('zod')
 const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  FRONTEND_URL: z.string().url().default('http://localhost:5173'),
+
+  // Lista separada por vírgulas (ex: "http://localhost:5173,https://cofre-orcin.vercel.app").
+  // Normalizada aqui para um array de URLs já validadas — o resto do app
+  // (config/index.js, cors.middleware.js) nunca lida com a string crua.
+  FRONTEND_URLS: z
+    .string()
+    .default('http://localhost:5173')
+    .transform((value) =>
+      value
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean)
+    )
+    .pipe(z.array(z.string().url()).min(1, 'Informe ao menos uma origin em FRONTEND_URLS.')),
+
   DATABASE_PATH: z.string().min(1).default('./src/database/cofre.db'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 

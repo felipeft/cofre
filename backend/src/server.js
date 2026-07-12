@@ -14,7 +14,7 @@ function start() {
     logger.info('Servidor iniciado', {
       port: config.port,
       environment: config.env,
-      frontendUrl: config.frontendUrl,
+      allowedOrigins: config.cors.allowedOrigins,
     })
   })
 

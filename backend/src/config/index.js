@@ -18,7 +18,12 @@ const config = Object.freeze({
   port: env.PORT,
   logLevel: env.LOG_LEVEL,
 
-  frontendUrl: env.FRONTEND_URL,
+  // Mesmo padrão de config.database/config.googleAuth/etc: um sub-objeto
+  // dedicado, já pronto para uso — o middleware de CORS só lê
+  // `config.cors.allowedOrigins`, nunca `process.env` ou uma URL fixa.
+  cors: Object.freeze({
+    allowedOrigins: env.FRONTEND_URLS,
+  }),
 
   database: Object.freeze({
     path: path.resolve(process.cwd(), env.DATABASE_PATH),
