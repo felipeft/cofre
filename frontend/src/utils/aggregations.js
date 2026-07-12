@@ -1,5 +1,8 @@
-import { getCategory } from '@/services/mockCategories'
 import { monthLabel } from './formatters'
+
+// Funções puras de cálculo — não sabem de onde vêm os dados nem resolvem
+// categoria (isso é responsabilidade dos Services/Hooks). Assim continuam
+// testáveis isoladamente e reutilizáveis em qualquer contexto.
 
 export function currentMonthKey(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
@@ -23,7 +26,7 @@ export function getCategoryBreakdown(transactions, monthKey = currentMonthKey(),
     totals.set(t.categoryId, (totals.get(t.categoryId) ?? 0) + t.amount)
   }
   return [...totals.entries()]
-    .map(([categoryId, value]) => ({ categoryId, value, category: getCategory(categoryId) }))
+    .map(([categoryId, value]) => ({ categoryId, value }))
     .sort((a, b) => b.value - a.value)
 }
 

@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom'
-import Header from '@/components/layout/Header'
+import Header from '@/layout/Header'
 import Card from '@/components/ui/Card'
 import TransactionForm from '@/components/forms/TransactionForm'
-import { useTransactions } from '@/context/TransactionsContext'
-import { useToast } from '@/context/ToastContext'
+import { useTransactions } from '@/hooks/useTransactions'
+import { useToast } from '@/contexts/ToastContext'
+import { ROUTES } from '@/constants/routes'
 
 export default function RegisterTransaction() {
   const { addTransaction } = useTransactions()
@@ -13,7 +14,7 @@ export default function RegisterTransaction() {
   const handleSubmit = (tx) => {
     addTransaction(tx)
     showToast('Movimentação registrada')
-    navigate('/')
+    navigate(ROUTES.dashboard)
   }
 
   return (

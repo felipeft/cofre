@@ -1,21 +1,22 @@
 import { useMemo, useState } from 'react'
 import { Search, ArrowUpDown, Pencil, Trash2 } from 'lucide-react'
-import Header from '@/components/layout/Header'
+import Header from '@/layout/Header'
 import Card from '@/components/ui/Card'
-import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Modal from '@/components/ui/Modal'
 import Dialog from '@/components/ui/Dialog'
 import EmptyState from '@/components/ui/EmptyState'
 import CategoryIcon from '@/components/ui/CategoryIcon'
 import TransactionForm from '@/components/forms/TransactionForm'
-import { useTransactions } from '@/context/TransactionsContext'
-import { useToast } from '@/context/ToastContext'
-import { mockCategories, getCategory } from '@/services/mockCategories'
+import { useTransactions } from '@/hooks/useTransactions'
+import { useCategories } from '@/hooks/useCategories'
+import { useToast } from '@/contexts/ToastContext'
+import { filterAndSortTransactions } from '@/utils/transactionFilters'
 import { formatCurrency, formatDate } from '@/utils/formatters'
 
 export default function History() {
   const { transactions, updateTransaction, deleteTransaction } = useTransactions()
+  const { categories, getCategoryById } = useCategories()
   const { showToast } = useToast()
 
   const [search, setSearch] = useState('')
@@ -26,27 +27,9 @@ export default function History() {
   const [deleting, setDeleting] = useState(null)
 
   const filtered = useMemo(() => {
-    let items = transactions.map((t) => ({ ...t, category: getCategory(t.categoryId) }))
-
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      items = items.filter(
-        (t) => t.description?.toLowerCase().includes(q) || t.category.name.toLowerCase().includes(q)
-      )
-    }
-    if (typeFilter !== 'all') items = items.filter((t) => t.type === typeFilter)
-    if (categoryFilter !== 'all') items = items.filter((t) => t.categoryId === categoryFilter)
-
-    items.sort((a, b) => {
-      if (sort === 'date-desc') return a.date < b.date ? 1 : -1
-      if (sort === 'date-asc') return a.date > b.date ? 1 : -1
-      if (sort === 'amount-desc') return b.amount - a.amount
-      if (sort === 'amount-asc') return a.amount - b.amount
-      return 0
-    })
-
-    return items
-  }, [transactions, search, typeFilter, categoryFilter, sort])
+    const enriched = transactions.map((t) => ({ ...t, category: getCategoryById(t.categoryId) }))
+    return filterAndSortTransactions(enriched, { search, typeFilter, categoryFilter, sort })
+  }, [transactions, getCategoryById, search, typeFilter, categoryFilter, sort])
 
   const handleUpdate = (patch) => {
     updateTransaction(editing.id, { ...patch, amount: Number(patch.amount) })
@@ -84,7 +67,7 @@ export default function History() {
             </Select>
             <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
               <option value="all">Todas as categorias</option>
-              {mockCategories.map((c) => (
+              {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>

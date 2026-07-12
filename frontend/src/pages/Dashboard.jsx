@@ -1,33 +1,19 @@
-import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Wallet, TrendingDown, TrendingUp, ArrowRight, Tags, History } from 'lucide-react'
-import Header from '@/components/layout/Header'
+import Header from '@/layout/Header'
 import Card from '@/components/ui/Card'
 import StatCard from '@/components/dashboard/StatCard'
+import ShortcutButton from '@/components/dashboard/ShortcutButton'
 import TransactionRow from '@/components/transactions/TransactionRow'
 import CategoryPieChart from '@/components/charts/CategoryPieChart'
 import MonthlyBarChart from '@/components/charts/MonthlyBarChart'
 import EmptyState from '@/components/ui/EmptyState'
-import { useTransactions } from '@/context/TransactionsContext'
-import { getCategory } from '@/services/mockCategories'
-import {
-  getMonthSummary,
-  getCategoryBreakdown,
-  getMonthlyTrend,
-  getRecentTransactions,
-} from '@/utils/aggregations'
+import { useDashboard } from '@/hooks/useDashboard'
+import { ROUTES } from '@/constants/routes'
 
 export default function Dashboard() {
-  const { transactions } = useTransactions()
+  const { summary, breakdown, trend, recent } = useDashboard()
   const navigate = useNavigate()
-
-  const summary = useMemo(() => getMonthSummary(transactions), [transactions])
-  const breakdown = useMemo(() => getCategoryBreakdown(transactions), [transactions])
-  const trend = useMemo(() => getMonthlyTrend(transactions, 6), [transactions])
-  const recent = useMemo(
-    () => getRecentTransactions(transactions, 6).map((t) => ({ ...t, category: getCategory(t.categoryId) })),
-    [transactions]
-  )
 
   const pieData = breakdown
     .slice(0, 6)
@@ -49,10 +35,10 @@ export default function Dashboard() {
 
         {/* Quick shortcuts */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <ShortcutButton icon={History} label="Histórico" onClick={() => navigate('/historico')} />
-          <ShortcutButton icon={Tags} label="Categorias" onClick={() => navigate('/categorias')} />
-          <ShortcutButton icon={TrendingUp} label="Análises" onClick={() => navigate('/analitico')} />
-          <ShortcutButton icon={Wallet} label="Ajustes" onClick={() => navigate('/configuracoes')} />
+          <ShortcutButton icon={History} label="Histórico" onClick={() => navigate(ROUTES.history)} />
+          <ShortcutButton icon={Tags} label="Categorias" onClick={() => navigate(ROUTES.categories)} />
+          <ShortcutButton icon={TrendingUp} label="Análises" onClick={() => navigate(ROUTES.analytics)} />
+          <ShortcutButton icon={Wallet} label="Ajustes" onClick={() => navigate(ROUTES.settings)} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
@@ -61,7 +47,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-[15px] font-semibold text-text">Últimos lançamentos</h3>
               <button
-                onClick={() => navigate('/historico')}
+                onClick={() => navigate(ROUTES.history)}
                 className="focus-ring flex items-center gap-1 text-[13px] text-text-muted hover:text-text transition-colors"
               >
                 Ver tudo <ArrowRight size={14} />
@@ -103,17 +89,5 @@ export default function Dashboard() {
         </Card>
       </div>
     </div>
-  )
-}
-
-function ShortcutButton({ icon: Icon, label, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="focus-ring flex items-center gap-2.5 rounded-card bg-surface border border-border-soft px-4 h-14 text-[14px] font-medium text-text-muted hover:text-text hover:border-border transition-colors"
-    >
-      <Icon size={17} strokeWidth={2} />
-      {label}
-    </button>
   )
 }

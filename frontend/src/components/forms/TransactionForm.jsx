@@ -2,8 +2,8 @@ import { useState } from 'react'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
-import { mockCategories } from '@/services/mockCategories'
 import { formatDateInput } from '@/utils/formatters'
+import { useCategories } from '@/hooks/useCategories'
 
 const defaultState = {
   type: 'expense',
@@ -16,13 +16,14 @@ const defaultState = {
 export default function TransactionForm({ initial, onSubmit, onCancel, submitLabel = 'Salvar' }) {
   const [form, setForm] = useState(initial ?? defaultState)
   const [amountFocused, setAmountFocused] = useState(false)
+  const { categories: allCategories } = useCategories()
 
-  const categories = mockCategories.filter((c) => c.type === form.type)
+  const categories = allCategories.filter((c) => c.type === form.type)
 
   const set = (patch) => setForm((prev) => ({ ...prev, ...patch }))
 
   const handleTypeChange = (type) => {
-    const firstOfType = mockCategories.find((c) => c.type === type)
+    const firstOfType = allCategories.find((c) => c.type === type)
     set({ type, categoryId: firstOfType?.id })
   }
 

@@ -1,25 +1,14 @@
-import { useMemo } from 'react'
-import Header from '@/components/layout/Header'
+import Header from '@/layout/Header'
 import Card from '@/components/ui/Card'
 import CategoryIcon from '@/components/ui/CategoryIcon'
 import CategoryPieChart from '@/components/charts/CategoryPieChart'
 import MonthlyBarChart from '@/components/charts/MonthlyBarChart'
 import TrendLineChart from '@/components/charts/TrendLineChart'
-import { useTransactions } from '@/context/TransactionsContext'
-import { getCategory } from '@/services/mockCategories'
-import { getCategoryBreakdown, getMonthlyTrend, getMonthSummary, getTopExpenses } from '@/utils/aggregations'
+import { useAnalytics } from '@/hooks/useAnalytics'
 import { formatCurrency, formatDate } from '@/utils/formatters'
 
 export default function Analytics() {
-  const { transactions } = useTransactions()
-
-  const breakdown = useMemo(() => getCategoryBreakdown(transactions), [transactions])
-  const trend = useMemo(() => getMonthlyTrend(transactions, 6), [transactions])
-  const summary = useMemo(() => getMonthSummary(transactions), [transactions])
-  const topExpenses = useMemo(
-    () => getTopExpenses(transactions, undefined, 5).map((t) => ({ ...t, category: getCategory(t.categoryId) })),
-    [transactions]
-  )
+  const { breakdown, trend, summary, topExpenses } = useAnalytics()
 
   const pieData = breakdown.map((b) => ({ name: b.category.name, value: b.value, color: b.category.color }))
   const maxCategory = breakdown[0]?.value || 1

@@ -1,93 +1,87 @@
 # Cofre — Frontend de controle financeiro pessoal
 
-Frontend standalone (sem backend) para registro rápido de movimentações financeiras, construído para complementar — não substituir — sua planilha do Google Sheets. Todos os dados são fictícios (mockados) e vivem em memória + `localStorage`, prontos para serem trocados por chamadas reais a uma API Node.js/SQLite no futuro.
+Frontend em React 19 + Vite + Tailwind v4, hoje sem backend (dados mockados), já organizado em camadas para receber Node.js + Express, SQLite, OAuth do Google e integração com Google Sheets nas próximas etapas.
 
 ## Como rodar
 
 ```bash
+cp .env.example .env   # ajuste VITE_API_URL quando o backend existir
 npm install
-npm run dev       # ambiente de desenvolvimento
-npm run build     # build de produção em /dist
-npm run preview   # servir o build de produção localmente
+npm run dev
 ```
 
-## Stack
-
-- **React 19 + Vite** — SPA rápida, hot reload
-- **Tailwind CSS v4** — design tokens via `@theme` em `src/styles/index.css` (sem `tailwind.config.js`, tudo em CSS)
-- **React Router 7** — navegação entre páginas
-- **Recharts** — gráficos (pizza, barras, área)
-- **Lucide React** — ícones (nunca emojis)
-
-## Identidade visual
-
-- Fundo quase preto (`#0a0a0b`) com camadas de cinza (`surface`, `surface-2`, `surface-3`) para hierarquia sem contraste agressivo.
-- Cor só aparece com propósito: verde (`income`) para receitas, vermelho (`expense`) para despesas, azul (`info`) para informações e laranja (`alert`) reservado para alertas futuros.
-- Tipografia dupla: **Inter** para toda a interface e **JetBrains Mono** (classe utilitária `.num`) exclusivamente para valores monetários — como um livro-caixa, todo número fica alinhado e com largura fixa, o que reforça a seriedade financeira do produto sem parecer bancário/corporativo.
-- Navegação adaptada ao contexto: sidebar recolhível no desktop, bottom navigation com botão central de ação rápida (+) no mobile — pensada para registrar um gasto em poucos toques.
-
-## Árvore de pastas (`src/`)
+## Árvore de `src/`
 
 ```
 src/
-├─ App.jsx                     # Define as rotas e envolve a app nos providers globais
-├─ main.jsx                    # Ponto de entrada React
-├─ styles/index.css            # Design tokens (@theme), estilos base e keyframes
+├─ App.jsx / main.jsx
 │
-├─ components/
-│  ├─ ui/                      # Design system puro, sem regra de negócio
-│  │  ├─ Button.jsx            # Variantes: primary, secondary, ghost, danger
-│  │  ├─ Input.jsx  Select.jsx           # campos de formulário padronizados
-│  │  ├─ Card.jsx   Badge.jsx            # superfícies e rótulos
-│  │  ├─ Modal.jsx  Dialog.jsx           # modal base + confirmação de exclusão
-│  │  ├─ Toast.jsx  Loading.jsx          # feedback e estados de carregamento
-│  │  ├─ EmptyState.jsx                  # telas vazias com convite à ação
-│  │  └─ CategoryIcon.jsx                # resolve nome de ícone → componente Lucide
-│  │
-│  ├─ layout/                  # Casca da aplicação (shell)
-│  │  ├─ AppShell.jsx           — combina Sidebar + BottomNav + modal global de registro rápido
-│  │  ├─ Sidebar.jsx            — navegação recolhível para desktop
-│  │  ├─ BottomNav.jsx          — navegação + botão de ação rápida para mobile
-│  │  ├─ Header.jsx             — cabeçalho de página (título/subtítulo/ações)
-│  │  └─ navItems.js            — fonte única da lista de navegação
-│  │
-│  ├─ charts/                  # Wrappers do Recharts já estilizados com os tokens do tema
-│  │  └─ CategoryPieChart.jsx  MonthlyBarChart.jsx  TrendLineChart.jsx
-│  │
-│  ├─ dashboard/StatCard.jsx    # Card flutuante de estatística (saldo/receita/despesa)
-│  ├─ transactions/TransactionRow.jsx  # Linha de lançamento reutilizada no Dashboard/Histórico
-│  └─ forms/TransactionForm.jsx # Formulário único de lançamento, usado no modal E na página dedicada
+├─ api/                     Comunicação HTTP centralizada (ainda não usada de verdade)
+│  ├─ client.js              fetch wrapper único (base URL via VITE_API_URL, headers, erros)
+│  └─ endpoints.js           todos os caminhos da futura API em um só lugar
 │
-├─ pages/                      # Uma página por rota, compõem os componentes acima
-│  ├─ Dashboard.jsx             # "/"              resumo do mês, atalhos, gráficos
-│  ├─ RegisterTransaction.jsx   # "/registrar"     versão em página cheia do formulário rápido
-│  ├─ History.jsx               # "/historico"     busca, filtros, ordenação, editar/excluir
-│  ├─ Analytics.jsx             # "/analitico"     pizza, barras, linha, maiores gastos
-│  ├─ Categories.jsx            # "/categorias"    CRUD mockado de categorias
-│  └─ Settings.jsx              # "/configuracoes" apenas interface, nada funcional
+├─ services/                Fronteira única de acesso a dados — nada fora daqui lê `data/`
+│  ├─ transaction.service.js
+│  ├─ category.service.js
+│  ├─ dashboard.service.js
+│  └─ analytics.service.js
 │
-├─ context/
-│  ├─ TransactionsContext.jsx  # Estado global das movimentações (mock) + persistência local
-│  └─ ToastContext.jsx         # Fila de notificações toast
+├─ data/                    Mocks — moldados exatamente como as futuras respostas da API
+│  ├─ transactions.mock.js
+│  └─ categories.mock.js
 │
-├─ services/
-│  ├─ mockCategories.js        # Categorias fictícias (nome, ícone, cor, tipo)
-│  └─ mockTransactions.js      # Gerador determinístico de ~6 meses de lançamentos fictícios
+├─ hooks/                   Lógica de estado/composição reutilizável, consumindo Services
+│  ├─ useTransactions.js     porta de entrada para o Context de transações
+│  ├─ useCategories.js       leitura de categorias (Histórico, Dashboard, Análises, formulário)
+│  ├─ useCategoryManager.js  CRUD local usado só pela tela de Categorias
+│  ├─ useDashboard.js        dados prontos para a página Dashboard
+│  └─ useAnalytics.js        dados prontos para a página Análises
 │
-└─ utils/
-   ├─ formatters.js            # Formatação de moeda (BRL) e datas em pt-BR
-   └─ aggregations.js          # Cálculos derivados: saldo do mês, breakdown por categoria,
-                                  evolução mensal, maiores gastos — usados por Dashboard e Analytics
+├─ contexts/                Estado verdadeiramente global
+│  ├─ TransactionsContext.jsx  lista de transações (compartilhada por várias telas)
+│  └─ ToastContext.jsx         fila de notificações
+│
+├─ constants/                Valores fixos fora dos componentes
+│  ├─ routes.js               caminhos de rota (fonte única para App.jsx e navegação)
+│  ├─ colors.js                cores usadas pelos gráficos (espelham os tokens do CSS)
+│  └─ categories.js            paleta de cores/ícones do formulário de categoria
+│
+├─ components/               Design system e blocos de UI, sem regra de negócio de página
+│  ├─ ui/                     Button, Input, Select, Card, Modal, Dialog, Toast, Badge, Loading...
+│  ├─ charts/                 wrappers do Recharts já estilizados
+│  ├─ dashboard/              StatCard, ShortcutButton
+│  ├─ transactions/           TransactionRow
+│  ├─ categories/             CategoryGroup, CategoryForm
+│  ├─ settings/                SettingsGroup, SettingsRow
+│  └─ forms/                  TransactionForm (usado no modal rápido e na página Registrar)
+│
+├─ layout/                   Casca da aplicação
+│  ├─ AppShell.jsx, Sidebar.jsx, BottomNav.jsx, Header.jsx, navItems.js
+│
+├─ pages/                    Uma página por rota — só orquestram hooks + componentes
+│  ├─ Dashboard.jsx  RegisterTransaction.jsx  History.jsx
+│  └─ Analytics.jsx  Categories.jsx  Settings.jsx
+│
+├─ utils/                    Funções puras sem estado
+│  ├─ formatters.js           moeda, datas
+│  ├─ aggregations.js         cálculos de saldo/breakdown/tendência
+│  └─ transactionFilters.js   busca/filtro/ordenação do Histórico
+│
+├─ types/index.js            Typedefs JSDoc (Transaction, Category, MonthSummary…)
+└─ styles/index.css          Design tokens (@theme) e estilos base
 ```
 
-## Por que essa arquitetura facilita a integração futura com o backend
+## Decisões e por quê
 
-- **`services/`** concentra tudo que hoje é mock. Quando o backend em Node.js/SQLite existir, essas funções viram chamadas `fetch`/`axios` sem que nenhuma página precise mudar.
-- **`context/TransactionsContext.jsx`** já expõe `addTransaction`, `updateTransaction` e `deleteTransaction` como uma API estável — trocar o armazenamento local por chamadas HTTP é uma mudança isolada nesse arquivo.
-- **`utils/aggregations.js`** mantém toda lógica de cálculo fora dos componentes visuais, então mesmo que os totais passem a vir prontos da API, as páginas continuam consumindo a mesma interface de dados.
-- **`components/ui/`** não conhece regra de negócio nenhuma — é o design system puro, reaproveitável em qualquer tela nova.
+- **`layout/` no nível raiz, não dentro de `components/`.** É a casca fixa da aplicação (sidebar, bottom nav, shell), conceitualmente diferente de um componente de UI reutilizável — fica ao lado de `pages/`, não dentro de `components/`.
+- **Services síncronos por enquanto.** Eles já têm a assinatura definitiva (`transaction.service.js`, `category.service.js`...) e cada função tem um comentário `// Futuro: apiClient.get(...)` indicando exatamente o que muda quando o backend chegar. Como a fonte hoje é só um mock em memória, forçar `async`/`Promise` não mudaria nenhum comportamento visível — só adicionaria ruído.
+- **Dois hooks de categoria, não um.** `useCategories` é leitura compartilhada (Histórico, Dashboard, Análises, formulário). `useCategoryManager` é o CRUD local exclusivo da tela de Categorias — replica o comportamento que já existia (editar uma categoria ali nunca refletia nas outras telas), então a refatoração não alterou nada visível.
+- **Context apenas para o que é de fato global:** `TransactionsContext` (lista usada por 4+ telas) e `ToastContext` (notificação pode ser disparada de qualquer lugar). Não criei Context de tema (só existe modo escuro) nem de sidebar (estado puramente local do `AppShell`, sem motivo para vazar para o resto da árvore).
+- **`types/index.js` com JSDoc, não TypeScript.** Documenta o contrato de dados (`Transaction`, `Category`, `MonthSummary`) com autocomplete no editor, sem migrar o build para `.tsx` — mudança arriscada demais para uma etapa que não deveria alterar comportamento.
 
-## Observações
+## Como isso ajuda nas próximas etapas
 
-- `cursor.js` do seu portfólio não faz parte deste projeto (é uma aplicação separada); nada aqui interfere nele.
-- Sem backend, os dados vivem em `localStorage` sob a chave `cofre:transactions`, então lançamentos criados/editados/excluídos persistem entre recarregamentos do navegador, mas não são compartilhados entre dispositivos.
+- **Backend Node/Express + SQLite:** trocar o corpo de cada função em `services/` para chamar `apiClient` (já pronto em `api/client.js`) usando os caminhos de `api/endpoints.js`. Nenhuma página muda.
+- **OAuth Google:** o header de autenticação entra em `api/client.js` (um único lugar); `ToastContext`/`TransactionsContext` continuam do mesmo jeito.
+- **Google Sheets:** vira só mais um Service (`sheets.service.js`) e um endpoint em `api/endpoints.js` — já reservado (`ENDPOINTS.sheets.sync`).
+- **Dashboard dinâmico / CRUD completo:** `hooks/useDashboard.js` e `useAnalytics.js` já isolam a página da forma como o dado é calculado; quando isso migrar do cliente para o backend, só o `dashboard.service.js`/`analytics.service.js` muda.

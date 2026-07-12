@@ -1,7 +1,8 @@
-import { Moon, Download, Upload, CloudUpload, Info, ChevronRight, Vault } from 'lucide-react'
-import Header from '@/components/layout/Header'
-import Card from '@/components/ui/Card'
-import { useToast } from '@/context/ToastContext'
+import { Moon, Download, Upload, CloudUpload, Info, Vault } from 'lucide-react'
+import Header from '@/layout/Header'
+import SettingsGroup from '@/components/settings/SettingsGroup'
+import SettingsRow from '@/components/settings/SettingsRow'
+import { useToast } from '@/contexts/ToastContext'
 
 export default function Settings() {
   const { showToast } = useToast()
@@ -37,28 +38,5 @@ export default function Settings() {
         </SettingsGroup>
       </div>
     </div>
-  )
-}
-
-function SettingsGroup({ title, children }) {
-  return (
-    <div>
-      <h3 className="text-[13px] font-semibold text-text-muted uppercase tracking-wide mb-3">{title}</h3>
-      <Card className="divide-y divide-border-soft overflow-hidden">{children}</Card>
-    </div>
-  )
-}
-
-function SettingsRow({ icon: Icon, label, value, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="focus-ring w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-2/60 transition-colors"
-    >
-      <Icon size={17} className="text-text-muted shrink-0" strokeWidth={2} />
-      <span className="flex-1 text-[14px] text-text">{label}</span>
-      {value && <span className="text-[13px] text-text-faint">{value}</span>}
-      <ChevronRight size={16} className="text-text-faint shrink-0" />
-    </button>
   )
 }
