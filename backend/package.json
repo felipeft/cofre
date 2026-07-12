@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "API do Cofre - infraestrutura backend (Node.js + Express + SQLite).",
   "main": "src/server.js",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
