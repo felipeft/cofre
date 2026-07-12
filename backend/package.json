@@ -1,10 +1,13 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "cofre-backend",
+  "version": "0.1.0",
+  "description": "API do Cofre - infraestrutura backend (Node.js + Express + SQLite).",
+  "main": "src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "migrate": "node src/database/migrate.js",
+    "seed": "node src/database/seed/index.js"
   },
   "keywords": [],
   "author": "",
