@@ -1,11 +1,12 @@
 const { Router } = require('express')
 const systemRoutes = require('./system.routes')
+const categoryRoutes = require('./category.routes')
+const transactionRoutes = require('./transaction.routes')
 
 const router = Router()
 
-// Novos grupos de rota (categories.routes.js, transactions.routes.js...)
-// entram aqui, cada um com seu próprio prefixo, ex:
-//   router.use('/categories', categoryRoutes)
 router.use(systemRoutes)
+router.use('/categories', categoryRoutes)
+router.use('/transactions', transactionRoutes)
 
 module.exports = router

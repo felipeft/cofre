@@ -1,4 +1,5 @@
 const { z } = require('zod')
+const logger = require('../utils/logger')
 
 // Valida as variáveis de ambiente uma única vez, na inicialização. Se algo
 // estiver faltando ou no formato errado, o servidor falha imediatamente com
@@ -38,8 +39,12 @@ function parseEnv(source = process.env) {
   const result = envSchema.safeParse(source)
 
   if (!result.success) {
-    console.error('[config] Variáveis de ambiente inválidas:')
-    console.error(result.error.flatten().fieldErrors)
+    // Único ponto do bootstrap onde o app pode falhar antes mesmo de existir
+    // um `config` válido — por isso valida direto contra `process.env`, mas
+    // ainda assim usa `logger` (que só depende de `process.env.LOG_LEVEL`,
+    // não de `config`) em vez de `console` cru, para manter a mesma
+    // convenção do resto do projeto.
+    logger.error('Variáveis de ambiente inválidas', { fieldErrors: result.error.flatten().fieldErrors })
     process.exit(1)
   }
 

@@ -14,7 +14,8 @@ alfabética (por isso o prefixo numérico) e registra cada um aplicado na
 tabela `schema_migrations`, criada automaticamente. Migrations já aplicadas
 nunca rodam de novo.
 
-Esta pasta está **intencionalmente vazia** nesta etapa: a infraestrutura de
-migrations existe e funciona (veja `npm run migrate`), mas a criação das
-tabelas de negócio (`categories`, `transactions`, etc.) é responsabilidade da
-etapa de CRUD, não desta etapa de infraestrutura.
+A partir de `0001_create_categories_table.sql` e
+`0002_create_transactions_table.sql`, o domínio financeiro (categorias e
+transações) passou a existir de verdade — a tabela `schema_migrations`
+(criada automaticamente pelo runner, não como um arquivo aqui) garante que
+cada uma delas roda exatamente uma vez.

@@ -4,4 +4,5 @@ module.exports = {
   ValidationError: require('./ValidationError'),
   DatabaseError: require('./DatabaseError'),
   ForbiddenError: require('./ForbiddenError'),
+  ConflictError: require('./ConflictError'),
 }
