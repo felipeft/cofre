@@ -1,12 +1,16 @@
-// Um único lugar com todos os caminhos da API. Quando o backend existir,
-// nenhum Service precisará ser vasculhado atrás de strings soltas — é tudo aqui.
+// Um único lugar com todos os caminhos da API. Nenhum Service (muito menos
+// uma página) deve ter uma URL solta — é tudo aqui.
+//
+// Não há endpoints dedicados de dashboard/analytics: o backend ainda não os
+// expõe, então esses indicadores continuam calculados no cliente a partir de
+// GET /transactions (ver dashboard.service.js e analytics.service.js). Se um
+// endpoint dedicado existir no futuro, adiciona-se a entrada aqui e troca-se
+// o corpo desses dois Services — nenhuma página muda.
 export const ENDPOINTS = {
   transactions: '/transactions',
   transaction: (id) => `/transactions/${id}`,
   categories: '/categories',
   category: (id) => `/categories/${id}`,
-  dashboard: '/dashboard',
-  analytics: '/analytics',
   auth: {
     google: '/auth/google',
     session: '/auth/session',

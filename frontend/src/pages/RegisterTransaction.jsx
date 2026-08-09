@@ -11,10 +11,14 @@ export default function RegisterTransaction() {
   const { showToast } = useToast()
   const navigate = useNavigate()
 
-  const handleSubmit = (tx) => {
-    addTransaction(tx)
-    showToast('Movimentação registrada')
-    navigate(ROUTES.dashboard)
+  const handleSubmit = async (tx) => {
+    try {
+      await addTransaction(tx)
+      showToast('Movimentação registrada')
+      navigate(ROUTES.dashboard)
+    } catch (err) {
+      showToast(err.message ?? 'Não foi possível registrar a movimentação.', 'error')
+    }
   }
 
   return (

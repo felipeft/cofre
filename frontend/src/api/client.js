@@ -1,32 +1,56 @@
-// Cliente HTTP centralizado.
-//
-// Nenhum Service deve usar `fetch` diretamente — todos passam por aqui.
-// Isso garante um único lugar para tratar base URL, headers (ex: token do
-// Google OAuth futuramente), parsing de erro e timeouts.
-//
-// Hoje nenhuma dessas funções é chamada de verdade (os Services ainda leem
-// os arquivos em `data/`), mas a assinatura já é a definitiva: quando o
-// backend em Node.js/Express existir, basta trocar o corpo dos Services
-// para chamar `apiClient.get(...)` etc. em vez de retornar o mock.
+// Cliente HTTP centralizado. Nenhum Service usa `fetch` diretamente — todos
+// passam por aqui. Único lugar que sabe a base URL, trata erros de forma
+// uniforme e (quando a autenticação existir) enviará o cookie de sessão.
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
-async function request(path, options = {}) {
-  const response = await fetch(`${BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    ...options,
-  })
+// Erro rico o suficiente para o toast mostrar uma mensagem amigável (`message`,
+// já em pt-BR, vem do backend) e, se algum dia fizer falta, para lógica mais
+// fina decidir com base em `status`/`code` (ex: redirecionar em 401 quando a
+// autenticação existir).
+export class ApiError extends Error {
+  constructor(message, { status, code, details } = {}) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.code = code
+    this.details = details
+  }
+}
 
-  if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText)
-    throw new Error(`[apiClient] ${options.method ?? 'GET'} ${path} → ${response.status}: ${message}`)
+async function request(path, options = {}) {
+  let response
+
+  try {
+    response = await fetch(`${BASE_URL}${path}`, {
+      // Preparado para a autenticação por sessão HTTP-only futura mesmo sem
+      // login existir ainda — nenhuma chamada precisará ser revisitada
+      // quando essa etapa chegar.
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    })
+  } catch {
+    // Falha de rede de verdade (servidor fora do ar, sem internet) — não
+    // existe resposta HTTP para interpretar.
+    throw new ApiError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.', {
+      status: 0,
+      code: 'NETWORK_ERROR',
+    })
   }
 
-  if (response.status === 204) return null
-  return response.json()
+  const isJson = response.headers.get('content-type')?.includes('application/json')
+  const payload = isJson ? await response.json().catch(() => null) : null
+
+  if (!response.ok) {
+    const message = payload?.message || 'Ocorreu um erro inesperado. Tente novamente.'
+    throw new ApiError(message, { status: response.status, code: payload?.code, details: payload?.details })
+  }
+
+  return payload
 }
 
 export const apiClient = {

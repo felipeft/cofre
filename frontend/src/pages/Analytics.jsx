@@ -4,18 +4,48 @@ import CategoryIcon from '@/components/ui/CategoryIcon'
 import CategoryPieChart from '@/components/charts/CategoryPieChart'
 import MonthlyBarChart from '@/components/charts/MonthlyBarChart'
 import TrendLineChart from '@/components/charts/TrendLineChart'
+import EmptyState from '@/components/ui/EmptyState'
+import { SkeletonRow } from '@/components/ui/Loading'
 import { useAnalytics } from '@/hooks/useAnalytics'
 import { formatCurrency, formatDate } from '@/utils/formatters'
 
 export default function Analytics() {
-  const { breakdown, trend, summary, topExpenses } = useAnalytics()
+  const { breakdown, trend, summary, topExpenses, loading, error } = useAnalytics()
 
   const pieData = breakdown.map((b) => ({ name: b.category.name, value: b.value, color: b.category.color }))
   const maxCategory = breakdown[0]?.value || 1
 
+  if (error) {
+    return (
+      <div>
+        <Header title="Análises" subtitle="Visão detalhada das suas movimentações" />
+        <div className="px-5 md:px-8 pb-8">
+          <Card>
+            <EmptyState title="Não foi possível carregar as análises" description={error.message ?? 'Tente novamente em instantes.'} />
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div>
+        <Header title="Análises" subtitle="Visão detalhada das suas movimentações" />
+        <div className="px-5 md:px-8 pb-8 flex flex-col gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <SkeletonRow className="h-64" />
+            <SkeletonRow className="h-64" />
+          </div>
+          <SkeletonRow className="h-56" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div>
-      <Header title="Análises" subtitle="Visão detalhada dos seus dados fictícios" />
+      <Header title="Análises" subtitle="Visão detalhada das suas movimentações" />
 
       <div className="px-5 md:px-8 pb-8 flex flex-col gap-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

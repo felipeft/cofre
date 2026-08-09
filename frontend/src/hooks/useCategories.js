@@ -1,17 +1,10 @@
-import { useMemo } from 'react'
-import * as categoryService from '@/services/category.service'
+import { useCategoriesContext } from '@/contexts/CategoriesContext'
 
-// Uso geral (formulário de lançamento, histórico, dashboard, análises):
-// só precisam ler a lista e resolver uma categoria por id — não precisam de
-// estado global compartilhado. A tela de Categorias (pages/Categories.jsx)
-// é a exceção: ela gerencia sua própria lista local porque é a única tela
-// que cria/edita/exclui categorias, e isso já era assim antes da refatoração
-// (edições lá nunca refletiam em outras telas, então manter esse
-// comportamento aqui evita qualquer mudança visível de comportamento).
+// Porta de entrada única para o Context de categorias — o resto do app não
+// sabe (nem precisa saber) que por trás existe um Context. Toda tela usa
+// este mesmo hook, inclusive a de gerenciamento (páginas/Categories.jsx):
+// como CRUD de categoria agora precisa refletir em todo o app na hora, não
+// faz mais sentido aquela tela ter uma cópia local separada.
 export function useCategories() {
-  const categories = useMemo(() => categoryService.getCategories(), [])
-
-  const getCategoryById = (id) => categoryService.getCategoryById(id, categories)
-
-  return { categories, getCategoryById }
+  return useCategoriesContext()
 }

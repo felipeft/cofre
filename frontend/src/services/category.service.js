@@ -1,37 +1,46 @@
-// Camada de acesso a dados de categorias. Nenhuma página ou hook deve
-// importar `data/categories.mock.js` diretamente — tudo passa por aqui.
-//
-// As funções são síncronas por enquanto porque a fonte é um mock em memória;
-// no dia em que o backend existir, o corpo de cada função troca para usar
-// `apiClient` (comentado abaixo) e passa a retornar uma Promise. Quem
-// consome este Service (os hooks) já está preparado: um `await` extra não
-// muda nenhum comportamento visível hoje, então adiar essa troca não é
-// otimização prematura, é só não inventar `async` onde ainda não há nada
-// assíncrono de verdade.
-import { mockCategories } from '@/data/categories.mock'
-// import { apiClient } from '@/api/client'
-// import { ENDPOINTS } from '@/api/endpoints'
+// Camada de acesso a dados de categorias. Nenhuma página ou hook fala com o
+// backend diretamente — tudo passa por aqui, que é o único arquivo (fora de
+// api/client.js) que conhece a forma exata da resposta da API.
+import { apiClient } from '@/api/client'
+import { ENDPOINTS } from '@/api/endpoints'
 
-export function getCategories() {
-  // Futuro: return apiClient.get(ENDPOINTS.categories)
-  return mockCategories
+function buildQuery(params) {
+  const usp = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return
+    usp.set(key, value)
+  })
+  const query = usp.toString()
+  return query ? `?${query}` : ''
 }
 
-export function getCategoryById(id, categories = mockCategories) {
-  return categories.find((c) => c.id === id) ?? categories[categories.length - 1]
+export async function getCategories({ type, includeInactive } = {}) {
+  const query = buildQuery({ type, includeInactive: includeInactive ? 'true' : undefined })
+  const { data } = await apiClient.get(`${ENDPOINTS.categories}${query}`)
+  return data
 }
 
-export function createCategory(payload) {
-  // Futuro: return apiClient.post(ENDPOINTS.categories, payload)
-  return { ...payload, id: `${payload.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}` }
+// Continua síncrona de propósito: é uma busca pura numa lista que os hooks já
+// carregaram, não uma chamada de rede — não faz sentido devolver uma Promise
+// para um `.find()`.
+export function getCategoryById(id, categories = []) {
+  return categories.find((c) => c.id === id) ?? null
 }
 
-export function updateCategory(id, patch) {
-  // Futuro: return apiClient.put(ENDPOINTS.category(id), patch)
-  return { id, ...patch }
+export async function createCategory(payload) {
+  const { data } = await apiClient.post(ENDPOINTS.categories, payload)
+  return data
 }
 
-export function deleteCategory(id) {
-  // Futuro: return apiClient.delete(ENDPOINTS.category(id))
-  return { id }
+export async function updateCategory(id, patch) {
+  const { data } = await apiClient.put(ENDPOINTS.category(id), patch)
+  return data
+}
+
+// O backend pode responder com uma exclusão de verdade OU uma desativação
+// lógica (categoria em uso por transações) — devolve os dois sinais para
+// quem chamou decidir a mensagem certa a mostrar.
+export async function deleteCategory(id) {
+  const { data, message } = await apiClient.delete(ENDPOINTS.category(id))
+  return { ...data, message }
 }

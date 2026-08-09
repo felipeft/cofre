@@ -31,7 +31,7 @@ export default function Settings() {
             </div>
             <div>
               <p className="text-[14px] font-medium text-text">Cofre</p>
-              <p className="text-[12px] text-text-muted">Versão 0.1.0 · Frontend com dados fictícios</p>
+              <p className="text-[12px] text-text-muted">Versão 0.2.0 · Conectado à API</p>
             </div>
           </div>
           <SettingsRow icon={Info} label="Sobre este app" onClick={simulate('Cofre é uma interface pessoal para registro rápido de movimentações')} />

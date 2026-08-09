@@ -1,53 +1,66 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import * as transactionService from '@/services/transaction.service'
 
-const STORAGE_KEY = 'cofre:transactions'
 const TransactionsContext = createContext(null)
 
-// O Context é o cache local (com persistência em localStorage) das
-// transações — o mesmo papel que teria um cache de query (ex: React Query)
-// na frente de uma API real. Toda leitura/escrita passa pelo
-// transaction.service, que é quem decide (hoje: mock; amanhã: apiClient)
-// de onde os dados vêm.
-function loadInitial() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw)
-  } catch {
-    // storage corrompido — cai para o dataset do service
-  }
-  return transactionService.getTransactions()
-}
-
+// O Context guarda o conjunto (quase) completo de transações — usado pelo
+// Dashboard e pelas Análises, que precisam agregar vários meses de uma vez.
+// O Histórico NÃO lê esse array: ele busca sua própria página filtrada
+// direto da API (ver hooks/useTransactionsList.js), porque carregar tudo só
+// para filtrar no cliente é exatamente o que a paginação do backend existe
+// para evitar.
+//
+// `version` é o que conecta os dois mundos: toda mutação feita por aqui
+// incrementa o contador, e o hook do Histórico o inclui nas dependências do
+// seu próprio fetch — assim, registrar uma transação pelo botão rápido
+// enquanto o Histórico está aberto atualiza a lista sem recarregar a página,
+// mesmo sem os dois lados compartilharem o mesmo array.
 export function TransactionsProvider({ children }) {
-  const [transactions, setTransactions] = useState(loadInitial)
+  const [transactions, setTransactions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [version, setVersion] = useState(0)
+
+  const refresh = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const all = await transactionService.getAllTransactions()
+      setTransactions(all)
+    } catch (err) {
+      setError(err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions))
-    } catch {
-      // storage indisponível — não é crítico para um frontend mockado
-    }
-  }, [transactions])
+    refresh()
+  }, [refresh])
 
-  const addTransaction = (payload) => {
-    const created = transactionService.createTransaction(payload)
+  const addTransaction = useCallback(async (payload) => {
+    const created = await transactionService.createTransaction(payload)
     setTransactions((prev) => [created, ...prev])
-  }
+    setVersion((v) => v + 1)
+    return created
+  }, [])
 
-  const updateTransaction = (id, patch) => {
-    const updated = transactionService.updateTransaction(id, patch)
-    setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...updated } : t)))
-  }
+  const updateTransaction = useCallback(async (id, patch) => {
+    const updated = await transactionService.updateTransaction(id, patch)
+    setTransactions((prev) => prev.map((t) => (t.id === id ? updated : t)))
+    setVersion((v) => v + 1)
+    return updated
+  }, [])
 
-  const deleteTransaction = (id) => {
-    transactionService.deleteTransaction(id)
+  const deleteTransaction = useCallback(async (id) => {
+    await transactionService.deleteTransaction(id)
     setTransactions((prev) => prev.filter((t) => t.id !== id))
-  }
+    setVersion((v) => v + 1)
+  }, [])
 
   const value = useMemo(
-    () => ({ transactions, addTransaction, updateTransaction, deleteTransaction }),
-    [transactions]
+    () => ({ transactions, loading, error, version, refresh, addTransaction, updateTransaction, deleteTransaction }),
+    [transactions, loading, error, version, refresh, addTransaction, updateTransaction, deleteTransaction]
   )
 
   return <TransactionsContext.Provider value={value}>{children}</TransactionsContext.Provider>

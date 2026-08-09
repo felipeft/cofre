@@ -13,10 +13,14 @@ export default function AppShell() {
   const { addTransaction } = useTransactions()
   const { showToast } = useToast()
 
-  const handleQuickAdd = (tx) => {
-    addTransaction(tx)
-    setQuickAddOpen(false)
-    showToast('Movimentação registrada')
+  const handleQuickAdd = async (tx) => {
+    try {
+      await addTransaction(tx)
+      setQuickAddOpen(false)
+      showToast('Movimentação registrada')
+    } catch (err) {
+      showToast(err.message ?? 'Não foi possível registrar a movimentação.', 'error')
+    }
   }
 
   return (

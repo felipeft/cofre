@@ -8,11 +8,12 @@ import TransactionRow from '@/components/transactions/TransactionRow'
 import CategoryPieChart from '@/components/charts/CategoryPieChart'
 import MonthlyBarChart from '@/components/charts/MonthlyBarChart'
 import EmptyState from '@/components/ui/EmptyState'
+import { SkeletonRow } from '@/components/ui/Loading'
 import { useDashboard } from '@/hooks/useDashboard'
 import { ROUTES } from '@/constants/routes'
 
 export default function Dashboard() {
-  const { summary, breakdown, trend, recent } = useDashboard()
+  const { summary, breakdown, trend, recent, loading, error } = useDashboard()
   const navigate = useNavigate()
 
   const pieData = breakdown
@@ -20,6 +21,35 @@ export default function Dashboard() {
     .map((b) => ({ name: b.category.name, value: b.value, color: b.category.color }))
 
   const monthName = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+
+  if (error) {
+    return (
+      <div>
+        <Header title="Início" subtitle={`Resumo de ${monthName}`} />
+        <div className="px-5 md:px-8 pb-8">
+          <Card>
+            <EmptyState title="Não foi possível carregar o resumo" description={error.message ?? 'Tente novamente em instantes.'} />
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div>
+        <Header title="Início" subtitle={`Resumo de ${monthName}`} />
+        <div className="px-5 md:px-8 pb-8 flex flex-col gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <SkeletonRow key={i} className="h-24" />
+            ))}
+          </div>
+          <SkeletonRow className="h-64" />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>

@@ -3,17 +3,26 @@ import { useTransactions } from '@/hooks/useTransactions'
 import { useCategories } from '@/hooks/useCategories'
 import { getDashboardOverview } from '@/services/dashboard.service'
 
-export function useDashboard() {
-  const { transactions } = useTransactions()
-  const { getCategoryById } = useCategories()
+const FALLBACK_CATEGORY = { name: '—', color: '#8b8b93', icon: 'MoreHorizontal' }
 
-  return useMemo(() => {
-    const overview = getDashboardOverview(transactions)
+export function useDashboard() {
+  const { transactions, loading: transactionsLoading, error: transactionsError } = useTransactions()
+  const { getCategoryById, loading: categoriesLoading } = useCategories()
+
+  const overview = useMemo(() => {
+    const base = getDashboardOverview(transactions)
     return {
-      ...overview,
-      recent: overview.recent.map((t) => ({ ...t, category: getCategoryById(t.categoryId) })),
-      breakdown: overview.breakdown.map((b) => ({ ...b, category: getCategoryById(b.categoryId) })),
+      ...base,
+      // As transações recentes já vêm com `category` embutido pela API
+      // (join no backend) — não precisa resolver de novo.
+      recent: base.recent,
+      // O breakdown por categoria é um agregado (soma por categoryId), então
+      // não carrega categoria nenhuma — resolve aqui a partir da lista já
+      // carregada pelo Context de categorias.
+      breakdown: base.breakdown.map((b) => ({ ...b, category: getCategoryById(b.categoryId) ?? FALLBACK_CATEGORY })),
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions])
+  }, [transactions, getCategoryById])
+
+  return { ...overview, loading: transactionsLoading || categoriesLoading, error: transactionsError }
 }

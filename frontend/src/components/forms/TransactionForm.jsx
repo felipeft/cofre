@@ -1,14 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
-import { formatDateInput } from '@/utils/formatters'
 import { useCategories } from '@/hooks/useCategories'
+import { formatDateInput } from '@/utils/formatters'
 
 const defaultState = {
   type: 'expense',
   amount: '',
-  categoryId: 'mercado',
+  categoryId: '',
   description: '',
   date: formatDateInput(),
 }
@@ -16,21 +16,42 @@ const defaultState = {
 export default function TransactionForm({ initial, onSubmit, onCancel, submitLabel = 'Salvar' }) {
   const [form, setForm] = useState(initial ?? defaultState)
   const [amountFocused, setAmountFocused] = useState(false)
-  const { categories: allCategories } = useCategories()
+  const [submitting, setSubmitting] = useState(false)
+  const { categories: allCategories, loading: categoriesLoading } = useCategories()
 
   const categories = allCategories.filter((c) => c.type === form.type)
 
   const set = (patch) => setForm((prev) => ({ ...prev, ...patch }))
 
+  // Categorias chegam via API de forma assíncrona — se a categoria
+  // selecionada deixar de existir na lista carregada (ou nenhuma tiver sido
+  // escolhida ainda), cai para a primeira opção válida do tipo atual assim
+  // que os dados chegam.
+  useEffect(() => {
+    if (categoriesLoading) return
+    const stillValid = categories.some((c) => c.id === form.categoryId)
+    if (!stillValid) {
+      set({ categoryId: categories[0]?.id ?? '' })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoriesLoading, form.type, allCategories])
+
   const handleTypeChange = (type) => {
     const firstOfType = allCategories.find((c) => c.type === type)
-    set({ type, categoryId: firstOfType?.id })
+    set({ type, categoryId: firstOfType?.id ?? '' })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.amount || Number(form.amount) <= 0) return
-    onSubmit({ ...form, amount: Number(form.amount) })
+    if (!form.categoryId) return
+
+    setSubmitting(true)
+    try {
+      await onSubmit({ ...form, amount: Number(form.amount) })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -80,7 +101,14 @@ export default function TransactionForm({ initial, onSubmit, onCancel, submitLab
         </div>
       </div>
 
-      <Select label="Categoria" value={form.categoryId} onChange={(e) => set({ categoryId: e.target.value })}>
+      <Select
+        label="Categoria"
+        value={form.categoryId}
+        onChange={(e) => set({ categoryId: Number(e.target.value) })}
+        disabled={categoriesLoading || categories.length === 0}
+      >
+        {categoriesLoading && <option value="">Carregando categorias…</option>}
+        {!categoriesLoading && categories.length === 0 && <option value="">Nenhuma categoria disponível</option>}
         {categories.map((c) => (
           <option key={c.id} value={c.id}>
             {c.name}
@@ -104,12 +132,12 @@ export default function TransactionForm({ initial, onSubmit, onCancel, submitLab
 
       <div className="flex gap-3 mt-1">
         {onCancel && (
-          <Button type="button" variant="ghost" className="flex-1" onClick={onCancel}>
+          <Button type="button" variant="ghost" className="flex-1" onClick={onCancel} disabled={submitting}>
             Cancelar
           </Button>
         )}
-        <Button type="submit" variant="primary" className="flex-1">
-          {submitLabel}
+        <Button type="submit" variant="primary" className="flex-1" disabled={submitting || categoriesLoading || !form.categoryId}>
+          {submitting ? 'Salvando…' : submitLabel}
         </Button>
       </div>
     </form>

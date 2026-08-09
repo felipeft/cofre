@@ -1,51 +1,79 @@
-import { useMemo, useState } from 'react'
-import { Search, ArrowUpDown, Pencil, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Search, ArrowUpDown, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import Header from '@/layout/Header'
 import Card from '@/components/ui/Card'
 import Select from '@/components/ui/Select'
+import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
 import Dialog from '@/components/ui/Dialog'
 import EmptyState from '@/components/ui/EmptyState'
 import CategoryIcon from '@/components/ui/CategoryIcon'
+import { Spinner, SkeletonRow } from '@/components/ui/Loading'
 import TransactionForm from '@/components/forms/TransactionForm'
 import { useTransactions } from '@/hooks/useTransactions'
 import { useCategories } from '@/hooks/useCategories'
 import { useToast } from '@/contexts/ToastContext'
-import { filterAndSortTransactions } from '@/utils/transactionFilters'
+import { useTransactionsList } from '@/hooks/useTransactionsList'
 import { formatCurrency, formatDate } from '@/utils/formatters'
 
 export default function History() {
-  const { transactions, updateTransaction, deleteTransaction } = useTransactions()
-  const { categories, getCategoryById } = useCategories()
+  const { updateTransaction, deleteTransaction } = useTransactions()
+  const { categories } = useCategories()
   const { showToast } = useToast()
 
+  const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [sort, setSort] = useState('date-desc')
+  const [page, setPage] = useState(1)
   const [editing, setEditing] = useState(null)
   const [deleting, setDeleting] = useState(null)
 
-  const filtered = useMemo(() => {
-    const enriched = transactions.map((t) => ({ ...t, category: getCategoryById(t.categoryId) }))
-    return filterAndSortTransactions(enriched, { search, typeFilter, categoryFilter, sort })
-  }, [transactions, getCategoryById, search, typeFilter, categoryFilter, sort])
+  // Espera o usuário parar de digitar antes de disparar a busca — evita uma
+  // requisição por tecla pressionada.
+  useEffect(() => {
+    const timeout = setTimeout(() => setSearch(searchInput), 400)
+    return () => clearTimeout(timeout)
+  }, [searchInput])
 
-  const handleUpdate = (patch) => {
-    updateTransaction(editing.id, { ...patch, amount: Number(patch.amount) })
-    setEditing(null)
-    showToast('Movimentação atualizada')
+  // Qualquer mudança de filtro/ordenação/busca volta para a primeira página.
+  useEffect(() => {
+    setPage(1)
+  }, [search, typeFilter, categoryFilter, sort])
+
+  const { data: filtered, meta, loading, error } = useTransactionsList({
+    search,
+    typeFilter,
+    categoryFilter,
+    sort,
+    page,
+  })
+
+  const handleUpdate = async (patch) => {
+    try {
+      await updateTransaction(editing.id, { ...patch, amount: Number(patch.amount) })
+      setEditing(null)
+      showToast('Movimentação atualizada')
+    } catch (err) {
+      showToast(err.message ?? 'Não foi possível atualizar a movimentação.', 'error')
+    }
   }
 
-  const handleDelete = () => {
-    deleteTransaction(deleting.id)
-    showToast('Movimentação excluída', 'info')
-    setDeleting(null)
+  const handleDelete = async () => {
+    try {
+      await deleteTransaction(deleting.id)
+      showToast('Movimentação excluída', 'info')
+    } catch (err) {
+      showToast(err.message ?? 'Não foi possível excluir a movimentação.', 'error')
+    } finally {
+      setDeleting(null)
+    }
   }
 
   return (
     <div>
-      <Header title="Histórico" subtitle={`${filtered.length} movimentações`} />
+      <Header title="Histórico" subtitle={`${meta.total} movimentações`} />
 
       <div className="px-5 md:px-8 pb-8 flex flex-col gap-4">
         {/* Filters */}
@@ -54,9 +82,9 @@ export default function History() {
             <div className="relative">
               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-faint" />
               <input
-                placeholder="Buscar por descrição ou categoria"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por descrição, categoria ou observações"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="focus-ring h-11 w-full rounded-control bg-surface-2 border border-border pl-9 pr-3.5 text-[14px] text-text placeholder:text-text-faint focus:border-income/50 transition-colors"
               />
             </div>
@@ -65,7 +93,7 @@ export default function History() {
               <option value="income">Receitas</option>
               <option value="expense">Despesas</option>
             </Select>
-            <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+            <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}>
               <option value="all">Todas as categorias</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -82,7 +110,21 @@ export default function History() {
           </div>
         </Card>
 
-        {filtered.length === 0 ? (
+        {error ? (
+          <Card>
+            <EmptyState
+              icon={ArrowUpDown}
+              title="Não foi possível carregar o histórico"
+              description={error.message ?? 'Tente novamente em instantes.'}
+            />
+          </Card>
+        ) : loading && filtered.length === 0 ? (
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <SkeletonRow key={i} className="h-16" />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <Card>
             <EmptyState
               icon={ArrowUpDown}
@@ -166,6 +208,36 @@ export default function History() {
                 </tbody>
               </table>
             </Card>
+
+            {/* Pagination */}
+            {meta.totalPages > 1 && (
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[13px] text-text-muted flex items-center gap-2">
+                  Página {meta.page} de {meta.totalPages}
+                  {loading && <Spinner size={14} />}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={ChevronLeft}
+                    iconOnly
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    aria-label="Página anterior"
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={ChevronRight}
+                    iconOnly
+                    disabled={page >= meta.totalPages}
+                    onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
+                    aria-label="Próxima página"
+                  />
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

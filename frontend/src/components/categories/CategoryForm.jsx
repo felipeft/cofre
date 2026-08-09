@@ -10,11 +10,17 @@ export default function CategoryForm({ initial, onSubmit, onCancel }) {
   const [type, setType] = useState(initial?.type ?? 'expense')
   const [color, setColor] = useState(initial?.color ?? CATEGORY_COLOR_PALETTE[0])
   const [icon, setIcon] = useState(initial?.icon ?? CATEGORY_ICON_OPTIONS[0])
+  const [submitting, setSubmitting] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!name.trim()) return
-    onSubmit({ name: name.trim(), type, color, icon })
+    setSubmitting(true)
+    try {
+      await onSubmit({ name: name.trim(), type, color, icon })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -61,11 +67,11 @@ export default function CategoryForm({ initial, onSubmit, onCancel }) {
       </div>
 
       <div className="flex gap-3 mt-1">
-        <Button type="button" variant="ghost" className="flex-1" onClick={onCancel}>
+        <Button type="button" variant="ghost" className="flex-1" onClick={onCancel} disabled={submitting}>
           Cancelar
         </Button>
-        <Button type="submit" className="flex-1">
-          Salvar
+        <Button type="submit" className="flex-1" disabled={submitting}>
+          {submitting ? 'Salvando…' : 'Salvar'}
         </Button>
       </div>
     </form>

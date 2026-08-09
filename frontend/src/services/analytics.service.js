@@ -1,5 +1,6 @@
-// Mesma lógica do dashboard.service: hoje calcula no cliente, no futuro
-// pode virar uma chamada a GET /analytics.
+// Mesma lógica do dashboard.service: sem endpoint dedicado de analytics na
+// API ainda, calcula no cliente a partir de GET /transactions. Endpoint
+// dedicado no futuro = trocar só o corpo desta função.
 import {
   getCategoryBreakdown,
   getMonthlyTrend,
