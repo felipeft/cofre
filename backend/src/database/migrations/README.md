@@ -19,3 +19,6 @@ A partir de `0001_create_categories_table.sql` e
 transações) passou a existir de verdade — a tabela `schema_migrations`
 (criada automaticamente pelo runner, não como um arquivo aqui) garante que
 cada uma delas roda exatamente uma vez.
+
+`0003` e `0004` (Fase 3, Etapa 7) adicionam as regras de oferta/dízimo —
+ver o README principal do backend para a explicação completa da regra.

@@ -109,12 +109,12 @@ function create(data) {
            description, amount, type, category_id, date,
            competence_month, competence_year, notes, source,
            is_recurring, is_fixed, card, installment_current, installment_total,
-           tags, status
+           tags, status, offer_amount, tithe_amount, offer_rate_applied, tithe_rate_applied
          ) VALUES (
            @description, @amount, @type, @categoryId, @date,
            @competenceMonth, @competenceYear, @notes, @source,
            @isRecurring, @isFixed, @card, @installmentCurrent, @installmentTotal,
-           @tags, @status
+           @tags, @status, @offerAmount, @titheAmount, @offerRateApplied, @titheRateApplied
          )`
       )
       .run({
@@ -134,6 +134,10 @@ function create(data) {
         installmentTotal: data.installmentTotal ?? null,
         tags: data.tags,
         status: data.status,
+        offerAmount: data.offerAmount ?? 0,
+        titheAmount: data.titheAmount ?? 0,
+        offerRateApplied: data.offerRateApplied ?? null,
+        titheRateApplied: data.titheRateApplied ?? null,
       })
 
     return db.prepare(`${SELECT_WITH_CATEGORY} WHERE t.id = ?`).get(lastInsertRowid)
@@ -157,6 +161,10 @@ const UPDATE_COLUMNS = {
   installmentTotal: 'installment_total',
   tags: 'tags',
   status: 'status',
+  offerAmount: 'offer_amount',
+  titheAmount: 'tithe_amount',
+  offerRateApplied: 'offer_rate_applied',
+  titheRateApplied: 'tithe_rate_applied',
 }
 
 const BOOLEAN_KEYS = new Set(['isRecurring', 'isFixed'])
@@ -185,6 +193,23 @@ function remove(id) {
   }, 'Não foi possível excluir a transação.')
 }
 
+// Usado só pelo resumo financeiro (GET /transactions/summary): busca TODAS
+// as transações de uma competência, sem paginação — o resumo precisa somar
+// o período inteiro, não uma página dele. Separado de `findMany` para não
+// forçar esse método genérico a ter um "modo sem paginação" escondido atrás
+// de um parâmetro.
+function findAllForSummary({ month, year }) {
+  return run(
+    (db) =>
+      db
+        .prepare(
+          `${SELECT_WITH_CATEGORY} WHERE t.competence_month = @month AND t.competence_year = @year`
+        )
+        .all({ month, year }),
+    'Não foi possível calcular o resumo financeiro.'
+  )
+}
+
 // Usado pela regra de negócio de categorias: "não permitir excluir
 // categoria utilizada em transações".
 function existsByCategoryId(categoryId) {
@@ -194,4 +219,4 @@ function existsByCategoryId(categoryId) {
   }, 'Não foi possível verificar o uso da categoria.')
 }
 
-module.exports = { findMany, findById, create, update, remove, existsByCategoryId }
+module.exports = { findMany, findById, create, update, remove, existsByCategoryId, findAllForSummary }

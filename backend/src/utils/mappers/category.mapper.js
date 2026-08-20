@@ -12,6 +12,10 @@ function mapCategoryRow(row) {
     icon: row.icon,
     isActive: Boolean(row.is_active),
     sortOrder: row.sort_order,
+    applyOffer: Boolean(row.apply_offer),
+    offerRate: row.offer_rate,
+    applyTithe: Boolean(row.apply_tithe),
+    titheRate: row.tithe_rate,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }

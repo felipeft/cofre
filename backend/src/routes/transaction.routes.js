@@ -6,10 +6,14 @@ const {
   updateTransactionSchema,
   transactionIdParamSchema,
   listTransactionsQuerySchema,
+  financialSummaryQuerySchema,
 } = require('../schemas/transaction.schema')
 
 const router = Router()
 
+// Precisa vir ANTES de /:id — senão "summary" seria interpretado como um id
+// e cairia na validação de id inválido.
+router.get('/summary', validate(financialSummaryQuerySchema, 'query'), transactionController.getSummary)
 router.get('/', validate(listTransactionsQuerySchema, 'query'), transactionController.list)
 router.get('/:id', validate(transactionIdParamSchema, 'params'), transactionController.getById)
 router.post('/', validate(createTransactionSchema, 'body'), transactionController.create)

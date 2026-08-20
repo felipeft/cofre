@@ -123,9 +123,18 @@ const listTransactionsQuerySchema = paginationSchema.extend({
   sortDir: z.enum(['asc', 'desc']).optional().default('desc'),
 })
 
+// GET /transactions/summary — competência obrigatória: um resumo financeiro
+// "de todos os tempos" misturaria anos e não corresponde a nenhuma pergunta
+// real que o domínio precisa responder nesta etapa.
+const financialSummaryQuerySchema = z.object({
+  month: z.coerce.number().int().min(1).max(12),
+  year: z.coerce.number().int().min(2000).max(2100),
+})
+
 module.exports = {
   createTransactionSchema,
   updateTransactionSchema,
   transactionIdParamSchema,
   listTransactionsQuerySchema,
+  financialSummaryQuerySchema,
 }

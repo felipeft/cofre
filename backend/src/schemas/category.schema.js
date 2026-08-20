@@ -1,6 +1,7 @@
 const { z } = require('zod')
 
 const HEX_COLOR_REGEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
+const RATE_MESSAGE = 'deve ser um número entre 0 e 1 (ex: 0.01 para 1%).'
 
 const categoryTypeSchema = z.enum(['income', 'expense'], {
   errorMap: () => ({ message: "type deve ser 'income' ou 'expense'." }),
@@ -19,6 +20,13 @@ const core = {
   icon: z.string().trim().min(1, 'icon é obrigatório.').max(60),
   isActive: z.boolean(),
   sortOrder: z.coerce.number().int().min(0),
+  // Regras financeiras da fonte de renda (ver domain/financialRules.js).
+  // `null` explícito em offerRate/titheRate significa "use a taxa padrão
+  // global" — por isso `.nullable()`, não apenas `.optional()`.
+  applyOffer: z.boolean(),
+  offerRate: z.coerce.number().min(0, RATE_MESSAGE).max(1, RATE_MESSAGE).nullable(),
+  applyTithe: z.boolean(),
+  titheRate: z.coerce.number().min(0, RATE_MESSAGE).max(1, RATE_MESSAGE).nullable(),
 }
 
 const createCategorySchema = z.object({
@@ -28,6 +36,10 @@ const createCategorySchema = z.object({
   icon: core.icon,
   isActive: core.isActive.optional().default(true),
   sortOrder: core.sortOrder.optional().default(0),
+  applyOffer: core.applyOffer.optional().default(false),
+  offerRate: core.offerRate.optional().default(null),
+  applyTithe: core.applyTithe.optional().default(false),
+  titheRate: core.titheRate.optional().default(null),
 })
 
 const updateCategorySchema = z
@@ -38,6 +50,10 @@ const updateCategorySchema = z
     icon: core.icon.optional(),
     isActive: core.isActive.optional(),
     sortOrder: core.sortOrder.optional(),
+    applyOffer: core.applyOffer.optional(),
+    offerRate: core.offerRate.optional(),
+    applyTithe: core.applyTithe.optional(),
+    titheRate: core.titheRate.optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'Envie ao menos um campo para atualizar.',

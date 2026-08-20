@@ -9,14 +9,25 @@ function run(fn, errorMessage) {
   }
 }
 
-function create({ name, type, color, icon, isActive, sortOrder }) {
+function create({ name, type, color, icon, isActive, sortOrder, applyOffer, offerRate, applyTithe, titheRate }) {
   return run((db) => {
     const { lastInsertRowid } = db
       .prepare(
-        `INSERT INTO categories (name, type, color, icon, is_active, sort_order)
-         VALUES (@name, @type, @color, @icon, @isActive, @sortOrder)`
+        `INSERT INTO categories (name, type, color, icon, is_active, sort_order, apply_offer, offer_rate, apply_tithe, tithe_rate)
+         VALUES (@name, @type, @color, @icon, @isActive, @sortOrder, @applyOffer, @offerRate, @applyTithe, @titheRate)`
       )
-      .run({ name, type, color, icon, isActive: isActive ? 1 : 0, sortOrder })
+      .run({
+        name,
+        type,
+        color,
+        icon,
+        isActive: isActive ? 1 : 0,
+        sortOrder,
+        applyOffer: applyOffer ? 1 : 0,
+        offerRate: offerRate ?? null,
+        applyTithe: applyTithe ? 1 : 0,
+        titheRate: titheRate ?? null,
+      })
 
     return db.prepare('SELECT * FROM categories WHERE id = ?').get(lastInsertRowid)
   }, 'Não foi possível criar a categoria.')
@@ -68,7 +79,12 @@ function update(id, patch) {
       icon: 'icon',
       isActive: 'is_active',
       sortOrder: 'sort_order',
+      applyOffer: 'apply_offer',
+      offerRate: 'offer_rate',
+      applyTithe: 'apply_tithe',
+      titheRate: 'tithe_rate',
     }
+    const booleanKeys = new Set(['isActive', 'applyOffer', 'applyTithe'])
 
     const sets = []
     const params = { id }
@@ -76,7 +92,7 @@ function update(id, patch) {
     for (const [key, column] of Object.entries(columns)) {
       if (patch[key] === undefined) continue
       sets.push(`${column} = @${key}`)
-      params[key] = key === 'isActive' ? (patch[key] ? 1 : 0) : patch[key]
+      params[key] = booleanKeys.has(key) ? (patch[key] ? 1 : 0) : patch[key]
     }
 
     sets.push("updated_at = datetime('now')")
