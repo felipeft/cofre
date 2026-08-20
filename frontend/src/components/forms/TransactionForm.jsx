@@ -3,7 +3,8 @@ import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
 import { useCategories } from '@/hooks/useCategories'
-import { formatDateInput } from '@/utils/formatters'
+import { formatDateInput, formatCurrency, formatPercent } from '@/utils/formatters'
+import { DEFAULT_OFFER_RATE, DEFAULT_TITHE_RATE } from '@/constants/financialRules'
 
 const defaultState = {
   type: 'expense',
@@ -40,6 +41,22 @@ export default function TransactionForm({ initial, onSubmit, onCancel, submitLab
     const firstOfType = allCategories.find((c) => c.type === type)
     set({ type, categoryId: firstOfType?.id ?? '' })
   }
+
+  // Prévia informativa de oferta/dízimo — NÃO é a fonte da verdade. O
+  // backend recalcula e persiste os valores reais (Transaction.offerAmount/
+  // titheAmount) ao salvar; isso aqui só ajuda o usuário a entender o que
+  // vai acontecer antes de confirmar. Quando a categoria não sobrescreve a
+  // taxa (offerRate/titheRate null), usa o padrão espelhado do backend só
+  // para exibição.
+  const selectedCategory = categories.find((c) => c.id === form.categoryId)
+  const amountNumber = Number(form.amount) || 0
+  const showObligationsPreview =
+    form.type === 'income' && selectedCategory && amountNumber > 0 && (selectedCategory.applyOffer || selectedCategory.applyTithe)
+
+  const offerRate = selectedCategory?.offerRate ?? DEFAULT_OFFER_RATE
+  const titheRate = selectedCategory?.titheRate ?? DEFAULT_TITHE_RATE
+  const offerPreview = selectedCategory?.applyOffer ? amountNumber * offerRate : 0
+  const tithePreview = selectedCategory?.applyTithe ? amountNumber * titheRate : 0
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -115,6 +132,28 @@ export default function TransactionForm({ initial, onSubmit, onCancel, submitLab
           </option>
         ))}
       </Select>
+
+      {showObligationsPreview && (
+        <div className="flex flex-col gap-1.5 rounded-control bg-surface-2 border border-border-soft p-3 text-[13px]">
+          <div className="flex items-center justify-between text-text-muted">
+            <span>Receita</span>
+            <span className="num text-text">{formatCurrency(amountNumber)}</span>
+          </div>
+          {selectedCategory.applyOffer && (
+            <div className="flex items-center justify-between text-text-muted">
+              <span>Oferta ({formatPercent(offerRate)})</span>
+              <span className="num text-income">{formatCurrency(offerPreview)}</span>
+            </div>
+          )}
+          {selectedCategory.applyTithe && (
+            <div className="flex items-center justify-between text-text-muted">
+              <span>Dízimo ({formatPercent(titheRate)})</span>
+              <span className="num text-income">{formatCurrency(tithePreview)}</span>
+            </div>
+          )}
+          <p className="text-[11px] text-text-faint pt-0.5">Valor estimado — calculado e salvo pelo backend ao confirmar.</p>
+        </div>
+      )}
 
       <Input
         label="Descrição"
