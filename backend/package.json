@@ -3,6 +3,9 @@
   "version": "0.3.0",
   "description": "API do Cofre - Node.js + Express + SQLite, com CRUD completo e regras financeiras parametrizadas.",
   "main": "src/server.js",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
