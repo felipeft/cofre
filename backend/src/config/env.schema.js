@@ -12,13 +12,17 @@ const envSchema = z.object({
   // Lista separada por vírgulas (ex: "http://localhost:5173,https://cofre-orcin.vercel.app").
   // Normalizada aqui para um array de URLs já validadas — o resto do app
   // (config/index.js, cors.middleware.js) nunca lida com a string crua.
+  // Cada origin também tem barra(s) final(is) removida(s): o header
+  // `Origin` enviado pelo navegador nunca tem barra no final, então uma
+  // entrada configurada como ".../app/" nunca bateria no `===` exato do
+  // middleware — silenciosamente, sem nenhum erro visível.
   FRONTEND_URLS: z
     .string()
     .default('http://localhost:5173')
     .transform((value) =>
       value
         .split(',')
-        .map((origin) => origin.trim())
+        .map((origin) => origin.trim().replace(/\/+$/, ''))
         .filter(Boolean)
     )
     .pipe(z.array(z.string().url()).min(1, 'Informe ao menos uma origin em FRONTEND_URLS.')),
@@ -36,7 +40,22 @@ const envSchema = z.object({
 })
 
 function parseEnv(source = process.env) {
-  const result = envSchema.safeParse(source)
+  // FRONTEND_URLS (plural) é o nome canônico, documentado em .env.example,
+  // e o único que o resto do app conhece (config.cors.allowedOrigins). Mas
+  // um ambiente já configurado com o nome singular `FRONTEND_URL` (erro
+  // fácil de cometer, e o que de fato aconteceu no Render) não pode
+  // simplesmente cair no default de localhost em silêncio — isso é
+  // exatamente o tipo de falha que derruba o CORS em produção sem nenhum
+  // erro óbvio no log de start. Normaliza aqui, antes da validação, e avisa.
+  const normalizedSource = { ...source }
+  if (!normalizedSource.FRONTEND_URLS && normalizedSource.FRONTEND_URL) {
+    normalizedSource.FRONTEND_URLS = normalizedSource.FRONTEND_URL
+    logger.warn(
+      "Usando FRONTEND_URL (singular) como fallback para FRONTEND_URLS. Renomeie a variável de ambiente para FRONTEND_URLS — o nome singular pode deixar de ser aceito no futuro."
+    )
+  }
+
+  const result = envSchema.safeParse(normalizedSource)
 
   if (!result.success) {
     // Único ponto do bootstrap onde o app pode falhar antes mesmo de existir

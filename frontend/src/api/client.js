@@ -2,7 +2,21 @@
 // passam por aqui. Único lugar que sabe a base URL, trata erros de forma
 // uniforme e (quando a autenticação existir) enviará o cookie de sessão.
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+// `VITE_API_URL` frequentemente é configurada com barra final no painel do
+// Vercel (ex: "https://cofre-api-mgdl.onrender.com/") — removê-la aqui, uma
+// única vez, é o que garante que `${BASE_URL}${path}` nunca produza
+// "...com//categories", não importa como a variável foi digitada.
+function normalizeBaseUrl(rawUrl) {
+  return rawUrl.replace(/\/+$/, '')
+}
+
+const BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_URL ?? 'http://localhost:3000')
+
+// Sempre um único "/" entre base e path, independente de o path já vir com
+// uma barra inicial (todo `ENDPOINTS.*` vem, ex: '/categories') ou não.
+function buildUrl(path) {
+  return `${BASE_URL}/${path.replace(/^\/+/, '')}`
+}
 
 // Erro rico o suficiente para o toast mostrar uma mensagem amigável (`message`,
 // já em pt-BR, vem do backend) e, se algum dia fizer falta, para lógica mais
@@ -22,7 +36,7 @@ async function request(path, options = {}) {
   let response
 
   try {
-    response = await fetch(`${BASE_URL}${path}`, {
+    response = await fetch(buildUrl(path), {
       // Preparado para a autenticação por sessão HTTP-only futura mesmo sem
       // login existir ainda — nenhuma chamada precisará ser revisitada
       // quando essa etapa chegar.
