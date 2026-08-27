@@ -263,3 +263,134 @@ Ficam para a etapa seguinte (Cartões e Parcelamentos):
   etapa de infraestrutura, não alterada aqui). Migrations `ADD COLUMN` são
   de baixo risco (não há como "perder dados" na maioria dos casos), mas não
   há um mecanismo de `down` formal se um dia for preciso reverter.
+
+---
+
+## Fase 3, Etapa 8 — Cartões e Parcelamentos
+
+### Modelo de cartão
+
+Nova entidade `credit_cards` (migration `0005`): `name`, `creditLimit`,
+`closingDay`, `dueDay`, `isActive`. Segue exatamente o padrão de
+`categories` — inclusive a regra de exclusão: um cartão com transações
+associadas não é removido de verdade, só desativado (`DELETE /cards/:id`
+retorna `softDeleted: true/false`, igual a `DELETE /categories/:id`).
+
+`transactions.card_id` (migration `0006`) é o relacionamento real por ID
+que faltava. A coluna antiga `card` (texto livre, criada numa etapa
+anterior) **permanece intocada no banco** — não editamos uma migration já
+aplicada, e assim nenhum dado existente é perdido — mas deixou de ser
+exposta pela API: o mapper agora expõe `card: { id, name } | null`, sempre
+o cartão relacional. Nada no frontend lia o campo antigo, então não houve
+quebra de contrato real.
+
+### Regra de fechamento/vencimento e geração de parcelas
+
+Documentada em `src/domain/installmentPlan.js`. Resumo:
+
+1. Compra até o dia do fechamento → entra no ciclo que fecha **neste** mês.
+   Depois do fechamento → ciclo do mês **seguinte**.
+2. Dentro do ciclo, se `dueDay > closingDay` (caso comum: fecha dia 10,
+   vence dia 20), o vencimento cai no mesmo mês do fechamento. Se
+   `dueDay <= closingDay`, o vencimento rola para o mês seguinte.
+3. Cada parcela subsequente soma +1 mês ao vencimento da parcela anterior
+   (com clamp de dia — dia 31 vira dia 28/29/30 num mês mais curto).
+4. `date` de cada parcela é o **vencimento daquela parcela específica**, e
+   `competence` continua sendo simplesmente derivada de `date`
+   (`utils/competence.js`, sem mudança de semântica) — cada parcela cai na
+   competência financeira correta, não todas na competência da compra
+   original.
+
+Esta é uma decisão de negócio que o prompt desta etapa deixou em aberto
+("se houver ambiguidade, escolha o mais simples e documente") — a
+alternativa seria negociável, mas esta regra é determinística, testada
+(`tests/installmentPlan.unit.test.js`) e cobre exatamente o exemplo do
+prompt (compra 20/08, fecha 10/vence 20 → primeira parcela 20/09).
+
+### Arredondamento
+
+`amount total / N`, arredondado a 2 casas em cada parcela; a diferença
+residual (poucos centavos, na pior das hipóteses) é somada à **última**
+parcela. Garante `soma das parcelas === valor original` sempre — testado
+inclusive com valores que não dividem exatamente (R$100 ÷ 3, R$1000 ÷ 7).
+
+### Sem duplicação, atomicidade
+
+`POST /transactions` com `cardId` + `installmentTotal > 1` gera as N
+parcelas numa única chamada a `transactionRepository.createMany()`, que
+executa tudo dentro de um `db.transaction()` do better-sqlite3: **OU as N
+parcelas são criadas, OU nenhuma** (rollback automático em qualquer erro no
+meio do lote — testado explicitamente forçando uma violação de FK no meio
+de um lote de 2 linhas). Não existe uma linha extra "da compra original":
+o conjunto de parcelas *é* a compra.
+
+### Limite de crédito
+
+`GET /cards/:id/summary` retorna `creditLimit`, `usedLimit`,
+`availableLimit`. `usedLimit` soma todas as despesas **não canceladas**
+associadas ao cartão (`status != 'cancelled'`) — inclui parcelas futuras
+ainda não vencidas, porque o limite reflete o compromisso total assumido,
+não só o que já venceu. Não há noção de fatura paga nesta etapa (fora de
+escopo, ver abaixo) — "em aberto" aqui é só "não cancelada".
+
+### Validações implementadas
+
+- `cardId` deve existir (404 se não).
+- Cartão inativo não aceita novas compras (400).
+- Cartão só pode ser associado a despesa — receita com `cardId` é
+  rejeitada (400), o que **também** bloqueia parcelamento de receita (uma
+  regra cobre as duas).
+- `installmentTotal` é inteiro positivo, com teto de 60 parcelas
+  (`constants/cards.js` — não é uma regra "financeira", só um limite
+  sensato contra erro de digitação).
+- Nome de cartão duplicado é rejeitado (409), mesmo padrão de categorias.
+
+### Endpoints novos
+
+| Rota | Descrição |
+|---|---|
+| `GET /cards` | Lista — `?includeInactive=true` |
+| `GET /cards/:id` | Busca um cartão |
+| `GET /cards/:id/summary` | Limite total/usado/disponível |
+| `POST /cards` | Cria — `{ name, creditLimit, closingDay, dueDay, isActive? }` |
+| `PUT /cards/:id` | Atualiza (parcial) |
+| `DELETE /cards/:id` | Exclui — vira desativação lógica se houver compras associadas |
+
+`POST /transactions` (rota existente) passou a aceitar `cardId` e
+`installmentTotal` opcionais — sem `cardId`, comportamento idêntico a
+antes. Com `cardId` e `installmentTotal > 1`, a resposta muda de forma
+(`data` vira `{ installmentGroupId, count, transactions: [...] }` em vez de
+uma transação única) — documentado no frontend (`TransactionsContext.jsx`)
+como a única mudança de contrato desta etapa.
+
+`GET /transactions` ganhou dois filtros novos, opcionais: `cardId` e
+`installmentGroupId` (mesma extensão natural do padrão já usado por
+`categoryId`).
+
+### Testes desta etapa
+
+`npm test`: **57/57 passando** no total (35 novos desta etapa). Cobrem
+literalmente os 22 itens pedidos na seção 24 do prompt: CRUD de cartão
+completo, duplicidade, compra normal/1x/parcelada, sequência
+`installmentCurrent`/`installmentTotal`, `installmentGroupId` compartilhado,
+`cardId` compartilhado, datas do ciclo de fatura, soma exata, arredondamento,
+bloqueio de parcelamento de receita, bloqueio de cartão inativo, cálculo de
+limite (incluindo o caso de transação cancelada não contar), e atomicidade
+forçando uma falha no meio de um lote.
+
+### Fora do escopo desta etapa (de propósito)
+
+- Pagamento de fatura, juros, rotativo, atraso, pagamento parcial, encargos.
+- Cartão adicional, cashback, pontos.
+- Regenerar/cascatear as parcelas-irmãs quando uma parcela individual é
+  editada via `PUT /transactions/:id` — a edição continua funcionando como
+  antes (campo a campo, na própria linha), só não propaga para o grupo.
+- Qualquer filtro/UI de fatura mensal agrupada — o Histórico mostra cada
+  parcela como uma linha própria, com o cartão e "N/total" visíveis.
+
+### Decisão a revisar futuramente
+
+Se um dia for necessário editar uma compra parcelada inteira (ex: mudar o
+cartão de todas as 12 parcelas de uma vez), vai ser preciso um endpoint
+dedicado que opere sobre `installmentGroupId` — hoje cada parcela só pode
+ser editada individualmente, como qualquer outra transação.

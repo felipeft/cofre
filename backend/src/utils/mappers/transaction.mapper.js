@@ -29,10 +29,14 @@ function mapTransactionRow(row) {
     source: row.source,
     isRecurring: Boolean(row.is_recurring),
     isFixed: Boolean(row.is_fixed),
-    card: row.card,
+    // `card` no contrato da API agora é sempre o cartão RELACIONAL
+    // (card_id → credit_cards), nunca mais a coluna de texto livre
+    // descontinuada na Etapa 8 (ela continua existindo fisicamente no
+    // banco, intocada, mas deixou de ser exposta — nada no frontend a lia).
+    card: row.card_id != null ? { id: row.card_id, name: row.card_name } : null,
     installments:
       row.installment_current != null || row.installment_total != null
-        ? { current: row.installment_current, total: row.installment_total }
+        ? { current: row.installment_current, total: row.installment_total, groupId: row.installment_group_id }
         : null,
     tags: parseTags(row.tags),
     status: row.status,

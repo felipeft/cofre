@@ -15,7 +15,10 @@ const getById = asyncHandler(async (req, res) => {
 
 const create = asyncHandler(async (req, res) => {
   const data = transactionService.createTransaction(req.validated.body)
-  apiResponse.success(res, { data, message: 'Transação criada com sucesso.', statusCode: HTTP_STATUS.CREATED })
+  const message = Array.isArray(data?.transactions)
+    ? `${data.count} parcelas criadas com sucesso.`
+    : 'Transação criada com sucesso.'
+  apiResponse.success(res, { data, message, statusCode: HTTP_STATUS.CREATED })
 })
 
 const update = asyncHandler(async (req, res) => {

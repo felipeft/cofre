@@ -6,5 +6,6 @@ export const ROUTES = {
   history: '/historico',
   analytics: '/analitico',
   categories: '/categorias',
+  cards: '/cartoes',
   settings: '/configuracoes',
 }

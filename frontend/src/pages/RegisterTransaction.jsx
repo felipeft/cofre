@@ -13,8 +13,8 @@ export default function RegisterTransaction() {
 
   const handleSubmit = async (tx) => {
     try {
-      await addTransaction(tx)
-      showToast('Movimentação registrada')
+      const created = await addTransaction(tx)
+      showToast(Array.isArray(created?.transactions) ? `${created.count} parcelas registradas` : 'Movimentação registrada')
       navigate(ROUTES.dashboard)
     } catch (err) {
       showToast(err.message ?? 'Não foi possível registrar a movimentação.', 'error')

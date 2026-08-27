@@ -11,6 +11,9 @@ export const ENDPOINTS = {
   transaction: (id) => `/transactions/${id}`,
   categories: '/categories',
   category: (id) => `/categories/${id}`,
+  cards: '/cards',
+  card: (id) => `/cards/${id}`,
+  cardSummary: (id) => `/cards/${id}/summary`,
   auth: {
     google: '/auth/google',
     session: '/auth/session',

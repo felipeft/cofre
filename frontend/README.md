@@ -118,3 +118,65 @@ resposta da API — o restante da interface reage automaticamente, sem reload.
 - **Endpoint dedicado de Dashboard/Analytics:** troca só o corpo de
   `dashboard.service.js`/`analytics.service.js` por uma chamada a
   `apiClient` — `useDashboard`/`useAnalytics` e as páginas não mudam.
+
+---
+
+## Fase 3, Etapa 8 — Cartões e Parcelamentos
+
+### Nova página: Cartões (`/cartoes`)
+
+`pages/Cards.jsx` — listar, criar, editar, desativar/excluir cartões.
+Segue exatamente o padrão de `pages/Categories.jsx`: `CardsContext` como
+fonte única de verdade (mesmo raciocínio do `CategoriesContext` — criar um
+cartão no formulário de lançamento precisa refletir na tela de
+gerenciamento e vice-versa, sem reload). Adicionada à navegação existente
+(`layout/navItems.js`) — `Sidebar` já era genérico o suficiente para
+crescer sozinho; `BottomNav` foi generalizado para distribuir N itens em
+volta do botão central, em vez de assumir exatamente 5.
+
+### Registro de transação com cartão
+
+`components/forms/TransactionForm.jsx` ganhou uma seção "Forma de
+pagamento", visível só para despesa: Dinheiro/Cartão de crédito. Ao
+escolher um cartão, aparece a seleção do cartão e a quantidade de parcelas
+(campo numérico, 1 a 60). Com mais de 1 parcela, uma prévia informativa
+aparece (compra total, valor aproximado por parcela, cartão) — **não**
+tenta replicar a regra de ciclo de fatura do backend (fechamento/
+vencimento) no cliente: isso duplicaria uma regra de negócio não-trivial em
+dois lugares, e o próprio backend é quem calcula as datas definitivas.
+Datas exatas só aparecem depois de salvar, vindas da API.
+
+### Contrato de resposta: uma chamada pode criar várias transações
+
+Quando o formulário envia `cardId` + `installmentTotal > 1`, o backend
+responde com `{ installmentGroupId, count, transactions: [...] }` em vez de
+uma única transação. Normalizado em **um único lugar**
+(`TransactionsContext.addTransaction`), que sempre espalha a lista
+resultante no estado local — nenhuma página ou componente que chama
+`addTransaction` precisa saber dessa diferença.
+
+### Histórico e linha de transação
+
+`components/transactions/TransactionRow.jsx` e as duas visualizações
+(cards mobile / tabela desktop) de `pages/History.jsx` agora mostram o
+nome do cartão e "N/total" quando a transação pertence a uma compra
+parcelada — sem criar uma tela de fatura nova, só uma indicação visual
+onde a movimentação já aparecia.
+
+### Arquivos novos
+
+```
+src/services/card.service.js
+src/contexts/CardsContext.jsx
+src/hooks/useCards.js
+src/pages/Cards.jsx
+src/components/cards/CardForm.jsx
+src/components/cards/CardListItem.jsx
+```
+
+### Fora do escopo desta etapa
+
+Tela de fatura mensal agrupada, edição em lote de um grupo de parcelas,
+qualquer cálculo de limite feito no cliente (sempre vem de
+`GET /cards/:id/summary`), e prévia de datas de parcelamento no formulário
+(deliberadamente simplificada — ver acima).

@@ -3,7 +3,7 @@ import { formatCurrency, relativeDayLabel } from '@/utils/formatters'
 import { Pencil, Trash2 } from 'lucide-react'
 
 export default function TransactionRow({ transaction, onEdit, onDelete, showActions = false }) {
-  const { category, type, amount, description, date } = transaction
+  const { category, type, amount, description, date, card, installments } = transaction
   const isIncome = type === 'income'
 
   return (
@@ -17,8 +17,15 @@ export default function TransactionRow({ transaction, onEdit, onDelete, showActi
 
       <div className="min-w-0 flex-1">
         <p className="text-[14px] font-medium text-text truncate">{description || category.name}</p>
-        <p className="text-[12px] text-text-muted">
+        <p className="text-[12px] text-text-muted truncate">
           {category.name} · {relativeDayLabel(date)}
+          {card && (
+            <>
+              {' · '}
+              {card.name}
+              {installments && installments.total > 1 ? ` ${installments.current}/${installments.total}` : ''}
+            </>
+          )}
         </p>
       </div>
 

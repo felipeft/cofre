@@ -1,10 +1,13 @@
+const { randomUUID } = require('crypto')
 const transactionRepository = require('../repositories/transaction.repository')
 const categoryRepository = require('../repositories/category.repository')
+const cardRepository = require('../repositories/card.repository')
 const { mapTransactionRow } = require('../utils/mappers/transaction.mapper')
 const { buildPaginationMeta } = require('../utils/pagination')
 const { deriveCompetenceFromDate } = require('../utils/competence')
 const { calculateIncomeObligations } = require('../domain/financialRules')
 const { calculateFinancialSummary } = require('../domain/financialSummary')
+const { buildInstallmentPlan } = require('../domain/installmentPlan')
 const NotFoundError = require('../errors/NotFoundError')
 const ValidationError = require('../errors/ValidationError')
 
@@ -20,6 +23,12 @@ function findCategoryOrThrow(categoryId) {
   return category
 }
 
+function findCardOrThrow(cardId) {
+  const card = cardRepository.findById(cardId)
+  if (!card) throw new NotFoundError(`Cartão ${cardId} não encontrado.`)
+  return card
+}
+
 // Uma transação de despesa referenciando uma categoria de receita (ou
 // vice-versa) corromperia todo dashboard/análise que agrupa por categoria —
 // barato de checar aqui, caro de descobrir depois.
@@ -29,6 +38,21 @@ function assertCategoryMatchesType(category, type) {
       `A categoria "${category.name}" é de ${category.type === 'income' ? 'receita' : 'despesa'}, incompatível com type="${type}".`,
       [{ field: 'categoryId', message: 'Categoria não corresponde ao tipo da transação.' }]
     )
+  }
+}
+
+// Cartão de crédito é meio de pagamento de DESPESA — não existe "receita no
+// cartão" no domínio atual (ver README, Etapa 8).
+function assertCardUsableForExpense(card, type) {
+  if (type !== 'expense') {
+    throw new ValidationError('Cartão só pode ser associado a uma despesa.', [
+      { field: 'cardId', message: "cardId exige type='expense'." },
+    ])
+  }
+  if (!card.is_active) {
+    throw new ValidationError(`O cartão "${card.name}" está inativo e não aceita novas compras.`, [
+      { field: 'cardId', message: 'Cartão inativo.' },
+    ])
   }
 }
 
@@ -47,7 +71,8 @@ function toDomainCategory(categoryRow) {
 }
 
 function listTransactions(query) {
-  const { page, limit, q, type, categoryId, month, year, dateFrom, dateTo, status, sortBy, sortDir } = query
+  const { page, limit, q, type, categoryId, cardId, installmentGroupId, month, year, dateFrom, dateTo, status, sortBy, sortDir } =
+    query
 
   const { rows, total } = transactionRepository.findMany({
     page,
@@ -55,6 +80,8 @@ function listTransactions(query) {
     search: q,
     type,
     categoryId,
+    cardId,
+    installmentGroupId,
     month,
     year,
     dateFrom,
@@ -74,9 +101,27 @@ function getTransactionById(id) {
   return mapTransactionRow(findExistingOrThrow(id))
 }
 
+// Uma compra parcelada é criada através do mesmo POST /transactions —
+// diferenciada apenas por trazer `cardId` + `installmentTotal > 1`. Isso
+// evita uma segunda rota paralela para essencialmente a mesma operação
+// ("criar movimentação"), conforme pedido no prompt desta etapa.
+function isInstallmentPurchase(input) {
+  return input.cardId != null && input.installmentTotal != null && input.installmentTotal > 1
+}
+
 function createTransaction(input) {
   const category = findCategoryOrThrow(input.categoryId)
   assertCategoryMatchesType(category, input.type)
+
+  let cardRow = null
+  if (input.cardId != null) {
+    cardRow = findCardOrThrow(input.cardId)
+    assertCardUsableForExpense(cardRow, input.type)
+  }
+
+  if (isInstallmentPurchase(input)) {
+    return createInstallmentPurchase(input, cardRow)
+  }
 
   const competence =
     input.competenceMonth !== undefined && input.competenceYear !== undefined
@@ -98,6 +143,58 @@ function createTransaction(input) {
   return mapTransactionRow(row)
 }
 
+// Gera as N parcelas de uma compra e as persiste atomicamente (todas ou
+// nenhuma — ver transactionRepository.createMany). Nunca cria uma linha
+// extra para "a compra original": o conjunto de parcelas *é* a compra.
+function createInstallmentPurchase(input, cardRow) {
+  const plan = buildInstallmentPlan({
+    totalAmount: input.amount,
+    installmentsCount: input.installmentTotal,
+    purchaseDate: input.date,
+    description: input.description,
+    card: { closingDay: cardRow.closing_day, dueDay: cardRow.due_day },
+  })
+
+  const installmentGroupId = randomUUID()
+  const serializedTags = JSON.stringify(input.tags ?? [])
+
+  const rows = plan.map((installment) => ({
+    description: installment.description,
+    amount: installment.amount,
+    type: input.type,
+    categoryId: input.categoryId,
+    date: installment.date,
+    competenceMonth: installment.competenceMonth,
+    competenceYear: installment.competenceYear,
+    notes: input.notes,
+    source: input.source,
+    isRecurring: false,
+    isFixed: input.isFixed,
+    card: input.card ?? null,
+    cardId: cardRow.id,
+    installmentCurrent: installment.installmentCurrent,
+    installmentTotal: installment.installmentTotal,
+    installmentGroupId,
+    tags: serializedTags,
+    status: input.status,
+    // Despesa nunca gera oferta/dízimo — mesma regra de sempre, só que aqui
+    // não passa por calculateIncomeObligations porque já sabemos que é
+    // despesa (cartão só existe para despesa).
+    offerAmount: 0,
+    titheAmount: 0,
+    offerRateApplied: null,
+    titheRateApplied: null,
+  }))
+
+  const createdRows = transactionRepository.createMany(rows)
+
+  return {
+    installmentGroupId,
+    count: createdRows.length,
+    transactions: createdRows.map(mapTransactionRow),
+  }
+}
+
 function updateTransaction(id, patch) {
   const current = findExistingOrThrow(id)
 
@@ -108,6 +205,15 @@ function updateTransaction(id, patch) {
   if (patch.type !== undefined || patch.categoryId !== undefined) {
     effectiveCategoryRow = findCategoryOrThrow(effectiveCategoryId)
     assertCategoryMatchesType(effectiveCategoryRow, effectiveType)
+  }
+
+  // cardId pode ser trocado (ou removido, com `null`) numa edição — mesma
+  // validação de existência/ativo/tipo que vale na criação. Edição de uma
+  // transação já parcelada não regenera as parcelas-irmãs (fora do escopo
+  // desta etapa — ver README).
+  if (patch.cardId !== undefined && patch.cardId !== null) {
+    const cardRow = findCardOrThrow(patch.cardId)
+    assertCardUsableForExpense(cardRow, effectiveType)
   }
 
   // Se a data mudou e a competência não foi explicitamente informada nesta

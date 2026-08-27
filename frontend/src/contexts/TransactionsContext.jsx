@@ -40,7 +40,12 @@ export function TransactionsProvider({ children }) {
 
   const addTransaction = useCallback(async (payload) => {
     const created = await transactionService.createTransaction(payload)
-    setTransactions((prev) => [created, ...prev])
+    // Uma compra parcelada (cardId + installmentTotal > 1) faz o backend
+    // devolver várias transações de uma vez (`{ transactions: [...] }`) em
+    // vez de uma única — normaliza aqui para que quem chama `addTransaction`
+    // (formulário de lançamento) não precise saber dessa diferença.
+    const createdList = Array.isArray(created?.transactions) ? created.transactions : [created]
+    setTransactions((prev) => [...createdList, ...prev])
     setVersion((v) => v + 1)
     return created
   }, [])

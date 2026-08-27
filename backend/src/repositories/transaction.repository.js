@@ -9,15 +9,19 @@ function run(fn, errorMessage) {
   }
 }
 
+// `cards` é LEFT JOIN (não JOIN) porque `card_id` é opcional — a maioria das
+// transações não tem cartão nenhum associado.
 const SELECT_WITH_CATEGORY = `
   SELECT
     t.*,
     c.name AS category_name,
     c.color AS category_color,
     c.icon AS category_icon,
-    c.type AS category_type
+    c.type AS category_type,
+    cc.name AS card_name
   FROM transactions t
   JOIN categories c ON c.id = t.category_id
+  LEFT JOIN credit_cards cc ON cc.id = t.card_id
 `
 
 // Nomes de coluna nunca podem vir de input do usuário direto num ORDER BY
@@ -32,7 +36,7 @@ const SORT_COLUMNS = {
   createdAt: 't.created_at',
 }
 
-function buildWhere({ search, type, categoryId, month, year, dateFrom, dateTo, status }) {
+function buildWhere({ search, type, categoryId, cardId, installmentGroupId, month, year, dateFrom, dateTo, status }) {
   const conditions = []
   const params = {}
 
@@ -47,6 +51,14 @@ function buildWhere({ search, type, categoryId, month, year, dateFrom, dateTo, s
   if (categoryId) {
     conditions.push('t.category_id = @categoryId')
     params.categoryId = categoryId
+  }
+  if (cardId) {
+    conditions.push('t.card_id = @cardId')
+    params.cardId = cardId
+  }
+  if (installmentGroupId) {
+    conditions.push('t.installment_group_id = @installmentGroupId')
+    params.installmentGroupId = installmentGroupId
   }
   if (month) {
     conditions.push('t.competence_month = @month')
@@ -101,47 +113,74 @@ function findById(id) {
   return run((db) => db.prepare(`${SELECT_WITH_CATEGORY} WHERE t.id = ?`).get(id), 'Não foi possível buscar a transação.')
 }
 
+const INSERT_COLUMNS = `
+  description, amount, type, category_id, date,
+  competence_month, competence_year, notes, source,
+  is_recurring, is_fixed, card, card_id, installment_current, installment_total,
+  installment_group_id, tags, status, offer_amount, tithe_amount, offer_rate_applied, tithe_rate_applied
+`
+const INSERT_PLACEHOLDERS = `
+  @description, @amount, @type, @categoryId, @date,
+  @competenceMonth, @competenceYear, @notes, @source,
+  @isRecurring, @isFixed, @card, @cardId, @installmentCurrent, @installmentTotal,
+  @installmentGroupId, @tags, @status, @offerAmount, @titheAmount, @offerRateApplied, @titheRateApplied
+`
+
+function toInsertParams(data) {
+  return {
+    description: data.description,
+    amount: data.amount,
+    type: data.type,
+    categoryId: data.categoryId,
+    date: data.date,
+    competenceMonth: data.competenceMonth,
+    competenceYear: data.competenceYear,
+    notes: data.notes,
+    source: data.source,
+    isRecurring: data.isRecurring ? 1 : 0,
+    isFixed: data.isFixed ? 1 : 0,
+    card: data.card ?? null,
+    cardId: data.cardId ?? null,
+    installmentCurrent: data.installmentCurrent ?? null,
+    installmentTotal: data.installmentTotal ?? null,
+    installmentGroupId: data.installmentGroupId ?? null,
+    tags: data.tags,
+    status: data.status,
+    offerAmount: data.offerAmount ?? 0,
+    titheAmount: data.titheAmount ?? 0,
+    offerRateApplied: data.offerRateApplied ?? null,
+    titheRateApplied: data.titheRateApplied ?? null,
+  }
+}
+
 function create(data) {
   return run((db) => {
     const { lastInsertRowid } = db
-      .prepare(
-        `INSERT INTO transactions (
-           description, amount, type, category_id, date,
-           competence_month, competence_year, notes, source,
-           is_recurring, is_fixed, card, installment_current, installment_total,
-           tags, status, offer_amount, tithe_amount, offer_rate_applied, tithe_rate_applied
-         ) VALUES (
-           @description, @amount, @type, @categoryId, @date,
-           @competenceMonth, @competenceYear, @notes, @source,
-           @isRecurring, @isFixed, @card, @installmentCurrent, @installmentTotal,
-           @tags, @status, @offerAmount, @titheAmount, @offerRateApplied, @titheRateApplied
-         )`
-      )
-      .run({
-        description: data.description,
-        amount: data.amount,
-        type: data.type,
-        categoryId: data.categoryId,
-        date: data.date,
-        competenceMonth: data.competenceMonth,
-        competenceYear: data.competenceYear,
-        notes: data.notes,
-        source: data.source,
-        isRecurring: data.isRecurring ? 1 : 0,
-        isFixed: data.isFixed ? 1 : 0,
-        card: data.card ?? null,
-        installmentCurrent: data.installmentCurrent ?? null,
-        installmentTotal: data.installmentTotal ?? null,
-        tags: data.tags,
-        status: data.status,
-        offerAmount: data.offerAmount ?? 0,
-        titheAmount: data.titheAmount ?? 0,
-        offerRateApplied: data.offerRateApplied ?? null,
-        titheRateApplied: data.titheRateApplied ?? null,
-      })
+      .prepare(`INSERT INTO transactions (${INSERT_COLUMNS}) VALUES (${INSERT_PLACEHOLDERS})`)
+      .run(toInsertParams(data))
 
     return db.prepare(`${SELECT_WITH_CATEGORY} WHERE t.id = ?`).get(lastInsertRowid)
   }, 'Não foi possível criar a transação.')
+}
+
+// Cria várias transações numa única transação SQLite (BEGIN/COMMIT) — usada
+// pela geração de parcelas: OU as N parcelas são criadas todas, OU nenhuma
+// fica salva. `db.transaction()` do better-sqlite3 faz rollback automático
+// se qualquer `insertOne.run()` lançar no meio do laço.
+function createMany(dataArray) {
+  return run((db) => {
+    const insertOne = db.prepare(`INSERT INTO transactions (${INSERT_COLUMNS}) VALUES (${INSERT_PLACEHOLDERS})`)
+    const selectOne = db.prepare(`${SELECT_WITH_CATEGORY} WHERE t.id = ?`)
+
+    const insertAll = db.transaction((rows) => {
+      return rows.map((row) => {
+        const { lastInsertRowid } = insertOne.run(toInsertParams(row))
+        return selectOne.get(lastInsertRowid)
+      })
+    })
+
+    return insertAll(dataArray)
+  }, 'Não foi possível criar as parcelas.')
 }
 
 const UPDATE_COLUMNS = {
@@ -157,8 +196,10 @@ const UPDATE_COLUMNS = {
   isRecurring: 'is_recurring',
   isFixed: 'is_fixed',
   card: 'card',
+  cardId: 'card_id',
   installmentCurrent: 'installment_current',
   installmentTotal: 'installment_total',
+  installmentGroupId: 'installment_group_id',
   tags: 'tags',
   status: 'status',
   offerAmount: 'offer_amount',
@@ -219,4 +260,37 @@ function existsByCategoryId(categoryId) {
   }, 'Não foi possível verificar o uso da categoria.')
 }
 
-module.exports = { findMany, findById, create, update, remove, existsByCategoryId, findAllForSummary }
+// Mesma regra, para cartões: "não permitir excluir cartão utilizado em
+// transações" (card.service.js).
+function existsByCardId(cardId) {
+  return run((db) => {
+    const row = db.prepare('SELECT EXISTS(SELECT 1 FROM transactions WHERE card_id = ?) AS used').get(cardId)
+    return Boolean(row.used)
+  }, 'Não foi possível verificar o uso do cartão.')
+}
+
+// Todas as despesas em aberto (não canceladas) de um cartão — usado pelo
+// cálculo de limite utilizado (domain/cardLimit.js). Sem paginação pelo
+// mesmo motivo de `findAllForSummary`: precisa do conjunto inteiro pra somar.
+function findOpenByCardId(cardId) {
+  return run(
+    (db) =>
+      db
+        .prepare(`${SELECT_WITH_CATEGORY} WHERE t.card_id = @cardId AND t.status != 'cancelled'`)
+        .all({ cardId }),
+    'Não foi possível calcular o limite utilizado do cartão.'
+  )
+}
+
+module.exports = {
+  findMany,
+  findById,
+  create,
+  createMany,
+  update,
+  remove,
+  existsByCategoryId,
+  existsByCardId,
+  findOpenByCardId,
+  findAllForSummary,
+}

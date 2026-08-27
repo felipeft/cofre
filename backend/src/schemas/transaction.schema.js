@@ -1,5 +1,6 @@
 const { z } = require('zod')
 const { paginationSchema } = require('./pagination.schema')
+const { MAX_INSTALLMENTS } = require('../constants/cards')
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
 const dateField = (message) => z.string().regex(DATE_REGEX, message)
@@ -27,30 +28,33 @@ const core = {
   isRecurring: z.boolean(),
   isFixed: z.boolean(),
   card: z.string().trim().max(60).nullable(),
+  // Cartão relacional (Etapa 8) — substitui `card` (texto livre,
+  // descontinuado) como identificação real do cartão usado na compra.
+  cardId: z.coerce.number().int().positive('cardId inválido.').nullable(),
   installmentCurrent: z.coerce.number().int().positive(),
-  installmentTotal: z.coerce.number().int().positive(),
+  installmentTotal: z.coerce.number().int().positive().max(MAX_INSTALLMENTS, `installmentTotal não pode passar de ${MAX_INSTALLMENTS}.`),
   tags: z.array(z.string().trim().min(1)),
   status: transactionStatusSchema,
 }
 
-// Parcela atual nunca pode ser maior que o total de parcelas — validado nos
-// dois schemas (create exige ambos ou nenhum; update só checa quando ambos
-// aparecem juntos no mesmo PUT).
+// `installmentCurrent` sozinho não faz sentido ("parcela 3 de quê?"), mas
+// `installmentTotal` sozinho é justamente o gatilho da geração automática de
+// parcelas (POST /transactions com cardId + installmentTotal > 1 — ver
+// transaction.service.js) — por isso a checagem é assimétrica, ao contrário
+// de uma etapa anterior em que os dois campos eram só metadados manuais.
 function refineInstallments(data, ctx) {
   const { installmentCurrent, installmentTotal } = data
-  const hasCurrent = installmentCurrent !== undefined
-  const hasTotal = installmentTotal !== undefined
 
-  if (hasCurrent !== hasTotal) {
+  if (installmentCurrent !== undefined && installmentTotal === undefined) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Informe installmentCurrent e installmentTotal juntos, ou nenhum dos dois.',
+      message: 'Informe installmentTotal junto com installmentCurrent.',
       path: ['installmentTotal'],
     })
     return
   }
 
-  if (hasCurrent && hasTotal && installmentCurrent > installmentTotal) {
+  if (installmentCurrent !== undefined && installmentTotal !== undefined && installmentCurrent > installmentTotal) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: 'installmentCurrent não pode ser maior que installmentTotal.',
@@ -73,6 +77,7 @@ const createTransactionSchema = z
     isRecurring: core.isRecurring.optional().default(false),
     isFixed: core.isFixed.optional().default(false),
     card: core.card.optional(),
+    cardId: core.cardId.optional().default(null),
     installmentCurrent: core.installmentCurrent.optional(),
     installmentTotal: core.installmentTotal.optional(),
     tags: core.tags.optional().default([]),
@@ -94,6 +99,7 @@ const updateTransactionSchema = z
     isRecurring: core.isRecurring.optional(),
     isFixed: core.isFixed.optional(),
     card: core.card.optional(),
+    cardId: core.cardId.optional(),
     installmentCurrent: core.installmentCurrent.optional(),
     installmentTotal: core.installmentTotal.optional(),
     tags: core.tags.optional(),
@@ -114,6 +120,8 @@ const listTransactionsQuerySchema = paginationSchema.extend({
   q: z.string().trim().min(1).optional(),
   type: transactionTypeSchema.optional(),
   categoryId: z.coerce.number().int().positive().optional(),
+  cardId: z.coerce.number().int().positive().optional(),
+  installmentGroupId: z.string().trim().min(1).optional(),
   month: z.coerce.number().int().min(1).max(12).optional(),
   year: z.coerce.number().int().min(2000).max(2100).optional(),
   dateFrom: dateField('dateFrom deve estar no formato YYYY-MM-DD.').optional(),

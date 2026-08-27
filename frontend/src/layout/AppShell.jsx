@@ -15,9 +15,9 @@ export default function AppShell() {
 
   const handleQuickAdd = async (tx) => {
     try {
-      await addTransaction(tx)
+      const created = await addTransaction(tx)
       setQuickAddOpen(false)
-      showToast('Movimentação registrada')
+      showToast(Array.isArray(created?.transactions) ? `${created.count} parcelas registradas` : 'Movimentação registrada')
     } catch (err) {
       showToast(err.message ?? 'Não foi possível registrar a movimentação.', 'error')
     }

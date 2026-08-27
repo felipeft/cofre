@@ -146,8 +146,15 @@ export default function History() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[14px] font-medium text-text truncate">{t.description || t.category.name}</p>
-                    <p className="text-[12px] text-text-muted">
+                    <p className="text-[12px] text-text-muted truncate">
                       {t.category.name} · {formatDate(t.date)}
+                      {t.card && (
+                        <>
+                          {' · '}
+                          {t.card.name}
+                          {t.installments && t.installments.total > 1 ? ` ${t.installments.current}/${t.installments.total}` : ''}
+                        </>
+                      )}
                     </p>
                   </div>
                   <span className={`num text-[14px] font-semibold shrink-0 ${t.type === 'income' ? 'text-income' : 'text-text'}`}>
@@ -181,7 +188,15 @@ export default function History() {
                 <tbody>
                   {filtered.map((t) => (
                     <tr key={t.id} className="group border-b border-border-soft last:border-0 hover:bg-surface-2/50 transition-colors">
-                      <td className="py-3 px-4 text-[14px] text-text">{t.description || t.category.name}</td>
+                      <td className="py-3 px-4 text-[14px] text-text">
+                        {t.description || t.category.name}
+                        {t.card && (
+                          <span className="block text-[11px] text-text-faint">
+                            {t.card.name}
+                            {t.installments && t.installments.total > 1 ? ` · ${t.installments.current}/${t.installments.total}` : ''}
+                          </span>
+                        )}
+                      </td>
                       <td className="py-3 px-4">
                         <span className="inline-flex items-center gap-1.5 text-[13px] text-text-muted">
                           <CategoryIcon name={t.category.icon} size={14} className="shrink-0" />

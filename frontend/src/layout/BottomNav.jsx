@@ -3,20 +3,25 @@ import { Plus } from 'lucide-react'
 import { navItems } from './navItems'
 import { ROUTES } from '@/constants/routes'
 
-const [first, second, , fourth, fifth] = navItems
+// Metade dos destinos de cada lado do botão central de ação rápida — cresce
+// automaticamente se um dia um novo item entrar em navItems (colunas do
+// grid abaixo escalam junto, 2 por item + 1 pra o botão central).
+const half = Math.ceil(navItems.length / 2)
+const leftItems = navItems.slice(0, half)
+const rightItems = navItems.slice(half)
 
 export default function BottomNav({ onRegister }) {
-  const leftItems = [first, second]
-  const rightItems = [fourth, fifth]
-
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border-soft bg-surface/90 backdrop-blur-lg pb-[env(safe-area-inset-bottom)]">
-      <div className="grid grid-cols-5 items-center h-16 px-2">
+      <div
+        className="grid items-center h-16 px-1"
+        style={{ gridTemplateColumns: `repeat(${leftItems.length}, 1fr) auto repeat(${rightItems.length}, 1fr)` }}
+      >
         {leftItems.map(({ to, label, icon: Icon }) => (
           <NavItem key={to} to={to} label={label} Icon={Icon} />
         ))}
 
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center px-1.5">
           <button
             onClick={onRegister}
             aria-label="Registrar movimentação"
@@ -40,12 +45,12 @@ function NavItem({ to, label, Icon }) {
     <NavLink
       to={to}
       end={to === ROUTES.dashboard}
-      className="focus-ring flex flex-col items-center justify-center gap-1"
+      className="focus-ring flex flex-col items-center justify-center gap-1 min-w-0 px-0.5"
     >
       {({ isActive }) => (
         <>
-          <Icon size={20} strokeWidth={2} className={isActive ? 'text-income' : 'text-text-faint'} />
-          <span className={`text-[10px] font-medium ${isActive ? 'text-income' : 'text-text-faint'}`}>
+          <Icon size={19} strokeWidth={2} className={isActive ? 'text-income shrink-0' : 'text-text-faint shrink-0'} />
+          <span className={`text-[9px] font-medium truncate max-w-full ${isActive ? 'text-income' : 'text-text-faint'}`}>
             {label}
           </span>
         </>
