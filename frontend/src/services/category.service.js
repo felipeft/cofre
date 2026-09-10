@@ -37,9 +37,6 @@ export async function updateCategory(id, patch) {
   return data
 }
 
-// O backend pode responder com uma exclusão de verdade OU uma desativação
-// lógica (categoria em uso por transações) — devolve os dois sinais para
-// quem chamou decidir a mensagem certa a mostrar.
 export async function deleteCategory(id) {
   const { data, message } = await apiClient.delete(ENDPOINTS.category(id))
   return { ...data, message }

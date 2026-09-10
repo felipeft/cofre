@@ -68,22 +68,19 @@ function updateCategory(id, patch) {
   return mapCategoryRow(row)
 }
 
-// Regra de negócio: uma categoria referenciada por transações não pode ser
-// removida de verdade (a FK ON DELETE RESTRICT recusaria de qualquer jeito),
-// então vira uma desativação lógica. Sem transações associadas, remove de
-// fato.
+// DELETE significa exclusão física. A FK protege o histórico: uma categoria
+// em uso não é escondida/desativada silenciosamente, a operação é recusada.
 function deleteCategory(id) {
   findExistingOrThrow(id)
 
   const isUsed = transactionRepository.existsByCategoryId(id)
 
   if (isUsed) {
-    const row = categoryRepository.setActive(id, false)
-    return { category: mapCategoryRow(row), softDeleted: true }
+    throw new ConflictError('Não é possível excluir uma categoria que possui transações. Exclua ou recategorize as transações vinculadas primeiro.')
   }
 
   categoryRepository.remove(id)
-  return { category: null, softDeleted: false }
+  return { category: null }
 }
 
 module.exports = { listCategories, getCategoryById, createCategory, updateCategory, deleteCategory }

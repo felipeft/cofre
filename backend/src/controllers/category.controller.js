@@ -24,13 +24,8 @@ const update = asyncHandler(async (req, res) => {
 })
 
 const remove = asyncHandler(async (req, res) => {
-  const { category, softDeleted } = categoryService.deleteCategory(req.validated.params.id)
-
-  const message = softDeleted
-    ? 'Categoria em uso: desativada em vez de excluída.'
-    : 'Categoria excluída com sucesso.'
-
-  apiResponse.success(res, { data: { softDeleted, category }, message })
+  const { category } = categoryService.deleteCategory(req.validated.params.id)
+  apiResponse.success(res, { data: { category }, message: 'Categoria excluída com sucesso.' })
 })
 
 module.exports = { list, getById, create, update, remove }

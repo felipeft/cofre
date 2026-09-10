@@ -16,7 +16,9 @@ export function CardsProvider({ children }) {
     setLoading(true)
     setError(null)
     try {
-      const data = await cardService.getCards()
+      // Gestão mostra inclusive legados inativos; o formulário continua
+      // filtrando `isActive`, portanto eles não viram opção de nova compra.
+      const data = await cardService.getCards({ includeInactive: true })
       setCards(data)
     } catch (err) {
       setError(err)
@@ -41,9 +43,6 @@ export function CardsProvider({ children }) {
     return updated
   }, [])
 
-  // Excluir pode virar uma desativação lógica no backend (cartão em uso por
-  // transações) — nesse caso ele some da lista padrão (a listagem já vem
-  // sem inativos por padrão), sem tratamento especial aqui.
   const removeCard = useCallback(async (id) => {
     const result = await cardService.deleteCard(id)
     setCards((prev) => prev.filter((c) => c.id !== id))

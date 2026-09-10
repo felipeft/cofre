@@ -10,6 +10,7 @@ const { calculateFinancialSummary } = require('../domain/financialSummary')
 const { buildInstallmentPlan } = require('../domain/installmentPlan')
 const NotFoundError = require('../errors/NotFoundError')
 const ValidationError = require('../errors/ValidationError')
+const { ensureRecurringExpensesGenerated } = require('./recurringExpense.service')
 
 function findExistingOrThrow(id) {
   const row = transactionRepository.findById(id)
@@ -71,6 +72,7 @@ function toDomainCategory(categoryRow) {
 }
 
 function listTransactions(query) {
+  ensureRecurringExpensesGenerated()
   const { page, limit, q, type, categoryId, cardId, installmentGroupId, month, year, dateFrom, dateTo, status, sortBy, sortDir } =
     query
 
@@ -257,6 +259,7 @@ function deleteTransaction(id) {
 // oferta, dízimo e saldo. A regra de como esses números se combinam vive em
 // domain/financialSummary.js; aqui só busca os dados e delega o cálculo.
 function getFinancialSummary({ month, year }) {
+  ensureRecurringExpensesGenerated()
   const rows = transactionRepository.findAllForSummary({ month, year })
   const transactions = rows.map(mapTransactionRow)
   return calculateFinancialSummary(transactions)

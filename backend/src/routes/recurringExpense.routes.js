@@ -1,0 +1,11 @@
+const { Router } = require('express')
+const controller = require('../controllers/recurringExpense.controller')
+const validate = require('../middlewares/validate.middleware')
+const { createRecurringExpenseSchema, updateRecurringExpenseSchema, recurringExpenseIdParamSchema, listRecurringExpensesQuerySchema } = require('../schemas/recurringExpense.schema')
+const router = Router()
+router.get('/', validate(listRecurringExpensesQuerySchema, 'query'), controller.list)
+router.get('/:id', validate(recurringExpenseIdParamSchema, 'params'), controller.getById)
+router.post('/', validate(createRecurringExpenseSchema, 'body'), controller.create)
+router.put('/:id', validate(recurringExpenseIdParamSchema, 'params'), validate(updateRecurringExpenseSchema, 'body'), controller.update)
+router.delete('/:id', validate(recurringExpenseIdParamSchema, 'params'), controller.remove)
+module.exports = router

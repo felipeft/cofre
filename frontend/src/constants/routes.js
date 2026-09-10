@@ -7,5 +7,6 @@ export const ROUTES = {
   analytics: '/analitico',
   categories: '/categorias',
   cards: '/cartoes',
+  recurringExpenses: '/gastos-recorrentes',
   settings: '/configuracoes',
 }

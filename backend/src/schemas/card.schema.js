@@ -36,6 +36,13 @@ const cardIdParamSchema = z.object({
   id: z.coerce.number().int().positive('id inválido.'),
 })
 
+const paymentDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'paidAt deve estar no formato YYYY-MM-DD.')
+const createCardPaymentSchema = z.object({
+  amount: z.coerce.number().positive('amount deve ser maior que zero.'),
+  paidAt: paymentDate,
+  notes: z.string().trim().max(1000).optional().default(''),
+})
+
 const listCardsQuerySchema = z.object({
   includeInactive: z
     .enum(['true', 'false'])
@@ -44,4 +51,4 @@ const listCardsQuerySchema = z.object({
     .transform((value) => value === 'true'),
 })
 
-module.exports = { createCardSchema, updateCardSchema, cardIdParamSchema, listCardsQuerySchema }
+module.exports = { createCardSchema, updateCardSchema, cardIdParamSchema, listCardsQuerySchema, createCardPaymentSchema }

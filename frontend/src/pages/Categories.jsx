@@ -39,7 +39,7 @@ export default function Categories() {
   const handleDelete = async () => {
     try {
       const result = await removeCategory(deleting.id)
-      showToast(result.message ?? 'Categoria excluída', result.softDeleted ? 'info' : 'default')
+      showToast(result.message ?? 'Categoria excluída')
     } catch (err) {
       showToast(err.message ?? 'Não foi possível excluir a categoria.', 'error')
     } finally {
@@ -103,7 +103,7 @@ export default function Categories() {
         onClose={() => setDeleting(null)}
         onConfirm={handleDelete}
         title="Excluir categoria"
-        description={`Excluir "${deleting?.name}"? Se houver movimentações nessa categoria, ela será apenas desativada em vez de excluída.`}
+        description={`Excluir "${deleting?.name}"? Categorias com movimentações vinculadas não podem ser excluídas até que essas movimentações sejam removidas ou recategorizadas.`}
         confirmLabel="Excluir"
       />
     </div>

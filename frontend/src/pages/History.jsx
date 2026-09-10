@@ -155,6 +155,7 @@ export default function History() {
                           {t.installments && t.installments.total > 1 ? ` ${t.installments.current}/${t.installments.total}` : ''}
                         </>
                       )}
+                      {t.recurringExpenseId && <> · Recorrente</>}
                     </p>
                   </div>
                   <span className={`num text-[14px] font-semibold shrink-0 ${t.type === 'income' ? 'text-income' : 'text-text'}`}>
@@ -196,6 +197,7 @@ export default function History() {
                             {t.installments && t.installments.total > 1 ? ` · ${t.installments.current}/${t.installments.total}` : ''}
                           </span>
                         )}
+                        {t.recurringExpenseId && <span className="block text-[11px] text-text-faint">Recorrente</span>}
                       </td>
                       <td className="py-3 px-4">
                         <span className="inline-flex items-center gap-1.5 text-[13px] text-text-muted">

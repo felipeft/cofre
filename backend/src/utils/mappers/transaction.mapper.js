@@ -28,6 +28,7 @@ function mapTransactionRow(row) {
     notes: row.notes,
     source: row.source,
     isRecurring: Boolean(row.is_recurring),
+    recurringExpenseId: row.recurring_expense_id ?? null,
     isFixed: Boolean(row.is_fixed),
     // `card` no contrato da API agora é sempre o cartão RELACIONAL
     // (card_id → credit_cards), nunca mais a coluna de texto livre

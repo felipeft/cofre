@@ -14,6 +14,9 @@ export const ENDPOINTS = {
   cards: '/cards',
   card: (id) => `/cards/${id}`,
   cardSummary: (id) => `/cards/${id}/summary`,
+  cardPayments: (id) => `/cards/${id}/payments`,
+  recurringExpenses: '/recurring-expenses',
+  recurringExpense: (id) => `/recurring-expenses/${id}`,
   auth: {
     google: '/auth/google',
     session: '/auth/session',

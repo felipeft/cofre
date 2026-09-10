@@ -1,5 +1,6 @@
 const cardRepository = require('../repositories/card.repository')
 const transactionRepository = require('../repositories/transaction.repository')
+const cardPaymentRepository = require('../repositories/cardPayment.repository')
 const { mapCardRow } = require('../utils/mappers/card.mapper')
 const { calculateCardLimitUsage } = require('../domain/cardLimit')
 const NotFoundError = require('../errors/NotFoundError')
@@ -41,22 +42,20 @@ function updateCard(id, patch) {
   return mapCardRow(row)
 }
 
-// Mesma filosofia de category.service.deleteCategory: um cartão com
-// histórico de compras não pode ser removido de verdade (a FK ON DELETE
-// RESTRICT recusaria de qualquer jeito), então vira uma desativação lógica.
-// Sem transações associadas, remove de fato.
+// DELETE significa exclusão física. Um cartão referenciado não pode ser
+// apagado sem apagar a história financeira que ele identifica; em vez de
+// escondê-lo via soft delete, recusamos a operação de forma explícita.
 function deleteCard(id) {
   findExistingOrThrow(id)
 
-  const isUsed = transactionRepository.existsByCardId(id)
+  const isUsed = transactionRepository.existsByCardId(id) || cardPaymentRepository.existsByCardId(id)
 
   if (isUsed) {
-    const row = cardRepository.setActive(id, false)
-    return { card: mapCardRow(row), softDeleted: true }
+    throw new ConflictError('Não é possível excluir um cartão que possui transações ou pagamentos. Exclua os registros vinculados primeiro.')
   }
 
   cardRepository.remove(id)
-  return { card: null, softDeleted: false }
+  return { card: null }
 }
 
 // GET /cards/:id/summary — limite total, usado e disponível (ver
@@ -64,10 +63,12 @@ function deleteCard(id) {
 function getCardSummary(id) {
   const cardRow = findExistingOrThrow(id)
   const openTransactions = transactionRepository.findOpenByCardId(id)
+  const payments = cardPaymentRepository.findByCardId(id)
 
   const usage = calculateCardLimitUsage({
     creditLimit: cardRow.credit_limit,
     openTransactions,
+    payments,
   })
 
   return {
@@ -76,10 +77,22 @@ function getCardSummary(id) {
     creditLimit: usage.creditLimit,
     usedLimit: usage.usedLimit,
     availableLimit: usage.availableLimit,
+    purchasesTotal: usage.purchasesTotal,
+    paidAmount: usage.paidAmount,
     closingDay: cardRow.closing_day,
     dueDay: cardRow.due_day,
     isActive: Boolean(cardRow.is_active),
   }
 }
 
-module.exports = { listCards, getCardById, createCard, updateCard, deleteCard, getCardSummary }
+function registerPayment(id, input) {
+  const card = findExistingOrThrow(id)
+  const summary = getCardSummary(id)
+  if (input.amount > summary.usedLimit) {
+    throw new ConflictError(`O pagamento não pode exceder o limite atualmente utilizado (${summary.usedLimit}).`)
+  }
+  const row = cardPaymentRepository.create({ cardId: card.id, ...input })
+  return { payment: require('../utils/mappers/cardPayment.mapper').mapCardPaymentRow(row), summary: getCardSummary(id) }
+}
+
+module.exports = { listCards, getCardById, createCard, updateCard, deleteCard, getCardSummary, registerPayment }

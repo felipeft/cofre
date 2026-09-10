@@ -28,6 +28,8 @@ src/
 ├─ services/                Fronteira única de acesso a dados — nada fora daqui faz fetch()
 │  ├─ transaction.service.js  GET/POST/PUT/DELETE /transactions, + getAllTransactions() paginado internamente
 │  ├─ category.service.js     GET/POST/PUT/DELETE /categories
+│  ├─ card.service.js         CRUD, resumo de limite e pagamento de fatura
+│  ├─ recurringExpense.service.js  CRUD das definições recorrentes
 │  ├─ dashboard.service.js    calcula indicadores a partir de GET /transactions (sem endpoint dedicado ainda)
 │  └─ analytics.service.js    idem, para a página de Análises
 │
@@ -35,12 +37,16 @@ src/
 │  ├─ useTransactions.js      porta de entrada para o Context de transações
 │  ├─ useTransactionsList.js  busca paginada/filtrada/ordenada do Histórico (não usa o Context)
 │  ├─ useCategories.js        porta de entrada para o Context de categorias
+│  ├─ useCards.js             porta de entrada para o Context de cartões
+│  ├─ useRecurringExpenses.js porta de entrada para recorrências
 │  ├─ useDashboard.js         dados prontos + loading/error para a página Dashboard
 │  └─ useAnalytics.js         dados prontos + loading/error para a página Análises
 │
 ├─ contexts/                Estado verdadeiramente global
 │  ├─ TransactionsContext.jsx  lista agregada (Dashboard/Análises) + mutações + contador `version`
 │  ├─ CategoriesContext.jsx    lista de categorias + CRUD — uma só fonte para toda a árvore
+│  ├─ CardsContext.jsx         cartões ativos/inativos + CRUD
+│  ├─ RecurringExpensesContext.jsx  definições recorrentes + CRUD
 │  └─ ToastContext.jsx         fila de notificações
 │
 ├─ constants/                Valores fixos fora dos componentes
@@ -54,6 +60,8 @@ src/
 │  ├─ dashboard/              StatCard, ShortcutButton
 │  ├─ transactions/           TransactionRow
 │  ├─ categories/             CategoryGroup, CategoryForm
+│  ├─ cards/                  CardForm, CardListItem, CardPaymentForm
+│  ├─ recurringExpenses/      RecurringExpenseForm
 │  ├─ settings/                SettingsGroup, SettingsRow
 │  └─ forms/                  TransactionForm (usado no modal rápido e na página Registrar)
 │
@@ -61,8 +69,8 @@ src/
 │  ├─ AppShell.jsx, Sidebar.jsx, BottomNav.jsx, Header.jsx, navItems.js
 │
 ├─ pages/                    Uma página por rota — só orquestram hooks + componentes
-│  ├─ Dashboard.jsx  RegisterTransaction.jsx  History.jsx
-│  └─ Analytics.jsx  Categories.jsx  Settings.jsx
+│  ├─ Dashboard.jsx  RegisterTransaction.jsx  History.jsx  Analytics.jsx
+│  └─ Categories.jsx  Cards.jsx  RecurringExpenses.jsx  Settings.jsx
 │
 ├─ utils/                    Funções puras sem estado
 │  ├─ formatters.js           moeda, datas
@@ -78,10 +86,10 @@ src/
 pages → hooks → services → api/client.js → Backend
 ```
 
-Nenhuma página faz `fetch()`. Nenhum componente conhece uma URL. Toda
-mutação (criar/editar/excluir) passa pelos Contexts (`TransactionsContext`,
-`CategoriesContext`), que atualizam o estado local de forma otimista após a
-resposta da API — o restante da interface reage automaticamente, sem reload.
+Nenhuma página faz `fetch()`. Nenhum componente conhece uma URL. As mutações
+passam pelos Contexts de transações, categorias, cartões e recorrências. O
+estado local só é alterado depois de a API confirmar a operação — assim uma
+exclusão recusada pelo backend não faz o item desaparecer da interface.
 
 ## Decisões e por quê
 
@@ -125,7 +133,9 @@ resposta da API — o restante da interface reage automaticamente, sem reload.
 
 ### Nova página: Cartões (`/cartoes`)
 
-`pages/Cards.jsx` — listar, criar, editar, desativar/excluir cartões.
+`pages/Cards.jsx` — listar, criar, editar e excluir cartões. Cartões com
+transações ou pagamentos vinculados permanecem visíveis, e a API recusa a
+exclusão física em vez de ocultá-los automaticamente.
 Segue exatamente o padrão de `pages/Categories.jsx`: `CardsContext` como
 fonte única de verdade (mesmo raciocínio do `CategoriesContext` — criar um
 cartão no formulário de lançamento precisa refletir na tela de
@@ -172,6 +182,7 @@ src/hooks/useCards.js
 src/pages/Cards.jsx
 src/components/cards/CardForm.jsx
 src/components/cards/CardListItem.jsx
+src/components/cards/CardPaymentForm.jsx
 ```
 
 ### Fora do escopo desta etapa
@@ -180,3 +191,60 @@ Tela de fatura mensal agrupada, edição em lote de um grupo de parcelas,
 qualquer cálculo de limite feito no cliente (sempre vem de
 `GET /cards/:id/summary`), e prévia de datas de parcelamento no formulário
 (deliberadamente simplificada — ver acima).
+
+---
+
+## Fase 3, Etapa 9 — Gastos recorrentes
+
+**Status: concluída.**
+
+`pages/RecurringExpenses.jsx` permite listar, cadastrar, editar e desativar
+regras mensais. A tela usa `RecurringExpensesContext`,
+`useRecurringExpenses` e `services/recurringExpense.service.js`, mantendo o
+mesmo caminho Context → Service → API client das entidades existentes.
+
+Ocorrências retornadas pela API têm `recurringExpenseId`; Histórico e
+`TransactionRow` exibem o indicador discreto “Recorrente”, separado de
+parcelas. A navegação inclui **Recorrentes**. O Dashboard e as Análises já
+consomem transações normais, portanto as ocorrências passam a participar dos
+agregados sem um segundo sistema de dados.
+
+### Formulário e gerenciamento
+
+`RecurringExpenseForm` cadastra descrição, valor, categoria de despesa, dia
+do mês, início, fim opcional, cartão opcional, observações e atividade. A
+tela de gerenciamento inclui regras ativas e inativas. Desativar uma regra
+preserva todas as ocorrências já geradas.
+
+### Pagamento manual de fatura
+
+A página de cartões permite registrar pagamento integral ou parcial do
+limite em aberto. `card.service.js` envia a quitação para
+`POST /cards/:id/payments` e recarrega o resumo calculado no backend. Como a
+compra original já é uma despesa, o pagamento apenas libera limite e não
+cria uma segunda movimentação financeira.
+
+### Categorias personalizáveis
+
+O formulário de categorias oferece 20 cores predefinidas, 41 ícones e uma
+cor personalizada escolhida pelo espectro visual ou por hexadecimal
+`#RRGGBB`.
+
+## Deploy e uso mobile
+
+- Produção: [cofre-orcin.vercel.app](https://cofre-orcin.vercel.app)
+- API: [cofre-api-mgdl.onrender.com](https://cofre-api-mgdl.onrender.com)
+
+A navegação e os formulários são responsivos para uso pelo Safari no iPhone.
+No plano gratuito do Render, a primeira chamada após um período sem uso pode
+aguardar a reativação do backend.
+
+## Validação
+
+```bash
+npm run lint
+npm run build
+```
+
+O frontend depende de `VITE_API_URL`. As chamadas HTTP permanecem
+centralizadas em `api/client.js` e nos services.

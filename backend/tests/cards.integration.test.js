@@ -110,21 +110,20 @@ describe('CRUD de cartões', () => {
     assert.equal(updated.name, 'Santander teste', 'campos não tocados permanecem intactos')
   })
 
-  test('5. desativar/excluir cartão sem uso -> exclusão física', () => {
+  test('5. excluir cartão sem uso remove fisicamente e libera o mesmo nome', () => {
     const created = cardService.createCard(baseCard({ name: 'C6 teste' }))
-    const result = cardService.deleteCard(created.id)
-    assert.equal(result.softDeleted, false)
+    cardService.deleteCard(created.id)
     assert.throws(() => cardService.getCardById(created.id), NotFoundError)
+    assert.doesNotThrow(() => cardService.createCard(baseCard({ name: 'C6 teste' })))
   })
 
-  test('6. cartão em uso -> desativação lógica, não exclusão', () => {
+  test('6. cartão em uso não some: DELETE é recusado e o registro persiste', () => {
     const card = cardService.createCard(baseCard({ name: 'Inter teste' }))
     const category = expenseCategory({ name: 'Categoria Inter teste' })
     transactionService.createTransaction(baseTransaction({ categoryId: category.id, cardId: card.id }))
 
-    const result = cardService.deleteCard(card.id)
-    assert.equal(result.softDeleted, true)
-    assert.equal(cardService.getCardById(card.id).isActive, false, 'continua existindo, só desativado')
+    assert.throws(() => cardService.deleteCard(card.id), ConflictError)
+    assert.equal(cardService.getCardById(card.id).isActive, true, 'continua visível e ativo após DELETE recusado')
   })
 
   test('7. rejeitar cartão inexistente (404)', () => {
@@ -272,6 +271,29 @@ describe('21. Limite utilizado do cartão', () => {
 
     const summary = cardService.getCardSummary(card.id)
     assert.equal(summary.usedLimit, 0)
+  })
+
+  test('excluir transação remove a linha do banco e deixa de consumir o limite', () => {
+    const card = cardService.createCard(baseCard({ name: 'Cartão delete transação', creditLimit: 1000 }))
+    const category = expenseCategory({ name: 'Categoria delete transação' })
+    const transaction = transactionService.createTransaction(baseTransaction({ categoryId: category.id, cardId: card.id, amount: 123.45 }))
+    assert.equal(cardService.getCardSummary(card.id).usedLimit, 123.45)
+    transactionService.deleteTransaction(transaction.id)
+    assert.equal(cardService.getCardSummary(card.id).usedLimit, 0)
+    assert.throws(() => transactionService.getTransactionById(transaction.id), NotFoundError)
+    assert.doesNotThrow(() => cardService.deleteCard(card.id))
+  })
+
+  test('pagamento manual da fatura quita o limite uma vez e não cria transação duplicada', () => {
+    const card = cardService.createCard(baseCard({ name: 'Cartão pagamento teste', creditLimit: 1000 }))
+    const category = expenseCategory({ name: 'Categoria pagamento teste' })
+    transactionService.createTransaction(baseTransaction({ categoryId: category.id, cardId: card.id, amount: 300 }))
+    const result = cardService.registerPayment(card.id, { amount: 300, paidAt: '2026-09-10', notes: 'Fatura setembro' })
+    assert.equal(result.summary.purchasesTotal, 300)
+    assert.equal(result.summary.paidAmount, 300)
+    assert.equal(result.summary.usedLimit, 0)
+    assert.equal(transactionService.listTransactions({ page: 1, limit: 20, sortBy: 'date', sortDir: 'asc', cardId: card.id }).data.length, 1)
+    assert.throws(() => cardService.registerPayment(card.id, { amount: 1, paidAt: '2026-09-10', notes: '' }), ConflictError)
   })
 })
 

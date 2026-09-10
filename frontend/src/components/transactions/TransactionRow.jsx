@@ -3,7 +3,7 @@ import { formatCurrency, relativeDayLabel } from '@/utils/formatters'
 import { Pencil, Trash2 } from 'lucide-react'
 
 export default function TransactionRow({ transaction, onEdit, onDelete, showActions = false }) {
-  const { category, type, amount, description, date, card, installments } = transaction
+  const { category, type, amount, description, date, card, installments, recurringExpenseId } = transaction
   const isIncome = type === 'income'
 
   return (
@@ -26,6 +26,7 @@ export default function TransactionRow({ transaction, onEdit, onDelete, showActi
               {installments && installments.total > 1 ? ` ${installments.current}/${installments.total}` : ''}
             </>
           )}
+          {recurringExpenseId && <> · Recorrente</>}
         </p>
       </div>
 

@@ -19,7 +19,9 @@ export function CategoriesProvider({ children }) {
     setLoading(true)
     setError(null)
     try {
-      const data = await categoryService.getCategories()
+      // A tela de gestão precisa refletir o banco, inclusive categorias
+      // inativas legadas. Formulários de lançamento filtram as ativas.
+      const data = await categoryService.getCategories({ includeInactive: true })
       setCategories(data)
     } catch (err) {
       setError(err)
@@ -44,10 +46,6 @@ export function CategoriesProvider({ children }) {
     return updated
   }, [])
 
-  // Excluir pode virar uma desativação lógica no backend (categoria em uso
-  // por transações) — nesse caso ela some da lista (mesmo comportamento
-  // visual de uma exclusão) porque a listagem já vem sem inativas por
-  // padrão, sem precisar de nenhum tratamento especial aqui.
   const removeCategory = useCallback(async (id) => {
     const result = await categoryService.deleteCategory(id)
     setCategories((prev) => prev.filter((c) => c.id !== id))

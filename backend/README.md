@@ -1,9 +1,9 @@
 # Cofre API — Backend
 
 API do sistema financeiro **Cofre**: Node.js + Express + SQLite
-(`better-sqlite3`). CRUD completo de categorias e transações, com regras
-financeiras parametrizadas (oferta/dízimo). Sem autenticação ainda — isso
-fica para uma etapa futura.
+(`better-sqlite3`). Inclui categorias, transações, regras financeiras
+parametrizadas, cartões, parcelamentos, gastos recorrentes e pagamentos de
+fatura. Sem autenticação ainda — isso pertence à Fase 4.
 
 ## Como rodar
 
@@ -45,9 +45,9 @@ O domínio já tinha uma entidade que representa exatamente "de onde vem um
 tipo de receita": a categoria (`type: 'income'`). Em vez de criar uma tabela
 `income_sources` paralela e duplicada, esta etapa **estende `categories`**
 com os campos de regra. Isso significa que tudo que já funcionava para
-categorias — criar sem alterar código, desativar sem apagar histórico
-(`isActive`/exclusão lógica), listar, filtrar — já vale para fontes de
-renda de graça.
+categorias — criar sem alterar código, ativar/desativar, listar e filtrar —
+já vale para fontes de renda. `DELETE` é físico quando a categoria está
+livre e é recusado quando existem transações vinculadas.
 
 **Por que não existe `POST /income-sources`:** seria literalmente
 `POST /categories` com `type=income` de novo, com outro nome. O prompt desta
@@ -156,13 +156,21 @@ em 2026".
 | `GET /categories/:id` | Busca uma categoria |
 | `POST /categories` | Cria — `{ name, type, color, icon, isActive?, sortOrder?, applyOffer?, offerRate?, applyTithe?, titheRate? }` |
 | `PUT /categories/:id` | Atualiza (parcial) |
-| `DELETE /categories/:id` | Exclui — vira desativação lógica se houver transações associadas |
+| `DELETE /categories/:id` | Exclui fisicamente; recusa se houver transações associadas |
 | `GET /transactions/summary` | **Novo** — resumo financeiro de uma competência (`?month=&year=`, obrigatórios) |
 | `GET /transactions` | Lista paginada |
 | `GET /transactions/:id` | Busca uma transação (com categoria e obrigações já populadas) |
 | `POST /transactions` | Cria — mesmos campos de antes; `offerAmount`/`titheAmount` são calculados, não enviados pelo cliente |
 | `PUT /transactions/:id` | Atualiza (parcial) — recalcula obrigações se `amount`/`categoryId`/`type` mudarem |
 | `DELETE /transactions/:id` | Exclui |
+| `GET /cards` | Lista cartões (`?includeInactive=true` inclui inativos) |
+| `GET /cards/:id/summary` | Retorna compras, pagamentos e limite utilizado/disponível |
+| `POST /cards/:id/payments` | Registra pagamento manual de fatura |
+| `POST /cards`, `PUT /cards/:id`, `DELETE /cards/:id` | CRUD de cartões |
+| `GET /recurring-expenses` | Lista regras recorrentes |
+| `POST /recurring-expenses` | Cria regra e reconcilia ocorrências até o mês atual |
+| `GET /recurring-expenses/:id`, `PUT /recurring-expenses/:id` | Consulta e edita recorrência |
+| `DELETE /recurring-expenses/:id` | Desativa a regra preservando ocorrências |
 
 Nenhum endpoint existente foi removido ou teve seu contrato quebrado —
 `GET /transactions` e `GET /transactions/:id` só passaram a incluir 4 campos
@@ -221,9 +229,9 @@ saem com defaults sãos (`apply_offer=0`, `offer_amount=0`, etc.), nunca
   `titheRate`): um `.default()` sobrevive a `.partial()`, então os campos
   de update nunca têm `.default()`.
 
-## Testes executados
+## Validação registrada ao final da Etapa 7
 
-- `npm test`: **22/22 passando** (12 unitários de `financialRules`, 3 de
+- Na conclusão daquela etapa, `npm test` registrou **22/22 passando** (12 unitários de `financialRules`, 3 de
   `financialSummary`, e 7 suítes de integração cobrindo os casos do
   prompt: Pai, Emprego, sem oferta, sem dízimo, valor zero, taxa
   customizada, taxa zero explícita, arredondamento, duplicidade de
@@ -272,9 +280,9 @@ Ficam para a etapa seguinte (Cartões e Parcelamentos):
 
 Nova entidade `credit_cards` (migration `0005`): `name`, `creditLimit`,
 `closingDay`, `dueDay`, `isActive`. Segue exatamente o padrão de
-`categories` — inclusive a regra de exclusão: um cartão com transações
-associadas não é removido de verdade, só desativado (`DELETE /cards/:id`
-retorna `softDeleted: true/false`, igual a `DELETE /categories/:id`).
+`categories` — um cartão com transações associadas não pode ser removido
+sem destruir fatos financeiros; `DELETE /cards/:id` recusa nesse caso e
+nunca o oculta por desativação automática.
 
 `transactions.card_id` (migration `0006`) é o relacionamento real por ID
 que faltava. A coluna antiga `card` (texto livre, criada numa etapa
@@ -327,11 +335,10 @@ o conjunto de parcelas *é* a compra.
 ### Limite de crédito
 
 `GET /cards/:id/summary` retorna `creditLimit`, `usedLimit`,
-`availableLimit`. `usedLimit` soma todas as despesas **não canceladas**
-associadas ao cartão (`status != 'cancelled'`) — inclui parcelas futuras
-ainda não vencidas, porque o limite reflete o compromisso total assumido,
-não só o que já venceu. Não há noção de fatura paga nesta etapa (fora de
-escopo, ver abaixo) — "em aberto" aqui é só "não cancelada".
+`availableLimit`, `purchasesTotal` e `paidAmount`. As compras não canceladas
+comprometem o limite, inclusive parcelas futuras. Pagamentos registrados em
+`credit_card_payments` reduzem esse compromisso sem criar uma segunda
+despesa financeira, pois a compra original já foi contabilizada.
 
 ### Validações implementadas
 
@@ -354,7 +361,7 @@ escopo, ver abaixo) — "em aberto" aqui é só "não cancelada".
 | `GET /cards/:id/summary` | Limite total/usado/disponível |
 | `POST /cards` | Cria — `{ name, creditLimit, closingDay, dueDay, isActive? }` |
 | `PUT /cards/:id` | Atualiza (parcial) |
-| `DELETE /cards/:id` | Exclui — vira desativação lógica se houver compras associadas |
+| `DELETE /cards/:id` | Exclui fisicamente; recusa se houver compras associadas |
 
 `POST /transactions` (rota existente) passou a aceitar `cardId` e
 `installmentTotal` opcionais — sem `cardId`, comportamento idêntico a
@@ -367,9 +374,10 @@ como a única mudança de contrato desta etapa.
 `installmentGroupId` (mesma extensão natural do padrão já usado por
 `categoryId`).
 
-### Testes desta etapa
+### Validação registrada ao final da Etapa 8
 
-`npm test`: **57/57 passando** no total (35 novos desta etapa). Cobrem
+Na conclusão daquela etapa, `npm test` registrou **57/57 passando** no total
+(35 novos). Os testes cobriam
 literalmente os 22 itens pedidos na seção 24 do prompt: CRUD de cartão
 completo, duplicidade, compra normal/1x/parcelada, sequência
 `installmentCurrent`/`installmentTotal`, `installmentGroupId` compartilhado,
@@ -380,7 +388,8 @@ forçando uma falha no meio de um lote.
 
 ### Fora do escopo desta etapa (de propósito)
 
-- Pagamento de fatura, juros, rotativo, atraso, pagamento parcial, encargos.
+- Juros, rotativo, atraso e encargos. O pagamento manual de fatura foi
+  acrescentado posteriormente; não há geração automática de fatura.
 - Cartão adicional, cashback, pontos.
 - Regenerar/cascatear as parcelas-irmãs quando uma parcela individual é
   editada via `PUT /transactions/:id` — a edição continua funcionando como
@@ -394,3 +403,96 @@ Se um dia for necessário editar uma compra parcelada inteira (ex: mudar o
 cartão de todas as 12 parcelas de uma vez), vai ser preciso um endpoint
 dedicado que opere sobre `installmentGroupId` — hoje cada parcela só pode
 ser editada individualmente, como qualquer outra transação.
+
+---
+
+## Fase 3, Etapa 9 — Gastos recorrentes
+
+**Status: concluída.**
+
+`recurring_expenses` representa a regra mensal; cada ocorrência é uma linha
+normal de `transactions` com `recurring_expense_id`. Isso não é
+parcelamento: ocorrências não recebem `installment_group_id`, nem campos de
+parcela.
+
+`0007_create_recurring_expenses.sql` cria a regra, adiciona a FK opcional na
+transação e um índice único parcial em `(recurring_expense_id,
+competence_year, competence_month)`. A restrição também considera uma
+ocorrência `cancelled`, portanto a reconciliação jamais recria um mês que o
+usuário cancelou.
+
+### Geração automática
+
+A reconciliação ocorre no bootstrap, ao criar/editar uma regra e antes de
+listar ou resumir transações. Ela gera somente competências entre
+`start_date` e o mês corrente — não projeta meses futuros ilimitados. Cada
+lote é inserido em transação SQLite com `INSERT OR IGNORE`; o índice único é
+a garantia final contra corridas e duplicidade.
+
+A primeira data nunca antecede `start_date`; `end_date` é inclusiva apenas
+quando a data mensal cabe nela. Para dias 29–31, meses menores usam seu
+último dia válido. Desativar via `DELETE /recurring-expenses/:id` é uma
+desativação lógica: fatos e configuração permanecem. Alterar uma regra só
+afeta competências ainda ausentes, preservando as transações existentes.
+
+Uma regra pode apontar para cartão ativo. Cada ocorrência recebe `card_id` e
+participa do limite normal, mas não recebe lógica de parcelamento: a data da
+cobrança é a data configurada da recorrência. Se o cartão for desativado,
+novas ocorrências dessa regra ficam suspensas até o usuário ajustar a regra;
+as anteriores permanecem.
+
+### Rotas
+
+| Rota | Descrição |
+|---|---|
+| `GET /recurring-expenses` | Lista regras ativas (`?includeInactive=true` inclui inativas) |
+| `POST /recurring-expenses` | Cria uma regra de despesa mensal |
+| `GET /recurring-expenses/:id` | Consulta uma regra |
+| `PUT /recurring-expenses/:id` | Atualiza a configuração futura |
+| `DELETE /recurring-expenses/:id` | Desativa a regra e preserva histórico |
+
+### Semântica de exclusão
+
+`DELETE /transactions/:id` remove a transação fisicamente; por isso ela deixa
+de participar imediatamente do limite de seu cartão. `DELETE /cards/:id` e
+`DELETE /categories/:id` também removem fisicamente quando não há vínculos.
+Se houver transações associadas, a API responde `409 Conflict`: ela não
+oculta o registro com `is_active = 0`, pois isso faria a interface divergir
+do banco e manteria nomes/limites bloqueados sem transparência.
+
+A única exceção deliberada é `DELETE /recurring-expenses/:id`: esse endpoint
+é semanticamente uma desativação da regra (`is_active = 0`) para preservar
+as ocorrências financeiras que ela já originou. A interface chama essa ação
+de **Desativar**, não de excluir.
+
+---
+
+## Pagamento manual de fatura
+
+Uma compra no cartão já é uma despesa no modelo atual. Por isso, registrar o
+pagamento da fatura não cria uma segunda `transaction`: ele cria um registro
+em `credit_card_payments` que liquida o limite utilizado. O resumo do cartão
+expõe `purchasesTotal`, `paidAmount`, `usedLimit` e `availableLimit`.
+
+| Rota | Descrição |
+|---|---|
+| `POST /cards/:id/payments` | Registra `{ amount, paidAt, notes? }` e reduz o limite utilizado |
+
+O valor não pode ultrapassar o limite em aberto. Um pagamento integral zera
+o limite usado; compras ou recorrências posteriores voltam a comprometê-lo.
+O registro é manual nesta etapa: fechamento e vencimento continuam
+informações configuradas do cartão, sem criar automaticamente uma segunda
+despesa no vencimento.
+
+## Estado atual dos testes
+
+A suíte atual reúne testes unitários e de integração para regras
+financeiras, cartões, parcelamentos, recorrências, idempotência, exclusões e
+pagamentos de fatura. Execute-a obrigatoriamente com Node.js 22.x:
+
+```bash
+npm test
+```
+
+O módulo nativo `better-sqlite3` precisa estar compilado para a mesma versão
+principal do Node usada na execução.

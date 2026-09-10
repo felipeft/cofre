@@ -8,6 +8,7 @@ import Card from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 import { SkeletonRow } from '@/components/ui/Loading'
 import CardForm from '@/components/cards/CardForm'
+import CardPaymentForm from '@/components/cards/CardPaymentForm'
 import CardListItem from '@/components/cards/CardListItem'
 import { useCards } from '@/hooks/useCards'
 import { useToast } from '@/contexts/ToastContext'
@@ -17,6 +18,7 @@ export default function Cards() {
   const { cards, loading, error, createCard, editCard, removeCard } = useCards()
   const [modalState, setModalState] = useState(null) // { mode: 'create'|'edit', card }
   const [deleting, setDeleting] = useState(null)
+  const [paying, setPaying] = useState(null)
   const { showToast } = useToast()
 
   // O limite usado/disponível não vem na listagem (GET /cards) — só no
@@ -24,6 +26,7 @@ export default function Cards() {
   // cartão carregado e de novo sempre que a lista mudar (criar/editar/
   // excluir um cartão, ou registrar uma compra em outro lugar do app).
   const [summaries, setSummaries] = useState({})
+  const [paymentsVersion, setPaymentsVersion] = useState(0)
 
   useEffect(() => {
     if (cards.length === 0) return
@@ -37,7 +40,7 @@ export default function Cards() {
     return () => {
       cancelled = true
     }
-  }, [cards])
+  }, [cards, paymentsVersion])
 
   const handleSave = async (data) => {
     try {
@@ -57,11 +60,22 @@ export default function Cards() {
   const handleDelete = async () => {
     try {
       const result = await removeCard(deleting.id)
-      showToast(result.message ?? 'Cartão excluído', result.softDeleted ? 'info' : 'default')
+      showToast(result.message ?? 'Cartão excluído')
     } catch (err) {
       showToast(err.message ?? 'Não foi possível excluir o cartão.', 'error')
     } finally {
       setDeleting(null)
+    }
+  }
+
+  const handlePayment = async (data) => {
+    try {
+      await cardService.registerCardPayment(paying.card.id, data)
+      setPaymentsVersion((version) => version + 1)
+      showToast('Pagamento da fatura registrado')
+      setPaying(null)
+    } catch (err) {
+      showToast(err.message ?? 'Não foi possível registrar o pagamento.', 'error')
     }
   }
 
@@ -110,6 +124,7 @@ export default function Cards() {
                 summary={summaries[c.id]}
                 onEdit={(card) => setModalState({ mode: 'edit', card })}
                 onDelete={setDeleting}
+                onPay={(card, summary) => setPaying({ card, summary })}
               />
             ))}
           </div>
@@ -125,9 +140,12 @@ export default function Cards() {
         onClose={() => setDeleting(null)}
         onConfirm={handleDelete}
         title="Excluir cartão"
-        description={`Excluir "${deleting?.name}"? Se houver compras nesse cartão, ele será apenas desativado em vez de excluído.`}
+        description={`Excluir "${deleting?.name}"? Cartões com transações vinculadas não podem ser excluídos até que essas transações sejam removidas.`}
         confirmLabel="Excluir"
       />
+      <Modal open={!!paying} onClose={() => setPaying(null)} title="Registrar pagamento da fatura">
+        {paying && <CardPaymentForm card={paying.card} summary={paying.summary} onSubmit={handlePayment} onCancel={() => setPaying(null)} />}
+      </Modal>
     </div>
   )
 }

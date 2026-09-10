@@ -37,6 +37,7 @@
  * @property {string} notes
  * @property {string} source
  * @property {boolean} isRecurring
+ * @property {number|null} recurringExpenseId
  * @property {boolean} isFixed
  * @property {string|null} card
  * @property {{ current: number, total: number } | null} installments

@@ -24,11 +24,8 @@ const update = asyncHandler(async (req, res) => {
 })
 
 const remove = asyncHandler(async (req, res) => {
-  const { card, softDeleted } = cardService.deleteCard(req.validated.params.id)
-
-  const message = softDeleted ? 'Cartão em uso: desativado em vez de excluído.' : 'Cartão excluído com sucesso.'
-
-  apiResponse.success(res, { data: { softDeleted, card }, message })
+  const { card } = cardService.deleteCard(req.validated.params.id)
+  apiResponse.success(res, { data: { card }, message: 'Cartão excluído com sucesso.' })
 })
 
 const getSummary = asyncHandler(async (req, res) => {
@@ -36,4 +33,9 @@ const getSummary = asyncHandler(async (req, res) => {
   apiResponse.success(res, { data })
 })
 
-module.exports = { list, getById, create, update, remove, getSummary }
+const registerPayment = asyncHandler(async (req, res) => {
+  const data = cardService.registerPayment(req.validated.params.id, req.validated.body)
+  apiResponse.success(res, { data, message: 'Pagamento da fatura registrado com sucesso.', statusCode: HTTP_STATUS.CREATED })
+})
+
+module.exports = { list, getById, create, update, remove, getSummary, registerPayment }

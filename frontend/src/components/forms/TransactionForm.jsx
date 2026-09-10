@@ -30,7 +30,7 @@ export default function TransactionForm({ initial, onSubmit, onCancel, submitLab
   const [cardId, setCardId] = useState(initial?.card?.id ?? '')
   const [installments, setInstallments] = useState(initial?.installments?.total ? String(initial.installments.total) : '1')
 
-  const categories = allCategories.filter((c) => c.type === form.type)
+  const categories = allCategories.filter((c) => c.type === form.type && c.isActive)
   const activeCards = allCards.filter((c) => c.isActive)
 
   const set = (patch) => setForm((prev) => ({ ...prev, ...patch }))

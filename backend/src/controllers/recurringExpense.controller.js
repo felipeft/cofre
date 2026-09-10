@@ -1,0 +1,10 @@
+const service = require('../services/recurringExpense.service')
+const apiResponse = require('../utils/apiResponse')
+const asyncHandler = require('../utils/asyncHandler')
+const HTTP_STATUS = require('../constants/httpStatus')
+const list = asyncHandler(async (req, res) => apiResponse.success(res, { data: service.listRecurringExpenses(req.validated.query) }))
+const getById = asyncHandler(async (req, res) => apiResponse.success(res, { data: service.getRecurringExpenseById(req.validated.params.id) }))
+const create = asyncHandler(async (req, res) => apiResponse.success(res, { data: service.createRecurringExpense(req.validated.body), message: 'Gasto recorrente criado com sucesso.', statusCode: HTTP_STATUS.CREATED }))
+const update = asyncHandler(async (req, res) => apiResponse.success(res, { data: service.updateRecurringExpense(req.validated.params.id, req.validated.body), message: 'Gasto recorrente atualizado com sucesso.' }))
+const remove = asyncHandler(async (req, res) => apiResponse.success(res, { data: service.deleteRecurringExpense(req.validated.params.id), message: 'Gasto recorrente desativado com sucesso.' }))
+module.exports = { list, getById, create, update, remove }

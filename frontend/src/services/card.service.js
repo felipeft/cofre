@@ -29,10 +29,6 @@ export async function updateCard(id, patch) {
   return data
 }
 
-// O backend pode responder com uma exclusão de verdade OU uma desativação
-// lógica (cartão em uso por transações) — devolve os dois sinais para quem
-// chamou decidir a mensagem certa a mostrar (mesmo padrão de
-// category.service.deleteCategory).
 export async function deleteCard(id) {
   const { data, message } = await apiClient.delete(ENDPOINTS.card(id))
   return { ...data, message }
@@ -42,5 +38,10 @@ export async function deleteCard(id) {
 // desse cálculo (nunca recalculado no cliente).
 export async function getCardSummary(id) {
   const { data } = await apiClient.get(ENDPOINTS.cardSummary(id))
+  return data
+}
+
+export async function registerCardPayment(id, payload) {
+  const { data } = await apiClient.post(ENDPOINTS.cardPayments(id), payload)
   return data
 }

@@ -21,7 +21,10 @@ export default function CategoryGroup({ title, categories, onEdit, onDelete }) {
               >
                 <CategoryIcon name={c.icon} size={18} />
               </div>
-              <span className="flex-1 text-[14px] font-medium text-text truncate">{c.name}</span>
+              <div className="min-w-0 flex-1">
+                <span className="block text-[14px] font-medium text-text truncate">{c.name}</span>
+                {!c.isActive && <span className="text-[11px] text-text-faint">Inativa</span>}
+              </div>
               <div className="hidden group-hover:flex items-center gap-1">
                 <button onClick={() => onEdit(c)} className="focus-ring rounded-[6px] p-1.5 text-text-faint hover:text-text hover:bg-surface-2" aria-label="Editar">
                   <Pencil size={14} />

@@ -1,6 +1,7 @@
 const { getDatabase } = require('./connection')
 const { runMigrations } = require('./migrate')
 const logger = require('../utils/logger')
+const { ensureRecurringExpensesGenerated } = require('../services/recurringExpense.service')
 
 /**
  * Chamado uma vez, na inicialização do servidor. Garante que o arquivo do
@@ -15,6 +16,8 @@ function ensureDatabaseReady() {
   if (applied.length > 0) {
     logger.info('Banco de dados atualizado na inicialização', { migrations: applied })
   }
+  // Reconciliação leve até o mês corrente: não depende de cron nem gera futuro ilimitado.
+  ensureRecurringExpensesGenerated()
 }
 
 module.exports = { ensureDatabaseReady }
