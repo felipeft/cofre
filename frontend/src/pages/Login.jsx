@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
-import { LogIn, ShieldCheck, Vault } from 'lucide-react'
+import { LogIn, ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+import AppIcon from '@/components/ui/AppIcon'
 
 export default function Login() {
   const { login, error } = useAuth()
@@ -15,7 +16,7 @@ export default function Login() {
     <main className="min-h-screen flex items-center justify-center bg-bg px-5">
       <section className="w-full max-w-[400px] rounded-card border border-border bg-surface p-7 shadow-2xl">
         <div className="mb-7 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-income/15 text-income"><Vault size={22} /></div>
+          <AppIcon size={44} />
           <div><h1 className="text-xl font-semibold tracking-tight">Cofre</h1><p className="text-sm text-text-muted">Suas finanças, com acesso privado.</p></div>
         </div>
         <div className="mb-6 flex gap-3 rounded-control bg-surface-2 p-3 text-sm text-text-muted">

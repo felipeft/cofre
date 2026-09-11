@@ -24,10 +24,10 @@ export default function AppShell() {
   }
 
   return (
-    <div className="flex h-full min-h-screen bg-bg">
+    <div className="flex h-full min-h-screen bg-bg max-md:h-dvh max-md:min-h-0 max-md:overflow-hidden">
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} onRegister={() => setQuickAddOpen(true)} />
 
-      <div className="flex-1 min-w-0 pb-20 md:pb-0">
+      <div className="min-w-0 flex-1 pb-8 max-md:h-[calc(100dvh-4rem-env(safe-area-inset-bottom))] max-md:overflow-y-auto max-md:overscroll-contain md:pb-0">
         <Outlet />
       </div>
 

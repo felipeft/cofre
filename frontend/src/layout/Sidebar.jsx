@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom'
-import { PanelLeftClose, PanelLeftOpen, Plus, Vault } from 'lucide-react'
+import { PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react'
 import { navItems } from './navItems'
 import { ROUTES } from '@/constants/routes'
 import { useAuth } from '@/hooks/useAuth'
+import AppIcon from '@/components/ui/AppIcon'
 
 export default function Sidebar({ collapsed, onToggle, onRegister }) {
   const { user } = useAuth()
@@ -11,9 +12,7 @@ export default function Sidebar({ collapsed, onToggle, onRegister }) {
       className={`hidden md:flex flex-col shrink-0 border-r border-border-soft bg-surface transition-[width] duration-200 ${collapsed ? 'w-[76px]' : 'w-[240px]'}`}
     >
       <div className="flex items-center h-16 px-4 gap-2.5 border-b border-border-soft">
-        <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-income/15 text-income shrink-0">
-          <Vault size={17} />
-        </div>
+        <AppIcon size={32} />
         {!collapsed && <span className="font-semibold text-[15px] tracking-tight">Cofre</span>}
       </div>
 
