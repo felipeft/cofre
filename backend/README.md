@@ -4,8 +4,8 @@ API do sistema financeiro **Cofre**: Node.js + Express + libSQL/Turso.
 Inclui Google OAuth, sessões persistentes, perfil e preferências individuais,
 categorias, transações, regras financeiras parametrizadas, cartões,
 parcelamentos, gastos recorrentes, pagamentos de fatura e isolamento de dados
-por usuário. A Fase 4 está concluída. A Etapa 12 adiciona integração opcional
-com Google Sheets e aguarda validação final contra as APIs reais em produção.
+por usuário. A Fase 4 e a Etapa 12 estão concluídas. A Etapa 13 adiciona uma
+camada própria de sincronização manual com histórico persistente.
 
 ## Como rodar
 
@@ -573,8 +573,7 @@ taxas, snapshot histórico e regressão integral das funcionalidades anteriores.
 
 ## Fase 5, Etapa 12 — Google Sheets
 
-**Status: implementação local concluída; validação das APIs reais em produção
-pendente.**
+**Status: concluída e validada com as APIs reais em produção.**
 
 A autorização é incremental e independente do login. O login continua usando
 somente identidade; a integração solicita voluntariamente o scope não sensível
@@ -618,3 +617,40 @@ GOOGLE_SHEETS_CALLBACK_URL=http://localhost:5173/api/integrations/google-sheets/
 ```
 
 Suíte completa após a Etapa 12: **93 testes aprovados, 0 falhas**.
+
+---
+
+## Fase 5, Etapa 13 — Sistema de Sincronização
+
+**Status: implementação local concluída; validação do novo fluxo em produção
+pendente.**
+
+A migration `0012_create_google_sheets_sync_runs.sql` registra cada tentativa
+por usuário, com chave de idempotência, origem, estado, contagens, conflitos,
+erro seguro e horários. Há no máximo uma execução ativa por usuário; execuções
+interrompidas há mais de 15 minutos são encerradas como falha recuperável.
+
+O fluxo manual executa, nesta ordem:
+
+1. lê e valida a planilha;
+2. se houver linhas inválidas ou divergentes, registra conflitos e não altera
+   o Cofre nem reexporta dados;
+3. importa atomicamente somente linhas novas, reutilizando o fingerprint da
+   Etapa 12;
+4. exporta o estado consolidado do banco para os intervalos gerenciados;
+5. persiste status e contagens no histórico.
+
+Endpoints adicionais:
+
+| Método | Endpoint | Finalidade |
+|---|---|---|
+| `GET` | `/integrations/google-sheets/sync` | Estado da integração e última execução |
+| `GET` | `/integrations/google-sheets/sync/history` | Histórico isolado do usuário atual |
+| `POST` | `/integrations/google-sheets/sync` | Sincronização manual idempotente |
+
+A chave `requestId` impede que uma resposta perdida replique a mesma operação.
+Falhas da API Google ficam registradas sem tokens ou detalhes sensíveis. O
+gatilho `automatic` já é representável no schema, mas nenhum scheduler foi
+adicionado: sincronização automática permanece deliberadamente posterior.
+
+Suíte completa após a Etapa 13: **96 testes aprovados, 0 falhas**.

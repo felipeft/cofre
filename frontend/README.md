@@ -269,8 +269,7 @@ layout responsivo e controles adequados ao uso móvel.
 
 ## Fase 5, Etapa 12 — Google Sheets
 
-**Status: interface e build concluídos; validação com a API real em produção
-pendente.**
+**Status: concluída e validada com a API real em produção.**
 
 A seção Google Sheets em `/configuracoes` mantém estado próprio local, sem
 poluir `AuthContext` ou `SettingsContext`. Ela apresenta conexão, conta Google,
@@ -284,6 +283,23 @@ conflitantes antes de habilitar a confirmação.
 
 O layout usa os componentes existentes, mantém o tema escuro e reorganiza as
 ações em uma coluna no mobile e duas colunas quando houver espaço.
+
+---
+
+## Fase 5, Etapa 13 — Sistema de Sincronização
+
+**Status: interface e build concluídos; validação em produção pendente.**
+
+A rota `/sincronizacao`, acessível pela seção Google Sheets dos ajustes,
+centraliza o botão **Sincronizar agora**, o estado da operação, a última
+sincronização e o histórico. Cada execução mostra registros lidos, importados,
+exportados e problemas encontrados, além de erros seguros e linhas conflitantes
+quando houver.
+
+O hook local `useGoogleSheetsSync` mantém a responsabilidade fora dos contexts
+globais. Cada clique gera um `requestId` idempotente e, após sucesso ou falha,
+reconsulta o backend como fonte de verdade. O fluxo é responsivo e não depende
+de polling ou execução automática nesta etapa.
 
 ## Deploy e uso mobile
 

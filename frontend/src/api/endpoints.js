@@ -31,5 +31,7 @@ export const ENDPOINTS = {
     export: '/integrations/google-sheets/export',
     importPreview: '/integrations/google-sheets/import/preview',
     import: '/integrations/google-sheets/import',
+    sync: '/integrations/google-sheets/sync',
+    syncHistory: '/integrations/google-sheets/sync/history',
   },
 }

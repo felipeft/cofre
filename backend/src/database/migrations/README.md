@@ -22,3 +22,7 @@ cada uma delas roda exatamente uma vez.
 
 `0003` e `0004` (Fase 3, Etapa 7) adicionam as regras de oferta/dízimo —
 ver o README principal do backend para a explicação completa da regra.
+
+As migrations seguintes preservam a mesma sequência: `0009` introduz usuários
+e ownership, `0010` preferências individuais, `0011` a integração Google
+Sheets e `0012` o histórico idempotente de sincronizações.

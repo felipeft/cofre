@@ -178,13 +178,47 @@ async function exportData(userId, currentYear = new Date().getUTCFullYear()) {
     const formatting = formatRequests(spreadsheet)
     if (formatting.length) await googleClient.batchUpdate(token, integration.spreadsheet_id, formatting)
     await repository.markOperation(userId, 'export')
-    logger.info('Exportação Google Sheets concluída', { userId, transactionCount: data.transactions.length })
-    return { exportedTransactions: data.transactions.length, exportedAt: now }
+    const breakdown = {
+      transactions: data.transactions.length,
+      categories: data.categories.length,
+      cards: data.cards.length,
+      recurringExpenses: data.recurringExpenses.length,
+      cardPayments: data.payments.length,
+      settings: data.settings ? 1 : 0,
+    }
+    const exportedRecords = Object.values(breakdown).reduce((total, count) => total + count, 0)
+    logger.info('Exportação Google Sheets concluída', { userId, transactionCount: data.transactions.length, exportedRecords })
+    return { exportedTransactions: data.transactions.length, exportedRecords, breakdown, exportedAt: now }
   } catch (error) { await handleFileError(userId, error); throw error }
 }
 
+function nullableNumber(value) { return value == null || value === '' ? null : Number(value) }
+function storedTags(value) {
+  try { return JSON.parse(value || '[]') } catch { return [] }
+}
 function sameExisting(row, candidate) {
-  return row.date === candidate.date && Number(row.competence_year) === candidate.competenceYear && Number(row.competence_month) === candidate.competenceMonth && row.type === candidate.type && row.description === candidate.description && Number(row.category_id) === candidate.categoryId && Number(row.amount) === candidate.amount && (row.card_id == null ? null : Number(row.card_id)) === candidate.cardId && Number(row.offer_amount) === candidate.offerAmount && Number(row.tithe_amount) === candidate.titheAmount && row.status === candidate.status && (row.notes || '') === candidate.notes
+  return row.date === candidate.date
+    && Number(row.competence_year) === candidate.competenceYear
+    && Number(row.competence_month) === candidate.competenceMonth
+    && row.type === candidate.type
+    && row.description === candidate.description
+    && Number(row.category_id) === candidate.categoryId
+    && Number(row.amount) === candidate.amount
+    && nullableNumber(row.card_id) === candidate.cardId
+    && nullableNumber(row.installment_current) === candidate.installmentCurrent
+    && nullableNumber(row.installment_total) === candidate.installmentTotal
+    && (row.installment_group_id || null) === candidate.installmentGroupId
+    && nullableNumber(row.recurring_expense_id) === candidate.recurringExpenseId
+    && Number(row.offer_amount) === candidate.offerAmount
+    && Number(row.tithe_amount) === candidate.titheAmount
+    && nullableNumber(row.offer_rate_applied) === candidate.offerRateApplied
+    && nullableNumber(row.tithe_rate_applied) === candidate.titheRateApplied
+    && row.status === candidate.status
+    && row.source === candidate.source
+    && Boolean(row.is_recurring) === candidate.isRecurring
+    && Boolean(row.is_fixed) === candidate.isFixed
+    && JSON.stringify(storedTags(row.tags)) === JSON.stringify(candidate.tags)
+    && (row.notes || '') === candidate.notes
 }
 
 async function readRows(userId) {

@@ -19,6 +19,7 @@ const { ensureDatabaseReady } = require('../src/database/bootstrap')
 const { closeDatabase, getDatabase } = require('../src/database/connection')
 const { createTestUser, asUser } = require('./helpers/userScope')
 const sheetsService = require('../src/services/googleSheets.service')
+const syncService = require('../src/services/googleSheetsSync.service')
 const categories = asUser(require('../src/services/category.service'), 1)
 const transactions = asUser(require('../src/services/transaction.service'), 1)
 
@@ -111,14 +112,61 @@ test('preview e confirmação importam atomicamente e são idempotentes', async 
   assert.equal(Number(count.total), 1)
 })
 
+test('sincronização consolida importação e exportação com histórico idempotente', async () => {
+  const requestId = '11111111-1111-4111-8111-111111111111'
+  const completed = await syncService.synchronize(1, requestId)
+  assert.equal(completed.status, 'success')
+  assert.equal(completed.recordsImported, 0)
+  assert.ok(completed.recordsExported >= 4)
+  assert.equal(completed.conflictCount, 0)
+
+  const replay = await syncService.synchronize(1, requestId)
+  assert.equal(replay.id, completed.id)
+  assert.equal(replay.idempotentReplay, true)
+  const history = await syncService.getHistory(1, 20)
+  assert.equal(history.length, 1)
+  assert.equal((await syncService.getHistory(2, 20)).length, 0)
+})
+
+test('impede duas sincronizações simultâneas e recupera execução interrompida', async () => {
+  const db = getDatabase()
+  await db.prepare("INSERT INTO google_sheets_sync_runs (user_id, idempotency_key) VALUES (1, 'active-test')").run()
+  await assert.rejects(
+    () => syncService.synchronize(1, '44444444-4444-4444-8444-444444444444'),
+    { code: 'SYNC_ALREADY_RUNNING' }
+  )
+  await db.prepare("UPDATE google_sheets_sync_runs SET started_at = datetime('now', '-16 minutes') WHERE idempotency_key = 'active-test'").run()
+  const recovered = await syncService.getStatus(1)
+  assert.equal(recovered.latest.status, 'failed')
+  assert.equal(recovered.latest.error.code, 'SYNC_INTERRUPTED')
+})
+
+test('detecta divergência em campos históricos antes de sobrescrever a planilha', async () => {
+  const rows = google.state.values.get('2024')
+  rows[1][23] = !rows[1][23]
+  const preview = await sheetsService.previewImport(1)
+  assert.equal(preview.summary.conflicts, 1)
+  assert.match(preview.details.conflicts[0].reason, /difere da transação existente/)
+  rows[1][23] = !rows[1][23]
+})
+
 test('detecta referência inválida, token revogado e planilha apagada sem afetar o Cofre', async () => {
   const rows = google.state.values.get('2024')
   const invalid = [...rows[1]]; invalid[0] = ''; invalid[6] = 999999; rows.push(invalid)
   const preview = await sheetsService.previewImport(1)
   assert.equal(preview.summary.conflicts, 1)
   assert.equal(preview.canImport, false)
+
+  const conflictRun = await syncService.synchronize(1, '22222222-2222-4222-8222-222222222222')
+  assert.equal(conflictRun.status, 'conflicts')
+  assert.equal(conflictRun.conflictCount, 1)
+  assert.equal(conflictRun.recordsExported, 0)
+
   google.state.deleted = true
-  await assert.rejects(() => sheetsService.exportData(1, 2026), { code: 'GOOGLE_SHEET_NOT_FOUND' })
+  await assert.rejects(() => syncService.synchronize(1, '33333333-3333-4333-8333-333333333333'), { code: 'GOOGLE_SHEET_NOT_FOUND' })
+  const failed = (await syncService.getHistory(1, 1))[0]
+  assert.equal(failed.status, 'failed')
+  assert.equal(failed.error.code, 'GOOGLE_SHEET_NOT_FOUND')
   assert.equal((await sheetsService.getStatus(1, 2026)).status, 'file_missing')
   google.state.deleted = false
   google.state.revoked = true

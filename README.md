@@ -5,9 +5,9 @@ gradualmente uma planilha de uso cotidiano por um sistema estruturado,
 confiável e preparado para evoluir com autenticação, integração ao Google
 Sheets, inteligência financeira, Engenharia de Dados e IA.
 
-> **Status atual:** Fase 5 em andamento — Fase 4 concluída; Etapa 12 Google
-> Sheets implementada e testada localmente, aguardando validação com as APIs
-> Google em produção.
+> **Status atual:** Fase 5 em andamento — Etapa 12 validada em produção e
+> Etapa 13 com sincronização manual implementada e testada localmente,
+> aguardando validação final após o deploy.
 
 ## Acesso
 
@@ -41,6 +41,8 @@ período sem uso pode levar alguns segundos enquanto o serviço é reativado.
 - Área de configurações com dados seguros da conta e da sessão atual.
 - Integração Google Sheets opcional por usuário, com exportação e importação
   manuais, planilha anual padronizada e refresh token criptografado.
+- Central de sincronização manual com status, contagens, conflitos, falhas,
+  idempotência e histórico persistente por usuário.
 
 ## Regras importantes do domínio
 
@@ -296,23 +298,24 @@ Concluído:
 
 Em andamento:
 
-- Fase 5, Etapa 12 — fundação Google Sheets, exportação e importação manuais;
-  falta validar consentimento, criação e operações na API real em produção.
+- Fase 5, Etapa 13 — sistema de sincronização manual implementado localmente;
+  falta validar a nova central e o histórico em produção.
 
 Concluído e validado em produção:
 
 - Fase 4, Etapa 10 — Google OAuth, whitelist, sessões persistentes, Turso e
   isolamento por usuário, incluindo uso no Chrome e Safari do iPhone.
 - Fase 4, Etapa 11 — perfil, settings e preferências financeiras por usuário.
+- Fase 5, Etapa 12 — autorização incremental, planilha estruturada, exportação
+  e importação idempotentes, validadas com as APIs reais em produção.
 
 Próximas fases planejadas, ainda não iniciadas:
 
-1. Fase 5, Etapa 13 — sistema de sincronização.
-2. Fase 6 — Documentação e Engenharia de Software.
-3. Fase 7 — Inteligência Financeira.
-4. Fase 8 — Engenharia de Dados.
-5. Fase 9 — Inteligência Artificial e Machine Learning.
-6. Fase 10 — Polimento, containerização e CI/CD.
+1. Fase 6 — Documentação e Engenharia de Software.
+2. Fase 7 — Inteligência Financeira.
+3. Fase 8 — Engenharia de Dados.
+4. Fase 9 — Inteligência Artificial e Machine Learning.
+5. Fase 10 — Polimento, containerização e CI/CD.
 
 O marco definido para o início do uso real completo é a conclusão da Etapa
 13, após autenticação e sincronização com Google Sheets. Nenhuma etapa futura

@@ -8,5 +8,8 @@ export const googleSheetsService = {
   exportData: () => apiClient.post(ENDPOINTS.sheets.export),
   previewImport: () => apiClient.post(ENDPOINTS.sheets.importPreview),
   confirmImport: (fingerprint) => apiClient.post(ENDPOINTS.sheets.import, { fingerprint }),
+  getSyncStatus: () => apiClient.get(ENDPOINTS.sheets.sync),
+  getSyncHistory: (limit = 20) => apiClient.get(`${ENDPOINTS.sheets.syncHistory}?limit=${limit}`),
+  synchronize: (requestId) => apiClient.post(ENDPOINTS.sheets.sync, { requestId }),
   disconnect: () => apiClient.delete(ENDPOINTS.sheets.status),
 }

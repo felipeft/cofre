@@ -1,4 +1,5 @@
 const service = require('../services/googleSheets.service')
+const syncService = require('../services/googleSheetsSync.service')
 const apiResponse = require('../utils/apiResponse')
 const asyncHandler = require('../utils/asyncHandler')
 const { parseCookies, serializeCookie } = require('../utils/cookies')
@@ -36,4 +37,8 @@ const disconnect = asyncHandler(async (req, res) => {
   apiResponse.success(res, { data: null, message: 'Integração desconectada. A planilha permanece no Google Drive.' })
 })
 
-module.exports = { status, connect, callback, createSpreadsheet, exportData, previewImport, confirmImport, disconnect }
+const syncStatus = asyncHandler(async (req, res) => apiResponse.success(res, { data: await syncService.getStatus(req.user.id) }))
+const syncHistory = asyncHandler(async (req, res) => apiResponse.success(res, { data: await syncService.getHistory(req.user.id, req.validated.query.limit) }))
+const synchronize = asyncHandler(async (req, res) => apiResponse.success(res, { data: await syncService.synchronize(req.user.id, req.validated.body.requestId), message: 'Sincronização processada.' }))
+
+module.exports = { status, connect, callback, createSpreadsheet, exportData, previewImport, confirmImport, disconnect, syncStatus, syncHistory, synchronize }

@@ -8,6 +8,7 @@ import Categories from '@/pages/Categories'
 import Cards from '@/pages/Cards'
 import RecurringExpenses from '@/pages/RecurringExpenses'
 import Settings from '@/pages/Settings'
+import Synchronization from '@/pages/Synchronization'
 import { TransactionsProvider } from '@/contexts/TransactionsContext'
 import { CategoriesProvider } from '@/contexts/CategoriesContext'
 import { CardsProvider } from '@/contexts/CardsContext'
@@ -35,6 +36,7 @@ function AuthenticatedApp() {
                   <Route path={ROUTES.cards} element={<Cards />} />
                   <Route path={ROUTES.recurringExpenses} element={<RecurringExpenses />} />
                   <Route path={ROUTES.settings} element={<Settings />} />
+                  <Route path={ROUTES.synchronization} element={<Synchronization />} />
                 </Route>
               </Routes>
             </TransactionsProvider>

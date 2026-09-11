@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { AlertCircle, ExternalLink, FileSpreadsheet, Link2, Unplug, Upload } from 'lucide-react'
+import { AlertCircle, ExternalLink, FileSpreadsheet, Link2, RefreshCw, Unplug } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Dialog from '@/components/ui/Dialog'
 import { useToast } from '@/contexts/ToastContext'
 import { useGoogleSheetsIntegration } from '@/hooks/useGoogleSheetsIntegration'
+import { ROUTES } from '@/constants/routes'
 
 const labels = {
   not_connected: 'Não conectado', authorized: 'Autorizado — crie sua planilha', ready: 'Pronto',
@@ -71,26 +73,10 @@ export default function GoogleSheetsSettings() {
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             <a href={integration.spreadsheetUrl} target="_blank" rel="noreferrer" className="focus-ring h-11 rounded-control border border-border bg-surface-3 text-[14px] font-medium flex items-center justify-center gap-2"><ExternalLink size={16} />Abrir planilha</a>
-            <Button variant="secondary" disabled={sheets.action === 'exporting'} onClick={() => toastAction(sheets.exportData, 'Exportação concluída')}>{sheets.action === 'exporting' ? 'Exportando…' : 'Exportar agora'}</Button>
-            <Button variant="secondary" icon={Upload} disabled={sheets.action === 'previewing'} onClick={() => toastAction(sheets.previewImport, 'Preview concluído')}>{sheets.action === 'previewing' ? 'Lendo…' : 'Ler para importar'}</Button>
+            <Link to={ROUTES.synchronization} className="focus-ring h-11 rounded-control border border-border bg-surface-3 text-[14px] font-medium flex items-center justify-center gap-2"><RefreshCw size={16} />Central de sincronização</Link>
             <Button variant="danger" icon={Unplug} onClick={() => setDisconnectOpen(true)}>Desconectar</Button>
           </div>
         </>
-      )}
-
-      {sheets.preview && (
-        <div className="rounded-xl border border-border bg-surface-2 p-3 flex flex-col gap-3">
-          <p className="text-[13px] font-medium">Preview da importação</p>
-          <div className="grid grid-cols-2 gap-2 text-[12px] text-text-muted">
-            <span>Novas: {sheets.preview.summary.new}</span><span>Já existentes: {sheets.preview.summary.existing}</span>
-            <span>Inválidas: {sheets.preview.summary.invalid}</span><span>Conflitos: {sheets.preview.summary.conflicts}</span>
-          </div>
-          {(sheets.preview.summary.invalid > 0 || sheets.preview.summary.conflicts > 0) && <p className="text-[12px] text-expense">Corrija as linhas indicadas na planilha e gere um novo preview.</p>}
-          {[...(sheets.preview.details?.invalid || []), ...(sheets.preview.details?.conflicts || [])].slice(0, 4).map((item) => (
-            <p key={`${item.rowNumber}-${item.transactionId || 'invalid'}`} className="text-[11px] text-text-faint">Linha {item.rowNumber}: {item.reason || item.errors?.join(' ')}</p>
-          ))}
-          <Button disabled={!sheets.preview.canImport || sheets.action === 'importing'} onClick={() => toastAction(sheets.confirmImport, 'Importação concluída')}>{sheets.action === 'importing' ? 'Importando…' : 'Confirmar importação'}</Button>
-        </div>
       )}
       {sheets.error && <p role="alert" className="text-[12px] text-expense">{sheets.error}</p>}
 

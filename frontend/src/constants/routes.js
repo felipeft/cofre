@@ -9,4 +9,5 @@ export const ROUTES = {
   cards: '/cartoes',
   recurringExpenses: '/gastos-recorrentes',
   settings: '/configuracoes',
+  synchronization: '/sincronizacao',
 }
