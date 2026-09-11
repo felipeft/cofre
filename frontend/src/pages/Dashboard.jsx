@@ -8,24 +8,40 @@ import TransactionRow from '@/components/transactions/TransactionRow'
 import CategoryPieChart from '@/components/charts/CategoryPieChart'
 import MonthlyBarChart from '@/components/charts/MonthlyBarChart'
 import EmptyState from '@/components/ui/EmptyState'
+import MonthNavigator from '@/components/ui/MonthNavigator'
 import { SkeletonRow } from '@/components/ui/Loading'
 import { useDashboard } from '@/hooks/useDashboard'
+import { useSelectedMonth } from '@/hooks/useSelectedMonth'
 import { ROUTES } from '@/constants/routes'
+import { monthLongLabel } from '@/utils/months'
 
 export default function Dashboard() {
-  const { summary, breakdown, trend, recent, loading, error } = useDashboard()
+  const monthSelection = useSelectedMonth()
+  const { selectedMonth } = monthSelection
+  const { summary, breakdown, trend, recent, loading, error } = useDashboard(selectedMonth)
   const navigate = useNavigate()
 
   const pieData = breakdown
     .slice(0, 6)
     .map((b) => ({ name: b.category.name, value: b.value, color: b.category.color }))
 
-  const monthName = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+  const monthName = monthLongLabel(selectedMonth)
+  const monthNavigator = (
+    <MonthNavigator
+      month={selectedMonth}
+      onPrevious={monthSelection.previousMonth}
+      onNext={monthSelection.nextMonth}
+      onReset={monthSelection.resetMonth}
+      isCurrentMonth={monthSelection.isCurrentMonth}
+      canGoPrevious={monthSelection.canGoPrevious}
+      canGoNext={monthSelection.canGoNext}
+    />
+  )
 
   if (error) {
     return (
       <div>
-        <Header title="Início" subtitle={`Resumo de ${monthName}`} />
+        <Header title="Início" subtitle={`Resumo de ${monthName}`} actions={monthNavigator} />
         <div className="px-5 md:px-8 pb-8">
           <Card>
             <EmptyState title="Não foi possível carregar o resumo" description={error.message ?? 'Tente novamente em instantes.'} />
@@ -38,7 +54,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div>
-        <Header title="Início" subtitle={`Resumo de ${monthName}`} />
+        <Header title="Início" subtitle={`Resumo de ${monthName}`} actions={monthNavigator} />
         <div className="px-5 md:px-8 pb-8 flex flex-col gap-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -53,7 +69,7 @@ export default function Dashboard() {
 
   return (
     <div>
-      <Header title="Início" subtitle={`Resumo de ${monthName}`} />
+      <Header title="Início" subtitle={`Resumo de ${monthName}`} actions={monthNavigator} />
 
       <div className="px-5 md:px-8 pb-8 flex flex-col gap-6">
         {/* Summary stat cards */}
@@ -75,7 +91,7 @@ export default function Dashboard() {
           {/* Recent transactions */}
           <Card className="lg:col-span-3 p-4 md:p-5">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-[15px] font-semibold text-text">Últimos lançamentos</h3>
+              <h3 className="text-[15px] font-semibold text-text">Lançamentos do mês</h3>
               <button
                 onClick={() => navigate(ROUTES.history)}
                 className="focus-ring flex items-center gap-1 text-[13px] text-text-muted hover:text-text transition-colors"

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Search, ArrowUpDown, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, ArrowUpDown, Pencil, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import Header from '@/layout/Header'
 import Card from '@/components/ui/Card'
 import Select from '@/components/ui/Select'
+import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
 import Dialog from '@/components/ui/Dialog'
@@ -15,6 +16,11 @@ import { useCategories } from '@/hooks/useCategories'
 import { useToast } from '@/contexts/ToastContext'
 import { useTransactionsList } from '@/hooks/useTransactionsList'
 import { formatCurrency, formatDate } from '@/utils/formatters'
+import { monthKey, parseMonthKey } from '@/utils/months'
+
+function localDateInput(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
 
 export default function History() {
   const { updateTransaction, deleteTransaction } = useTransactions()
@@ -26,6 +32,11 @@ export default function History() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [sort, setSort] = useState('date-desc')
+  const [periodFilter, setPeriodFilter] = useState('all')
+  const [monthFilter, setMonthFilter] = useState(monthKey())
+  const [exactDate, setExactDate] = useState(localDateInput())
+  const [dateFrom, setDateFrom] = useState(`${monthKey()}-01`)
+  const [dateTo, setDateTo] = useState(localDateInput())
   const [page, setPage] = useState(1)
   const [editing, setEditing] = useState(null)
   const [deleting, setDeleting] = useState(null)
@@ -40,7 +51,15 @@ export default function History() {
   // Qualquer mudança de filtro/ordenação/busca volta para a primeira página.
   useEffect(() => {
     setPage(1)
-  }, [search, typeFilter, categoryFilter, sort])
+  }, [search, typeFilter, categoryFilter, sort, periodFilter, monthFilter, exactDate, dateFrom, dateTo])
+
+  const selectedMonth = /^\d{4}-\d{2}$/.test(monthFilter) ? parseMonthKey(monthFilter) : null
+  const periodQuery = {
+    month: periodFilter === 'month' ? selectedMonth?.month : undefined,
+    year: periodFilter === 'month' ? selectedMonth?.year : undefined,
+    dateFrom: periodFilter === 'exact' ? exactDate : periodFilter === 'range' ? dateFrom || undefined : undefined,
+    dateTo: periodFilter === 'exact' ? exactDate : periodFilter === 'range' ? dateTo || undefined : undefined,
+  }
 
   const { data: filtered, meta, loading, error } = useTransactionsList({
     search,
@@ -48,7 +67,16 @@ export default function History() {
     categoryFilter,
     sort,
     page,
+    ...periodQuery,
   })
+
+  const clearPeriod = () => {
+    setPeriodFilter('all')
+    setMonthFilter(monthKey())
+    setExactDate(localDateInput())
+    setDateFrom(`${monthKey()}-01`)
+    setDateTo(localDateInput())
+  }
 
   const handleUpdate = async (patch) => {
     try {
@@ -107,6 +135,34 @@ export default function History() {
               <option value="amount-desc">Maior valor</option>
               <option value="amount-asc">Menor valor</option>
             </Select>
+          </div>
+
+          <div className="mt-3 grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-[220px_minmax(220px,440px)_auto]">
+            <Select label="Período" value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value)}>
+              <option value="all">Todas as datas</option>
+              <option value="month">Mês específico</option>
+              <option value="exact">Data específica</option>
+              <option value="range">Intervalo personalizado</option>
+            </Select>
+
+            {periodFilter === 'month' && (
+              <Input label="Mês e ano" type="month" min="2000-01" max="2100-12" value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} />
+            )}
+            {periodFilter === 'exact' && (
+              <Input label="Data" type="date" min="2000-01-01" max="2100-12-31" value={exactDate} onChange={(e) => setExactDate(e.target.value)} />
+            )}
+            {periodFilter === 'range' && (
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="De" type="date" min="2000-01-01" max={dateTo || '2100-12-31'} value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+                <Input label="Até" type="date" min={dateFrom || '2000-01-01'} max="2100-12-31" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+              </div>
+            )}
+
+            {periodFilter !== 'all' && (
+              <Button variant="ghost" icon={X} onClick={clearPeriod} className="justify-self-start">
+                Limpar período
+              </Button>
+            )}
           </div>
         </Card>
 

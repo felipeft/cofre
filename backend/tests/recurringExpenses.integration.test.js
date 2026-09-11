@@ -52,4 +52,18 @@ describe('gastos recorrentes', () => {
     await recurringService.ensureRecurringExpensesGenerated({ asOfDate: '2031-03-20' })
     assert.equal((await transactionService.listTransactions({ page: 1, limit: 20, sortBy: 'date', sortDir: 'asc', categoryId: category.id })).data.length, 1)
   })
+
+  test('consultar mês futuro materializa recorrências até o período solicitado sem duplicar', async () => {
+    const category = await categoryService.createCategory({ name: 'Previsões futuras', type: 'expense', color: '#5b9ef5', icon: 'CalendarClock', isActive: true, sortOrder: 0, applyOffer: false, offerRate: null, applyTithe: false, titheRate: null })
+    await recurringService.createRecurringExpense(input(category.id, { description: 'Assinatura futura', startDate: '2032-01-01' }))
+
+    const march = await transactionService.listTransactions({ page: 1, limit: 20, sortBy: 'date', sortDir: 'asc', categoryId: category.id, month: 3, year: 2032 })
+    assert.deepEqual(march.data.map((item) => item.date), ['2032-03-10'])
+
+    const rangeQuery = { page: 1, limit: 20, sortBy: 'date', sortDir: 'asc', categoryId: category.id, dateFrom: '2032-01-01', dateTo: '2032-03-31' }
+    const firstRange = await transactionService.listTransactions(rangeQuery)
+    const repeatedRange = await transactionService.listTransactions(rangeQuery)
+    assert.deepEqual(firstRange.data.map((item) => item.date), ['2032-01-10', '2032-02-10', '2032-03-10'])
+    assert.equal(repeatedRange.data.length, 3)
+  })
 })

@@ -10,11 +10,11 @@ import {
   getRecentTransactions,
 } from '@/utils/aggregations'
 
-export function getDashboardOverview(transactions) {
+export function getDashboardOverview(transactions, selectedMonth) {
   return {
-    summary: getMonthSummary(transactions),
-    breakdown: getCategoryBreakdown(transactions),
-    trend: getMonthlyTrend(transactions, 6),
-    recent: getRecentTransactions(transactions, 6),
+    summary: getMonthSummary(transactions, selectedMonth),
+    breakdown: getCategoryBreakdown(transactions, selectedMonth),
+    trend: getMonthlyTrend(transactions, 6, selectedMonth),
+    recent: getRecentTransactions(transactions, 6, selectedMonth),
   }
 }

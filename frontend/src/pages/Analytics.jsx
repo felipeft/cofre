@@ -5,20 +5,37 @@ import CategoryPieChart from '@/components/charts/CategoryPieChart'
 import MonthlyBarChart from '@/components/charts/MonthlyBarChart'
 import TrendLineChart from '@/components/charts/TrendLineChart'
 import EmptyState from '@/components/ui/EmptyState'
+import MonthNavigator from '@/components/ui/MonthNavigator'
 import { SkeletonRow } from '@/components/ui/Loading'
 import { useAnalytics } from '@/hooks/useAnalytics'
+import { useSelectedMonth } from '@/hooks/useSelectedMonth'
 import { formatCurrency, formatDate } from '@/utils/formatters'
+import { monthLongLabel } from '@/utils/months'
 
 export default function Analytics() {
-  const { breakdown, trend, summary, topExpenses, loading, error } = useAnalytics()
+  const monthSelection = useSelectedMonth()
+  const { selectedMonth } = monthSelection
+  const { breakdown, trend, summary, topExpenses, loading, error } = useAnalytics(selectedMonth)
 
   const pieData = breakdown.map((b) => ({ name: b.category.name, value: b.value, color: b.category.color }))
   const maxCategory = breakdown[0]?.value || 1
+  const subtitle = `Visão detalhada de ${monthLongLabel(selectedMonth)}`
+  const monthNavigator = (
+    <MonthNavigator
+      month={selectedMonth}
+      onPrevious={monthSelection.previousMonth}
+      onNext={monthSelection.nextMonth}
+      onReset={monthSelection.resetMonth}
+      isCurrentMonth={monthSelection.isCurrentMonth}
+      canGoPrevious={monthSelection.canGoPrevious}
+      canGoNext={monthSelection.canGoNext}
+    />
+  )
 
   if (error) {
     return (
       <div>
-        <Header title="Análises" subtitle="Visão detalhada das suas movimentações" />
+        <Header title="Análises" subtitle={subtitle} actions={monthNavigator} />
         <div className="px-5 md:px-8 pb-8">
           <Card>
             <EmptyState title="Não foi possível carregar as análises" description={error.message ?? 'Tente novamente em instantes.'} />
@@ -31,7 +48,7 @@ export default function Analytics() {
   if (loading) {
     return (
       <div>
-        <Header title="Análises" subtitle="Visão detalhada das suas movimentações" />
+        <Header title="Análises" subtitle={subtitle} actions={monthNavigator} />
         <div className="px-5 md:px-8 pb-8 flex flex-col gap-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <SkeletonRow className="h-64" />
@@ -45,7 +62,7 @@ export default function Analytics() {
 
   return (
     <div>
-      <Header title="Análises" subtitle="Visão detalhada das suas movimentações" />
+      <Header title="Análises" subtitle={subtitle} actions={monthNavigator} />
 
       <div className="px-5 md:px-8 pb-8 flex flex-col gap-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

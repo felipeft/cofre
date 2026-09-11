@@ -4,6 +4,11 @@ const { MAX_INSTALLMENTS } = require('../constants/cards')
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
 const dateField = (message) => z.string().regex(DATE_REGEX, message)
+const queryDateField = (message) =>
+  dateField(message).refine((value) => {
+    const year = Number(value.slice(0, 4))
+    return year >= 2000 && year <= 2100
+  }, 'A data deve estar entre os anos 2000 e 2100.')
 
 const transactionTypeSchema = z.enum(['income', 'expense'], {
   errorMap: () => ({ message: "type deve ser 'income' ou 'expense'." }),
@@ -124,11 +129,14 @@ const listTransactionsQuerySchema = paginationSchema.extend({
   installmentGroupId: z.string().trim().min(1).optional(),
   month: z.coerce.number().int().min(1).max(12).optional(),
   year: z.coerce.number().int().min(2000).max(2100).optional(),
-  dateFrom: dateField('dateFrom deve estar no formato YYYY-MM-DD.').optional(),
-  dateTo: dateField('dateTo deve estar no formato YYYY-MM-DD.').optional(),
+  dateFrom: queryDateField('dateFrom deve estar no formato YYYY-MM-DD.').optional(),
+  dateTo: queryDateField('dateTo deve estar no formato YYYY-MM-DD.').optional(),
   status: transactionStatusSchema.optional(),
   sortBy: z.enum(SORT_FIELDS).optional().default('date'),
   sortDir: z.enum(['asc', 'desc']).optional().default('desc'),
+}).refine((query) => !query.dateFrom || !query.dateTo || query.dateFrom <= query.dateTo, {
+  path: ['dateTo'],
+  message: 'dateTo deve ser igual ou posterior a dateFrom.',
 })
 
 // GET /transactions/summary — competência obrigatória: um resumo financeiro

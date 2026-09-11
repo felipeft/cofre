@@ -8,11 +8,11 @@ import {
   getTopExpenses,
 } from '@/utils/aggregations'
 
-export function getAnalyticsOverview(transactions) {
+export function getAnalyticsOverview(transactions, selectedMonth) {
   return {
-    breakdown: getCategoryBreakdown(transactions),
-    trend: getMonthlyTrend(transactions, 6),
-    summary: getMonthSummary(transactions),
-    topExpenses: getTopExpenses(transactions, undefined, 5),
+    breakdown: getCategoryBreakdown(transactions, selectedMonth),
+    trend: getMonthlyTrend(transactions, 6, selectedMonth),
+    summary: getMonthSummary(transactions, selectedMonth),
+    topExpenses: getTopExpenses(transactions, selectedMonth, 5),
   }
 }

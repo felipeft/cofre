@@ -78,9 +78,19 @@ async function getFinancialDefaults(userId) {
 }
 
 async function listTransactions(userId, query) {
-  await ensureRecurringExpensesGenerated(userId)
   const { page, limit, q, type, categoryId, cardId, installmentGroupId, month, year, dateFrom, dateTo, status, sortBy, sortDir } =
     query
+
+  // Consultar um mês futuro é uma ação de previsão: parcelas já existem no
+  // banco desde a compra, mas ocorrências recorrentes são materializadas sob
+  // demanda. Gera somente até o limite pedido e confia no índice único da
+  // recorrência para manter a operação idempotente.
+  let generationDate = dateTo
+  if (!generationDate && month && year) {
+    const lastDay = new Date(year, month, 0).getDate()
+    generationDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+  }
+  await ensureRecurringExpensesGenerated(userId, generationDate ? { asOfDate: generationDate } : undefined)
 
   const { rows, total } = await transactionRepository.findMany(userId, {
     page,

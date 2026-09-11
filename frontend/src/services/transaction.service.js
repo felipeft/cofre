@@ -27,14 +27,14 @@ export async function getTransactions(params = {}) {
 // isso na UI. Busca em lotes de 100 (o máximo aceito pela API) até cobrir o
 // `total` informado pelo backend, em vez de assumir que uma página é
 // suficiente.
-export async function getAllTransactions() {
+export async function getAllTransactions(params = {}) {
   const limit = 100
   let page = 1
   let all = []
   let total = Infinity
 
   while (all.length < total) {
-    const { data, meta } = await getTransactions({ page, limit, sortBy: 'date', sortDir: 'desc' })
+    const { data, meta } = await getTransactions({ ...params, page, limit, sortBy: 'date', sortDir: 'desc' })
     all = all.concat(data)
     total = meta?.total ?? all.length
     if (data.length === 0) break

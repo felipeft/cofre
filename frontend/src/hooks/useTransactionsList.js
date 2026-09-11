@@ -14,7 +14,7 @@ const EMPTY_META = { page: 1, limit: 20, total: 0, totalPages: 0 }
 // Busca a página atual do Histórico direto na API a cada mudança de filtro/
 // ordenação/página — nunca carrega tudo para filtrar no cliente, é
 // exatamente para isso que a paginação do backend existe.
-export function useTransactionsList({ search, typeFilter, categoryFilter, sort, page, limit = 20 }) {
+export function useTransactionsList({ search, typeFilter, categoryFilter, sort, page, month, year, dateFrom, dateTo, limit = 20 }) {
   const { version } = useTransactions()
   const [data, setData] = useState([])
   const [meta, setMeta] = useState(EMPTY_META)
@@ -35,6 +35,10 @@ export function useTransactionsList({ search, typeFilter, categoryFilter, sort, 
         q: search || undefined,
         type: typeFilter !== 'all' ? typeFilter : undefined,
         categoryId: categoryFilter !== 'all' ? categoryFilter : undefined,
+        month,
+        year,
+        dateFrom,
+        dateTo,
         sortBy,
         sortDir,
       })
@@ -49,7 +53,7 @@ export function useTransactionsList({ search, typeFilter, categoryFilter, sort, 
     } finally {
       if (requestId === requestIdRef.current) setLoading(false)
     }
-  }, [search, typeFilter, categoryFilter, sort, page, limit])
+  }, [search, typeFilter, categoryFilter, sort, page, month, year, dateFrom, dateTo, limit])
 
   useEffect(() => {
     fetchList()
