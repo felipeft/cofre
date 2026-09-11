@@ -1,23 +1,23 @@
 const { getDatabase } = require('../database/connection')
 const DatabaseError = require('../errors/DatabaseError')
 
-function run(fn, errorMessage) {
+async function run(fn, errorMessage) {
   try {
-    return fn(getDatabase())
+    return await fn(getDatabase())
   } catch (err) {
     throw new DatabaseError(errorMessage, [err.message])
   }
 }
 
-function create({ name, type, color, icon, isActive, sortOrder, applyOffer, offerRate, applyTithe, titheRate }) {
-  return run((db) => {
-    const { lastInsertRowid } = db
+function create(userId, { name, type, color, icon, isActive, sortOrder, applyOffer, offerRate, applyTithe, titheRate }) {
+  return run(async (db) => {
+    const { lastInsertRowid } = await db
       .prepare(
-        `INSERT INTO categories (name, type, color, icon, is_active, sort_order, apply_offer, offer_rate, apply_tithe, tithe_rate)
-         VALUES (@name, @type, @color, @icon, @isActive, @sortOrder, @applyOffer, @offerRate, @applyTithe, @titheRate)`
+        `INSERT INTO categories (user_id, name, type, color, icon, is_active, sort_order, apply_offer, offer_rate, apply_tithe, tithe_rate)
+         VALUES (@userId, @name, @type, @color, @icon, @isActive, @sortOrder, @applyOffer, @offerRate, @applyTithe, @titheRate)`
       )
       .run({
-        name,
+        userId, name,
         type,
         color,
         icon,
@@ -29,14 +29,14 @@ function create({ name, type, color, icon, isActive, sortOrder, applyOffer, offe
         titheRate: titheRate ?? null,
       })
 
-    return db.prepare('SELECT * FROM categories WHERE id = ?').get(lastInsertRowid)
+    return db.prepare('SELECT * FROM categories WHERE id = ? AND user_id = ?').get(lastInsertRowid, userId)
   }, 'Não foi possível criar a categoria.')
 }
 
-function findAll({ includeInactive = false, type } = {}) {
-  return run((db) => {
-    const conditions = []
-    const params = {}
+function findAll(userId, { includeInactive = false, type } = {}) {
+  return run(async (db) => {
+    const conditions = ['user_id = @userId']
+    const params = { userId }
 
     if (!includeInactive) {
       conditions.push('is_active = 1')
@@ -54,24 +54,24 @@ function findAll({ includeInactive = false, type } = {}) {
   }, 'Não foi possível listar as categorias.')
 }
 
-function findById(id) {
-  return run((db) => db.prepare('SELECT * FROM categories WHERE id = ?').get(id), 'Não foi possível buscar a categoria.')
+function findById(userId, id) {
+  return run((db) => db.prepare('SELECT * FROM categories WHERE id = ? AND user_id = ?').get(id, userId), 'Não foi possível buscar a categoria.')
 }
 
 // Usado pela regra de "não permitir categorias duplicadas" — comparação
 // insensível a maiúsculas/minúsculas, mesma semântica do índice único.
-function findByTypeAndName(type, name, { excludeId } = {}) {
-  return run((db) => {
+function findByTypeAndName(userId, type, name, { excludeId } = {}) {
+  return run(async (db) => {
     const query = excludeId
-      ? 'SELECT * FROM categories WHERE type = ? AND name = ? COLLATE NOCASE AND id != ?'
-      : 'SELECT * FROM categories WHERE type = ? AND name = ? COLLATE NOCASE'
-    const params = excludeId ? [type, name, excludeId] : [type, name]
+      ? 'SELECT * FROM categories WHERE user_id = ? AND type = ? AND name = ? COLLATE NOCASE AND id != ?'
+      : 'SELECT * FROM categories WHERE user_id = ? AND type = ? AND name = ? COLLATE NOCASE'
+    const params = excludeId ? [userId, type, name, excludeId] : [userId, type, name]
     return db.prepare(query).get(...params)
   }, 'Não foi possível verificar duplicidade de categoria.')
 }
 
-function update(id, patch) {
-  return run((db) => {
+function update(userId, id, patch) {
+  return run(async (db) => {
     const columns = {
       name: 'name',
       type: 'type',
@@ -87,7 +87,7 @@ function update(id, patch) {
     const booleanKeys = new Set(['isActive', 'applyOffer', 'applyTithe'])
 
     const sets = []
-    const params = { id }
+    const params = { id, userId }
 
     for (const [key, column] of Object.entries(columns)) {
       if (patch[key] === undefined) continue
@@ -97,21 +97,21 @@ function update(id, patch) {
 
     sets.push("updated_at = datetime('now')")
 
-    db.prepare(`UPDATE categories SET ${sets.join(', ')} WHERE id = @id`).run(params)
-    return db.prepare('SELECT * FROM categories WHERE id = ?').get(id)
+    await db.prepare(`UPDATE categories SET ${sets.join(', ')} WHERE id = @id AND user_id = @userId`).run(params)
+    return db.prepare('SELECT * FROM categories WHERE id = ? AND user_id = ?').get(id, userId)
   }, 'Não foi possível atualizar a categoria.')
 }
 
-function setActive(id, isActive) {
-  return run((db) => {
-    db.prepare("UPDATE categories SET is_active = ?, updated_at = datetime('now') WHERE id = ?").run(isActive ? 1 : 0, id)
-    return db.prepare('SELECT * FROM categories WHERE id = ?').get(id)
+function setActive(userId, id, isActive) {
+  return run(async (db) => {
+    await db.prepare("UPDATE categories SET is_active = ?, updated_at = datetime('now') WHERE id = ? AND user_id = ?").run(isActive ? 1 : 0, id, userId)
+    return db.prepare('SELECT * FROM categories WHERE id = ? AND user_id = ?').get(id, userId)
   }, 'Não foi possível alterar o status da categoria.')
 }
 
-function remove(id) {
-  return run((db) => {
-    db.prepare('DELETE FROM categories WHERE id = ?').run(id)
+function remove(userId, id) {
+  return run(async (db) => {
+    await db.prepare('DELETE FROM categories WHERE id = ? AND user_id = ?').run(id, userId)
   }, 'Não foi possível excluir a categoria.')
 }
 

@@ -4,11 +4,11 @@ const logger = require('./utils/logger')
 const { ensureDatabaseReady } = require('./database/bootstrap')
 const { closeDatabase } = require('./database/connection')
 
-function start() {
+async function start() {
   // Garante banco criado + migrations em dia antes de aceitar qualquer
   // requisição. Em uma máquina nova, `npm run dev` sozinho já deixa tudo
   // pronto — sem passo manual.
-  ensureDatabaseReady()
+  await ensureDatabaseReady()
 
   const server = app.listen(config.port, () => {
     logger.info('Servidor iniciado', {
@@ -20,8 +20,8 @@ function start() {
 
   function shutdown(signal) {
     logger.info('Encerrando servidor', { signal })
-    server.close(() => {
-      closeDatabase()
+    server.close(async () => {
+      await closeDatabase()
       process.exit(0)
     })
   }
@@ -30,4 +30,7 @@ function start() {
   process.on('SIGTERM', () => shutdown('SIGTERM'))
 }
 
-start()
+start().catch((error) => {
+  logger.error('Falha ao iniciar o servidor', { error: error.message })
+  process.exit(1)
+})

@@ -18,11 +18,9 @@ app.use(corsMiddleware)
 app.use(express.json({ limit: config.http.jsonBodyLimit }))
 app.use(requestLogger)
 
-// Pontos reservados para quando as próximas etapas chegarem:
+// Pontos de endurecimento que podem ser avaliados conforme o uso crescer:
 //   app.use(helmet())              — cabeçalhos de segurança
 //   app.use(rateLimit(...))        — rate limiting
-//   app.use(session({ secret: config.session.secret, cookie: { httpOnly: true } })) — sessão do usuário
-//   app.use(csrfProtection)        — proteção CSRF nas rotas que alteram estado
 
 app.use(routes)
 

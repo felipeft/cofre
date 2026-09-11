@@ -11,8 +11,8 @@ const MIGRATIONS_DIR = path.join(__dirname, 'migrations')
  * migrations já rodaram, então é criada diretamente aqui em vez de como um
  * arquivo numerado em `migrations/`.
  */
-function ensureMigrationsTable(db) {
-  db.exec(`
+async function ensureMigrationsTable(db) {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
@@ -21,8 +21,8 @@ function ensureMigrationsTable(db) {
   `)
 }
 
-function getAppliedMigrations(db) {
-  const rows = db.prepare('SELECT name FROM schema_migrations ORDER BY id ASC').all()
+async function getAppliedMigrations(db) {
+  const rows = await db.prepare('SELECT name FROM schema_migrations ORDER BY id ASC').all()
   return new Set(rows.map((row) => row.name))
 }
 
@@ -40,11 +40,11 @@ function getMigrationFiles() {
  * nada. Usada tanto pelo bootstrap automático do servidor quanto pelo script
  * `npm run migrate`.
  */
-function runMigrations() {
+async function runMigrations() {
   const db = getDatabase()
-  ensureMigrationsTable(db)
+  await ensureMigrationsTable(db)
 
-  const applied = getAppliedMigrations(db)
+  const applied = await getAppliedMigrations(db)
   const files = getMigrationFiles()
   const pending = files.filter((file) => !applied.has(file))
 
@@ -59,12 +59,10 @@ function runMigrations() {
     const filePath = path.join(MIGRATIONS_DIR, file)
     const sql = fs.readFileSync(filePath, 'utf-8')
 
-    const runMigration = db.transaction(() => {
-      db.exec(sql)
-      db.prepare('INSERT INTO schema_migrations (name) VALUES (?)').run(file)
+    await db.transaction(async (tx) => {
+      await tx.exec(sql)
+      await tx.prepare('INSERT INTO schema_migrations (name) VALUES (?)').run(file)
     })
-
-    runMigration()
     appliedNow.push(file)
     logger.info('Migration aplicada', { file })
   }
@@ -77,12 +75,14 @@ module.exports = { runMigrations, ensureMigrationsTable, getMigrationFiles }
 // Permite `node src/database/migrate.js` (usado pelo script `npm run migrate`)
 // além de ser importado programaticamente pelo bootstrap do servidor.
 if (require.main === module) {
-  try {
-    const result = runMigrations()
-    logger.info('Migrations concluídas', { count: result.applied.length })
-    process.exit(0)
-  } catch (err) {
-    logger.error('Falha ao rodar migrations', { error: err.message })
-    process.exit(1)
-  }
+  ;(async () => {
+    try {
+      const result = await runMigrations()
+      logger.info('Migrations concluídas', { count: result.applied.length })
+      process.exit(0)
+    } catch (err) {
+      logger.error('Falha ao rodar migrations', { error: err.message })
+      process.exit(1)
+    }
+  })()
 }

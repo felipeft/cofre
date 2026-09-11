@@ -4,17 +4,17 @@ const asyncHandler = require('../utils/asyncHandler')
 const HTTP_STATUS = require('../constants/httpStatus')
 
 const list = asyncHandler(async (req, res) => {
-  const { data, meta } = transactionService.listTransactions(req.validated.query)
+  const { data, meta } = await transactionService.listTransactions(req.user.id, req.validated.query)
   apiResponse.success(res, { data, meta })
 })
 
 const getById = asyncHandler(async (req, res) => {
-  const data = transactionService.getTransactionById(req.validated.params.id)
+  const data = await transactionService.getTransactionById(req.user.id, req.validated.params.id)
   apiResponse.success(res, { data })
 })
 
 const create = asyncHandler(async (req, res) => {
-  const data = transactionService.createTransaction(req.validated.body)
+  const data = await transactionService.createTransaction(req.user.id, req.validated.body)
   const message = Array.isArray(data?.transactions)
     ? `${data.count} parcelas criadas com sucesso.`
     : 'Transação criada com sucesso.'
@@ -22,17 +22,17 @@ const create = asyncHandler(async (req, res) => {
 })
 
 const update = asyncHandler(async (req, res) => {
-  const data = transactionService.updateTransaction(req.validated.params.id, req.validated.body)
+  const data = await transactionService.updateTransaction(req.user.id, req.validated.params.id, req.validated.body)
   apiResponse.success(res, { data, message: 'Transação atualizada com sucesso.' })
 })
 
 const remove = asyncHandler(async (req, res) => {
-  transactionService.deleteTransaction(req.validated.params.id)
+  await transactionService.deleteTransaction(req.user.id, req.validated.params.id)
   apiResponse.success(res, { data: null, message: 'Transação excluída com sucesso.' })
 })
 
 const getSummary = asyncHandler(async (req, res) => {
-  const data = transactionService.getFinancialSummary(req.validated.query)
+  const data = await transactionService.getFinancialSummary(req.user.id, req.validated.query)
   apiResponse.success(res, { data })
 })
 

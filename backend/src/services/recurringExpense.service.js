@@ -16,19 +16,19 @@ function assertRealDate(value, field) {
   const valid = month >= 1 && month <= 12 && day >= 1 && day <= new Date(year, month, 0).getDate()
   if (!valid) throw new ValidationError(`${field} deve ser uma data válida.`, [{ field, message: 'Data inválida.' }])
 }
-function findExistingOrThrow(id) {
-  const row = recurringExpenseRepository.findById(id)
+async function findExistingOrThrow(userId, id) {
+  const row = await recurringExpenseRepository.findById(userId, id)
   if (!row) throw new NotFoundError(`Gasto recorrente ${id} não encontrado.`)
   return row
 }
-function assertExpenseCategory(categoryId) {
-  const category = categoryRepository.findById(categoryId)
+async function assertExpenseCategory(userId, categoryId) {
+  const category = await categoryRepository.findById(userId, categoryId)
   if (!category) throw new NotFoundError(`Categoria ${categoryId} não encontrada.`)
   if (category.type !== 'expense') throw new ValidationError('Gasto recorrente exige uma categoria de despesa.', [{ field: 'categoryId', message: "categoryId exige categoria type='expense'." }])
 }
-function assertUsableCard(cardId) {
+async function assertUsableCard(userId, cardId) {
   if (cardId == null) return
-  const card = cardRepository.findById(cardId)
+  const card = await cardRepository.findById(userId, cardId)
   if (!card) throw new NotFoundError(`Cartão ${cardId} não encontrado.`)
   if (!card.is_active) throw new ValidationError(`O cartão "${card.name}" está inativo e não aceita novas recorrências.`, [{ field: 'cardId', message: 'Cartão inativo.' }])
 }
@@ -40,40 +40,40 @@ function assertDates(startDate, endDate) {
   }
 }
 
-function listRecurringExpenses(query) { return recurringExpenseRepository.findAll(query).map(mapRecurringExpenseRow) }
-function getRecurringExpenseById(id) { return mapRecurringExpenseRow(findExistingOrThrow(id)) }
-function createRecurringExpense(input) {
-  assertExpenseCategory(input.categoryId); assertUsableCard(input.cardId); assertDates(input.startDate, input.endDate)
-  const row = recurringExpenseRepository.create({ ...input, source: 'recurring' })
-  ensureRecurringExpensesGenerated()
-  return mapRecurringExpenseRow(recurringExpenseRepository.findById(row.id))
+async function listRecurringExpenses(userId, query) { return (await recurringExpenseRepository.findAll(userId, query)).map(mapRecurringExpenseRow) }
+async function getRecurringExpenseById(userId, id) { return mapRecurringExpenseRow(await findExistingOrThrow(userId, id)) }
+async function createRecurringExpense(userId, input) {
+  await assertExpenseCategory(userId, input.categoryId); await assertUsableCard(userId, input.cardId); assertDates(input.startDate, input.endDate)
+  const row = await recurringExpenseRepository.create(userId, { ...input, source: 'recurring' })
+  await ensureRecurringExpensesGenerated(userId)
+  return mapRecurringExpenseRow(await recurringExpenseRepository.findById(userId, row.id))
 }
-function updateRecurringExpense(id, patch) {
-  const current = findExistingOrThrow(id)
+async function updateRecurringExpense(userId, id, patch) {
+  const current = await findExistingOrThrow(userId, id)
   const categoryId = patch.categoryId ?? current.category_id
   const cardId = patch.cardId === undefined ? current.card_id : patch.cardId
   const startDate = patch.startDate ?? current.start_date
   const endDate = patch.endDate === undefined ? current.end_date : patch.endDate
-  assertExpenseCategory(categoryId)
+  await assertExpenseCategory(userId, categoryId)
   // Permite editar/desativar uma regra histórica que aponta para cartão
   // posteriormente inativado, mas não trocar/criar um vínculo inativo.
-  if (patch.cardId !== undefined && patch.cardId !== null && patch.cardId !== current.card_id) assertUsableCard(cardId)
+  if (patch.cardId !== undefined && patch.cardId !== null && patch.cardId !== current.card_id) await assertUsableCard(userId, cardId)
   assertDates(startDate, endDate)
-  const row = recurringExpenseRepository.update(id, patch)
+  const row = await recurringExpenseRepository.update(userId, id, patch)
   // Ocorrências existentes nunca são atualizadas; só preenche competências ainda ausentes.
-  ensureRecurringExpensesGenerated()
+  await ensureRecurringExpensesGenerated(userId)
   return mapRecurringExpenseRow(row)
 }
 // DELETE é encerramento lógico deliberadamente: preserva configuração e fatos.
-function deleteRecurringExpense(id) {
-  findExistingOrThrow(id)
-  const row = recurringExpenseRepository.update(id, { isActive: false })
+async function deleteRecurringExpense(userId, id) {
+  await findExistingOrThrow(userId, id)
+  const row = await recurringExpenseRepository.update(userId, id, { isActive: false })
   return mapRecurringExpenseRow(row)
 }
 
-function ensureRecurringExpensesGenerated({ asOfDate = todayIso() } = {}) {
+async function ensureRecurringExpensesGenerated(userId, { asOfDate = todayIso() } = {}) {
   assertRealDate(asOfDate, 'asOfDate')
-  const rows = recurringExpenseRepository.findActive()
+  const rows = await recurringExpenseRepository.findActive(userId)
   const drafts = rows.flatMap((row) => {
     const recurringExpense = mapRecurringExpenseRow(row)
     // Um cartão desativado não recebe novos lançamentos; os fatos já
@@ -90,7 +90,7 @@ function ensureRecurringExpensesGenerated({ asOfDate = todayIso() } = {}) {
       ...occurrence,
     }))
   })
-  const changes = recurringExpenseRepository.createOccurrences(drafts)
+  const changes = await recurringExpenseRepository.createOccurrences(userId, drafts)
   return { checked: drafts.length, created: changes.reduce((total, change) => total + change, 0) }
 }
 

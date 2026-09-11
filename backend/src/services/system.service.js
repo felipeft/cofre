@@ -14,8 +14,8 @@ function getApiInfo() {
   }
 }
 
-function getHealth() {
-  const databaseConnected = systemRepository.ping()
+async function getHealth() {
+  const databaseConnected = await systemRepository.ping()
 
   return {
     status: databaseConnected ? 'ok' : 'degraded',
@@ -33,7 +33,7 @@ function getVersion() {
   }
 }
 
-function getStatus() {
+async function getStatus() {
   const memory = process.memoryUsage()
 
   return {
@@ -48,8 +48,8 @@ function getStatus() {
       heapUsedMb: Math.round(memory.heapUsed / 1024 / 1024),
     },
     database: {
-      path: config.database.path,
-      connected: systemRepository.ping(),
+      provider: config.database.tursoUrl ? 'turso' : 'local',
+      connected: await systemRepository.ping(),
     },
   }
 }

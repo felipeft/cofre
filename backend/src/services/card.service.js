@@ -1,69 +1,73 @@
 const cardRepository = require('../repositories/card.repository')
 const transactionRepository = require('../repositories/transaction.repository')
 const cardPaymentRepository = require('../repositories/cardPayment.repository')
+const recurringExpenseRepository = require('../repositories/recurringExpense.repository')
 const { mapCardRow } = require('../utils/mappers/card.mapper')
 const { calculateCardLimitUsage } = require('../domain/cardLimit')
 const NotFoundError = require('../errors/NotFoundError')
 const ConflictError = require('../errors/ConflictError')
 
-function findExistingOrThrow(id) {
-  const row = cardRepository.findById(id)
+async function findExistingOrThrow(userId, id) {
+  const row = await cardRepository.findById(userId, id)
   if (!row) throw new NotFoundError(`Cartão ${id} não encontrado.`)
   return row
 }
 
-function assertNotDuplicate(name, { excludeId } = {}) {
-  const existing = cardRepository.findByName(name, { excludeId })
+async function assertNotDuplicate(userId, name, { excludeId } = {}) {
+  const existing = await cardRepository.findByName(userId, name, { excludeId })
   if (existing) {
     throw new ConflictError(`Já existe um cartão chamado "${name}".`)
   }
 }
 
-function listCards({ includeInactive }) {
-  return cardRepository.findAll({ includeInactive }).map(mapCardRow)
+async function listCards(userId, { includeInactive }) {
+  return (await cardRepository.findAll(userId, { includeInactive })).map(mapCardRow)
 }
 
-function getCardById(id) {
-  return mapCardRow(findExistingOrThrow(id))
+async function getCardById(userId, id) {
+  return mapCardRow(await findExistingOrThrow(userId, id))
 }
 
-function createCard(input) {
-  assertNotDuplicate(input.name)
-  const row = cardRepository.create(input)
+async function createCard(userId, input) {
+  await assertNotDuplicate(userId, input.name)
+  const row = await cardRepository.create(userId, input)
   return mapCardRow(row)
 }
 
-function updateCard(id, patch) {
-  findExistingOrThrow(id)
+async function updateCard(userId, id, patch) {
+  await findExistingOrThrow(userId, id)
   if (patch.name !== undefined) {
-    assertNotDuplicate(patch.name, { excludeId: id })
+    await assertNotDuplicate(userId, patch.name, { excludeId: id })
   }
-  const row = cardRepository.update(id, patch)
+  const row = await cardRepository.update(userId, id, patch)
   return mapCardRow(row)
 }
 
 // DELETE significa exclusão física. Um cartão referenciado não pode ser
 // apagado sem apagar a história financeira que ele identifica; em vez de
 // escondê-lo via soft delete, recusamos a operação de forma explícita.
-function deleteCard(id) {
-  findExistingOrThrow(id)
+async function deleteCard(userId, id) {
+  await findExistingOrThrow(userId, id)
 
-  const isUsed = transactionRepository.existsByCardId(id) || cardPaymentRepository.existsByCardId(id)
+  const isUsed =
+    (await transactionRepository.existsByCardId(userId, id)) ||
+    (await cardPaymentRepository.existsByCardId(userId, id)) ||
+    (await recurringExpenseRepository.existsByCardId(userId, id))
 
   if (isUsed) {
-    throw new ConflictError('Não é possível excluir um cartão que possui transações ou pagamentos. Exclua os registros vinculados primeiro.')
+    throw new ConflictError('Não é possível excluir um cartão que possui transações, recorrências ou pagamentos. Exclua ou ajuste os registros vinculados primeiro.')
   }
 
-  cardRepository.remove(id)
+  await cardRepository.remove(userId, id)
   return { card: null }
 }
 
 // GET /cards/:id/summary — limite total, usado e disponível (ver
 // domain/cardLimit.js para a regra de cálculo).
-function getCardSummary(id) {
-  const cardRow = findExistingOrThrow(id)
-  const openTransactions = transactionRepository.findOpenByCardId(id)
-  const payments = cardPaymentRepository.findByCardId(id)
+async function getCardSummary(userId, id) {
+  const cardRow = await findExistingOrThrow(userId, id)
+  const openTransactions = await transactionRepository.findOpenByCardId(userId, id)
+  const payments = await cardPaymentRepository.findByCardId(userId, id)
 
   const usage = calculateCardLimitUsage({
     creditLimit: cardRow.credit_limit,
@@ -85,14 +89,14 @@ function getCardSummary(id) {
   }
 }
 
-function registerPayment(id, input) {
-  const card = findExistingOrThrow(id)
-  const summary = getCardSummary(id)
+async function registerPayment(userId, id, input) {
+  const card = await findExistingOrThrow(userId, id)
+  const summary = await getCardSummary(userId, id)
   if (input.amount > summary.usedLimit) {
     throw new ConflictError(`O pagamento não pode exceder o limite atualmente utilizado (${summary.usedLimit}).`)
   }
-  const row = cardPaymentRepository.create({ cardId: card.id, ...input })
-  return { payment: require('../utils/mappers/cardPayment.mapper').mapCardPaymentRow(row), summary: getCardSummary(id) }
+  const row = await cardPaymentRepository.create(userId, { cardId: card.id, ...input })
+  return { payment: require('../utils/mappers/cardPayment.mapper').mapCardPaymentRow(row), summary: await getCardSummary(userId, id) }
 }
 
 module.exports = { listCards, getCardById, createCard, updateCard, deleteCard, getCardSummary, registerPayment }

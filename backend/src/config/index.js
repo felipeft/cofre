@@ -27,6 +27,8 @@ const config = Object.freeze({
 
   database: Object.freeze({
     path: path.resolve(process.cwd(), env.DATABASE_PATH),
+    tursoUrl: env.TURSO_DATABASE_URL ?? null,
+    tursoAuthToken: env.TURSO_AUTH_TOKEN ?? null,
   }),
 
   // Timeouts e limites gerais da aplicação. Centralizados aqui para que
@@ -36,16 +38,19 @@ const config = Object.freeze({
     jsonBodyLimit: '1mb',
   }),
 
-  // Preenchido de verdade quando a etapa de autenticação Google OAuth for
-  // implementada. A estrutura já existe para que aquela etapa só precise
-  // adicionar lógica, não decidir onde a configuração mora.
+  // Configuração do fluxo OAuth mantida exclusivamente no backend.
   googleAuth: Object.freeze({
     clientId: env.GOOGLE_CLIENT_ID ?? null,
     clientSecret: env.GOOGLE_CLIENT_SECRET ?? null,
+    callbackUrl: env.GOOGLE_CALLBACK_URL ?? null,
+    allowedEmails: Object.freeze(env.AUTH_ALLOWED_EMAILS),
+    legacyOwnerEmail: env.AUTH_LEGACY_OWNER_EMAIL ?? null,
   }),
 
   session: Object.freeze({
     secret: env.SESSION_SECRET ?? null,
+    ttlDays: env.SESSION_TTL_DAYS,
+    cookieName: env.SESSION_COOKIE_NAME,
   }),
 
   // Preenchido quando a integração com Google Sheets for implementada.

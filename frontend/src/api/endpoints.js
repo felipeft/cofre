@@ -19,7 +19,8 @@ export const ENDPOINTS = {
   recurringExpense: (id) => `/recurring-expenses/${id}`,
   auth: {
     google: '/auth/google',
-    session: '/auth/session',
+    me: '/auth/me',
+    logout: '/auth/logout',
   },
   sheets: {
     sync: '/integrations/google-sheets/sync',

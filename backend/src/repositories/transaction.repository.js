@@ -1,9 +1,9 @@
 const { getDatabase } = require('../database/connection')
 const DatabaseError = require('../errors/DatabaseError')
 
-function run(fn, errorMessage) {
+async function run(fn, errorMessage) {
   try {
-    return fn(getDatabase())
+    return await fn(getDatabase())
   } catch (err) {
     throw new DatabaseError(errorMessage, [err.message])
   }
@@ -36,9 +36,9 @@ const SORT_COLUMNS = {
   createdAt: 't.created_at',
 }
 
-function buildWhere({ search, type, categoryId, cardId, installmentGroupId, month, year, dateFrom, dateTo, status }) {
-  const conditions = []
-  const params = {}
+function buildWhere(userId, { search, type, categoryId, cardId, installmentGroupId, month, year, dateFrom, dateTo, status }) {
+  const conditions = ['t.user_id = @userId']
+  const params = { userId }
 
   if (search) {
     conditions.push('(t.description LIKE @search OR c.name LIKE @search OR t.notes LIKE @search)')
@@ -85,14 +85,14 @@ function buildWhere({ search, type, categoryId, cardId, installmentGroupId, mont
   return { where, params }
 }
 
-function findMany({ page, limit, sortBy, sortDir, ...filters }) {
-  return run((db) => {
-    const { where, params } = buildWhere(filters)
+function findMany(userId, { page, limit, sortBy, sortDir, ...filters }) {
+  return run(async (db) => {
+    const { where, params } = buildWhere(userId, filters)
     const orderColumn = SORT_COLUMNS[sortBy] ?? SORT_COLUMNS.date
     const orderDirection = sortDir === 'asc' ? 'ASC' : 'DESC'
     const offset = (page - 1) * limit
 
-    const rows = db
+    const rows = await db
       .prepare(
         `${SELECT_WITH_CATEGORY}
          ${where}
@@ -101,7 +101,7 @@ function findMany({ page, limit, sortBy, sortDir, ...filters }) {
       )
       .all({ ...params, limit, offset })
 
-    const { total } = db
+    const { total } = await db
       .prepare(`SELECT COUNT(*) AS total FROM transactions t JOIN categories c ON c.id = t.category_id ${where}`)
       .get(params)
 
@@ -109,25 +109,26 @@ function findMany({ page, limit, sortBy, sortDir, ...filters }) {
   }, 'Não foi possível listar as transações.')
 }
 
-function findById(id) {
-  return run((db) => db.prepare(`${SELECT_WITH_CATEGORY} WHERE t.id = ?`).get(id), 'Não foi possível buscar a transação.')
+function findById(userId, id) {
+  return run((db) => db.prepare(`${SELECT_WITH_CATEGORY} WHERE t.id = ? AND t.user_id = ?`).get(id, userId), 'Não foi possível buscar a transação.')
 }
 
 const INSERT_COLUMNS = `
-  description, amount, type, category_id, date,
+  user_id, description, amount, type, category_id, date,
   competence_month, competence_year, notes, source,
   is_recurring, is_fixed, card, card_id, installment_current, installment_total,
   installment_group_id, tags, status, offer_amount, tithe_amount, offer_rate_applied, tithe_rate_applied
 `
 const INSERT_PLACEHOLDERS = `
-  @description, @amount, @type, @categoryId, @date,
+  @userId, @description, @amount, @type, @categoryId, @date,
   @competenceMonth, @competenceYear, @notes, @source,
   @isRecurring, @isFixed, @card, @cardId, @installmentCurrent, @installmentTotal,
   @installmentGroupId, @tags, @status, @offerAmount, @titheAmount, @offerRateApplied, @titheRateApplied
 `
 
-function toInsertParams(data) {
+function toInsertParams(userId, data) {
   return {
+    userId,
     description: data.description,
     amount: data.amount,
     type: data.type,
@@ -153,34 +154,31 @@ function toInsertParams(data) {
   }
 }
 
-function create(data) {
-  return run((db) => {
-    const { lastInsertRowid } = db
+function create(userId, data) {
+  return run(async (db) => {
+    const { lastInsertRowid } = await db
       .prepare(`INSERT INTO transactions (${INSERT_COLUMNS}) VALUES (${INSERT_PLACEHOLDERS})`)
-      .run(toInsertParams(data))
+      .run(toInsertParams(userId, data))
 
-    return db.prepare(`${SELECT_WITH_CATEGORY} WHERE t.id = ?`).get(lastInsertRowid)
+    return db.prepare(`${SELECT_WITH_CATEGORY} WHERE t.id = ? AND t.user_id = ?`).get(lastInsertRowid, userId)
   }, 'Não foi possível criar a transação.')
 }
 
 // Cria várias transações numa única transação SQLite (BEGIN/COMMIT) — usada
 // pela geração de parcelas: OU as N parcelas são criadas todas, OU nenhuma
-// fica salva. `db.transaction()` do better-sqlite3 faz rollback automático
-// se qualquer `insertOne.run()` lançar no meio do laço.
-function createMany(dataArray) {
-  return run((db) => {
-    const insertOne = db.prepare(`INSERT INTO transactions (${INSERT_COLUMNS}) VALUES (${INSERT_PLACEHOLDERS})`)
-    const selectOne = db.prepare(`${SELECT_WITH_CATEGORY} WHERE t.id = ?`)
-
-    const insertAll = db.transaction((rows) => {
-      return rows.map((row) => {
-        const { lastInsertRowid } = insertOne.run(toInsertParams(row))
-        return selectOne.get(lastInsertRowid)
-      })
-    })
-
-    return insertAll(dataArray)
-  }, 'Não foi possível criar as parcelas.')
+// fica salva. A transação libSQL faz rollback automático se qualquer
+// `insertOne.run()` lançar no meio do laço.
+function createMany(userId, dataArray) {
+  return run((db) => db.transaction(async (tx) => {
+    const insertOne = tx.prepare(`INSERT INTO transactions (${INSERT_COLUMNS}) VALUES (${INSERT_PLACEHOLDERS})`)
+    const selectOne = tx.prepare(`${SELECT_WITH_CATEGORY} WHERE t.id = ? AND t.user_id = ?`)
+    const created = []
+    for (const row of dataArray) {
+      const { lastInsertRowid } = await insertOne.run(toInsertParams(userId, row))
+      created.push(await selectOne.get(lastInsertRowid, userId))
+    }
+    return created
+  }), 'Não foi possível criar as parcelas.')
 }
 
 const UPDATE_COLUMNS = {
@@ -210,10 +208,10 @@ const UPDATE_COLUMNS = {
 
 const BOOLEAN_KEYS = new Set(['isRecurring', 'isFixed'])
 
-function update(id, patch) {
-  return run((db) => {
+function update(userId, id, patch) {
+  return run(async (db) => {
     const sets = []
-    const params = { id }
+    const params = { id, userId }
 
     for (const [key, column] of Object.entries(UPDATE_COLUMNS)) {
       if (patch[key] === undefined) continue
@@ -223,14 +221,14 @@ function update(id, patch) {
 
     sets.push("updated_at = datetime('now')")
 
-    db.prepare(`UPDATE transactions SET ${sets.join(', ')} WHERE id = @id`).run(params)
-    return db.prepare(`${SELECT_WITH_CATEGORY} WHERE t.id = ?`).get(id)
+    await db.prepare(`UPDATE transactions SET ${sets.join(', ')} WHERE id = @id AND user_id = @userId`).run(params)
+    return db.prepare(`${SELECT_WITH_CATEGORY} WHERE t.id = ? AND t.user_id = ?`).get(id, userId)
   }, 'Não foi possível atualizar a transação.')
 }
 
-function remove(id) {
-  return run((db) => {
-    db.prepare('DELETE FROM transactions WHERE id = ?').run(id)
+function remove(userId, id) {
+  return run(async (db) => {
+    await db.prepare('DELETE FROM transactions WHERE id = ? AND user_id = ?').run(id, userId)
   }, 'Não foi possível excluir a transação.')
 }
 
@@ -239,32 +237,32 @@ function remove(id) {
 // o período inteiro, não uma página dele. Separado de `findMany` para não
 // forçar esse método genérico a ter um "modo sem paginação" escondido atrás
 // de um parâmetro.
-function findAllForSummary({ month, year }) {
+function findAllForSummary(userId, { month, year }) {
   return run(
     (db) =>
       db
         .prepare(
-          `${SELECT_WITH_CATEGORY} WHERE t.competence_month = @month AND t.competence_year = @year`
+          `${SELECT_WITH_CATEGORY} WHERE t.user_id = @userId AND t.competence_month = @month AND t.competence_year = @year`
         )
-        .all({ month, year }),
+        .all({ userId, month, year }),
     'Não foi possível calcular o resumo financeiro.'
   )
 }
 
 // Usado pela regra de negócio de categorias: "não permitir excluir
 // categoria utilizada em transações".
-function existsByCategoryId(categoryId) {
-  return run((db) => {
-    const row = db.prepare('SELECT EXISTS(SELECT 1 FROM transactions WHERE category_id = ?) AS used').get(categoryId)
+function existsByCategoryId(userId, categoryId) {
+  return run(async (db) => {
+    const row = await db.prepare('SELECT EXISTS(SELECT 1 FROM transactions WHERE user_id = ? AND category_id = ?) AS used').get(userId, categoryId)
     return Boolean(row.used)
   }, 'Não foi possível verificar o uso da categoria.')
 }
 
 // Mesma regra, para cartões: "não permitir excluir cartão utilizado em
 // transações" (card.service.js).
-function existsByCardId(cardId) {
-  return run((db) => {
-    const row = db.prepare('SELECT EXISTS(SELECT 1 FROM transactions WHERE card_id = ?) AS used').get(cardId)
+function existsByCardId(userId, cardId) {
+  return run(async (db) => {
+    const row = await db.prepare('SELECT EXISTS(SELECT 1 FROM transactions WHERE user_id = ? AND card_id = ?) AS used').get(userId, cardId)
     return Boolean(row.used)
   }, 'Não foi possível verificar o uso do cartão.')
 }
@@ -272,12 +270,12 @@ function existsByCardId(cardId) {
 // Todas as despesas em aberto (não canceladas) de um cartão — usado pelo
 // cálculo de limite utilizado (domain/cardLimit.js). Sem paginação pelo
 // mesmo motivo de `findAllForSummary`: precisa do conjunto inteiro pra somar.
-function findOpenByCardId(cardId) {
+function findOpenByCardId(userId, cardId) {
   return run(
     (db) =>
       db
-        .prepare(`${SELECT_WITH_CATEGORY} WHERE t.card_id = @cardId AND t.status != 'cancelled'`)
-        .all({ cardId }),
+        .prepare(`${SELECT_WITH_CATEGORY} WHERE t.user_id = @userId AND t.card_id = @cardId AND t.status != 'cancelled'`)
+        .all({ userId, cardId }),
     'Não foi possível calcular o limite utilizado do cartão.'
   )
 }

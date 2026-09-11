@@ -12,20 +12,20 @@ const NotFoundError = require('../errors/NotFoundError')
 const ValidationError = require('../errors/ValidationError')
 const { ensureRecurringExpensesGenerated } = require('./recurringExpense.service')
 
-function findExistingOrThrow(id) {
-  const row = transactionRepository.findById(id)
+async function findExistingOrThrow(userId, id) {
+  const row = await transactionRepository.findById(userId, id)
   if (!row) throw new NotFoundError(`Transação ${id} não encontrada.`)
   return row
 }
 
-function findCategoryOrThrow(categoryId) {
-  const category = categoryRepository.findById(categoryId)
+async function findCategoryOrThrow(userId, categoryId) {
+  const category = await categoryRepository.findById(userId, categoryId)
   if (!category) throw new NotFoundError(`Categoria ${categoryId} não encontrada.`)
   return category
 }
 
-function findCardOrThrow(cardId) {
-  const card = cardRepository.findById(cardId)
+async function findCardOrThrow(userId, cardId) {
+  const card = await cardRepository.findById(userId, cardId)
   if (!card) throw new NotFoundError(`Cartão ${cardId} não encontrado.`)
   return card
 }
@@ -71,12 +71,12 @@ function toDomainCategory(categoryRow) {
   }
 }
 
-function listTransactions(query) {
-  ensureRecurringExpensesGenerated()
+async function listTransactions(userId, query) {
+  await ensureRecurringExpensesGenerated(userId)
   const { page, limit, q, type, categoryId, cardId, installmentGroupId, month, year, dateFrom, dateTo, status, sortBy, sortDir } =
     query
 
-  const { rows, total } = transactionRepository.findMany({
+  const { rows, total } = await transactionRepository.findMany(userId, {
     page,
     limit,
     search: q,
@@ -99,8 +99,8 @@ function listTransactions(query) {
   }
 }
 
-function getTransactionById(id) {
-  return mapTransactionRow(findExistingOrThrow(id))
+async function getTransactionById(userId, id) {
+  return mapTransactionRow(await findExistingOrThrow(userId, id))
 }
 
 // Uma compra parcelada é criada através do mesmo POST /transactions —
@@ -111,18 +111,18 @@ function isInstallmentPurchase(input) {
   return input.cardId != null && input.installmentTotal != null && input.installmentTotal > 1
 }
 
-function createTransaction(input) {
-  const category = findCategoryOrThrow(input.categoryId)
+async function createTransaction(userId, input) {
+  const category = await findCategoryOrThrow(userId, input.categoryId)
   assertCategoryMatchesType(category, input.type)
 
   let cardRow = null
   if (input.cardId != null) {
-    cardRow = findCardOrThrow(input.cardId)
+    cardRow = await findCardOrThrow(userId, input.cardId)
     assertCardUsableForExpense(cardRow, input.type)
   }
 
   if (isInstallmentPurchase(input)) {
-    return createInstallmentPurchase(input, cardRow)
+    return createInstallmentPurchase(userId, input, cardRow)
   }
 
   const competence =
@@ -135,7 +135,7 @@ function createTransaction(input) {
   // evita um `if (type === 'income')` espalhado pelo service.
   const obligations = calculateIncomeObligations({ amount: input.amount, category: toDomainCategory(category) })
 
-  const row = transactionRepository.create({
+  const row = await transactionRepository.create(userId, {
     ...input,
     ...competence,
     ...obligations,
@@ -148,7 +148,7 @@ function createTransaction(input) {
 // Gera as N parcelas de uma compra e as persiste atomicamente (todas ou
 // nenhuma — ver transactionRepository.createMany). Nunca cria uma linha
 // extra para "a compra original": o conjunto de parcelas *é* a compra.
-function createInstallmentPurchase(input, cardRow) {
+async function createInstallmentPurchase(userId, input, cardRow) {
   const plan = buildInstallmentPlan({
     totalAmount: input.amount,
     installmentsCount: input.installmentTotal,
@@ -188,7 +188,7 @@ function createInstallmentPurchase(input, cardRow) {
     titheRateApplied: null,
   }))
 
-  const createdRows = transactionRepository.createMany(rows)
+  const createdRows = await transactionRepository.createMany(userId, rows)
 
   return {
     installmentGroupId,
@@ -197,15 +197,15 @@ function createInstallmentPurchase(input, cardRow) {
   }
 }
 
-function updateTransaction(id, patch) {
-  const current = findExistingOrThrow(id)
+async function updateTransaction(userId, id, patch) {
+  const current = await findExistingOrThrow(userId, id)
 
   const effectiveType = patch.type ?? current.type
   const effectiveCategoryId = patch.categoryId ?? current.category_id
 
   let effectiveCategoryRow = null
   if (patch.type !== undefined || patch.categoryId !== undefined) {
-    effectiveCategoryRow = findCategoryOrThrow(effectiveCategoryId)
+    effectiveCategoryRow = await findCategoryOrThrow(userId, effectiveCategoryId)
     assertCategoryMatchesType(effectiveCategoryRow, effectiveType)
   }
 
@@ -214,7 +214,7 @@ function updateTransaction(id, patch) {
   // transação já parcelada não regenera as parcelas-irmãs (fora do escopo
   // desta etapa — ver README).
   if (patch.cardId !== undefined && patch.cardId !== null) {
-    const cardRow = findCardOrThrow(patch.cardId)
+    const cardRow = await findCardOrThrow(userId, patch.cardId)
     assertCardUsableForExpense(cardRow, effectiveType)
   }
 
@@ -235,12 +235,12 @@ function updateTransaction(id, patch) {
   const amountChanged = patch.amount !== undefined
   const categoryOrTypeChanged = patch.type !== undefined || patch.categoryId !== undefined
   if (amountChanged || categoryOrTypeChanged) {
-    const categoryForCalc = effectiveCategoryRow ?? categoryRepository.findById(effectiveCategoryId)
+    const categoryForCalc = effectiveCategoryRow ?? await categoryRepository.findById(userId, effectiveCategoryId)
     const effectiveAmount = patch.amount ?? current.amount
     obligationsPatch = calculateIncomeObligations({ amount: effectiveAmount, category: toDomainCategory(categoryForCalc) })
   }
 
-  const row = transactionRepository.update(id, {
+  const row = await transactionRepository.update(userId, id, {
     ...patch,
     ...competencePatch,
     ...obligationsPatch,
@@ -250,17 +250,17 @@ function updateTransaction(id, patch) {
   return mapTransactionRow(row)
 }
 
-function deleteTransaction(id) {
-  findExistingOrThrow(id)
-  transactionRepository.remove(id)
+async function deleteTransaction(userId, id) {
+  await findExistingOrThrow(userId, id)
+  await transactionRepository.remove(userId, id)
 }
 
 // Resumo financeiro de uma competência (mês/ano) — receitas, despesas,
 // oferta, dízimo e saldo. A regra de como esses números se combinam vive em
 // domain/financialSummary.js; aqui só busca os dados e delega o cálculo.
-function getFinancialSummary({ month, year }) {
-  ensureRecurringExpensesGenerated()
-  const rows = transactionRepository.findAllForSummary({ month, year })
+async function getFinancialSummary(userId, { month, year }) {
+  await ensureRecurringExpensesGenerated(userId)
+  const rows = await transactionRepository.findAllForSummary(userId, { month, year })
   const transactions = rows.map(mapTransactionRow)
   return calculateFinancialSummary(transactions)
 }

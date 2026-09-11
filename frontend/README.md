@@ -1,7 +1,8 @@
 # Cofre — Frontend de controle financeiro pessoal
 
-Frontend em React 19 + Vite + Tailwind v4, integrado à API real do Cofre
-(Node.js + Express + SQLite). Nenhum dado é mockado — tudo vem do backend.
+Frontend em React 19 + Vite + Tailwind v4, integrado à API real do Cofre.
+Possui login Google, sessão consultada no backend e proteção da aplicação sem
+armazenar tokens no navegador. Nenhum dado é mockado — tudo vem do backend.
 
 ## Como rodar
 
@@ -30,6 +31,7 @@ src/
 │  ├─ category.service.js     GET/POST/PUT/DELETE /categories
 │  ├─ card.service.js         CRUD, resumo de limite e pagamento de fatura
 │  ├─ recurringExpense.service.js  CRUD das definições recorrentes
+│  ├─ auth.service.js         sessão, início do login Google e logout
 │  ├─ dashboard.service.js    calcula indicadores a partir de GET /transactions (sem endpoint dedicado ainda)
 │  └─ analytics.service.js    idem, para a página de Análises
 │
@@ -47,6 +49,7 @@ src/
 │  ├─ CategoriesContext.jsx    lista de categorias + CRUD — uma só fonte para toda a árvore
 │  ├─ CardsContext.jsx         cartões ativos/inativos + CRUD
 │  ├─ RecurringExpensesContext.jsx  definições recorrentes + CRUD
+│  ├─ AuthContext.jsx           loading, usuário e estado autenticado
 │  └─ ToastContext.jsx         fila de notificações
 │
 ├─ constants/                Valores fixos fora dos componentes
@@ -70,7 +73,7 @@ src/
 │
 ├─ pages/                    Uma página por rota — só orquestram hooks + componentes
 │  ├─ Dashboard.jsx  RegisterTransaction.jsx  History.jsx  Analytics.jsx
-│  └─ Categories.jsx  Cards.jsx  RecurringExpenses.jsx  Settings.jsx
+│  └─ Categories.jsx  Cards.jsx  RecurringExpenses.jsx  Settings.jsx  Login.jsx
 │
 ├─ utils/                    Funções puras sem estado
 │  ├─ formatters.js           moeda, datas
@@ -110,17 +113,16 @@ exclusão recusada pelo backend não faz o item desaparecer da interface.
   outro lugar — eram mocks. Agora é uma escrita de verdade no banco, e o
   restante do app (dropdown do formulário, filtro do Histórico) precisa
   saber na hora: virou Context para ter uma única fonte de verdade.
-- **`api/client.js` já usa `credentials: 'include'`** mesmo sem autenticação
-  ainda — quando a sessão HTTP-only existir, nenhuma chamada precisa ser
-  revisitada.
+- **`api/client.js` usa `credentials: 'include'`** e concentra o tratamento de
+  `401`; o token de sessão nunca fica disponível ao JavaScript.
 - **Sem React Query/SWR.** Conforme pedido nesta etapa, o cache/estado de
   requisição é feito só com `useState`/`useEffect` nos hooks acima — simples
   o suficiente para o tamanho atual do app.
 
 ## Como isso ajuda nas próximas etapas
 
-- **OAuth Google / sessão:** o header de autenticação entra em
-  `api/client.js` (um único lugar); os Contexts continuam do mesmo jeito.
+- **OAuth Google / sessão:** `AuthContext` consulta `/auth/me` antes de liberar
+  a aplicação, evitando o piscar de telas; logout invalida a sessão no backend.
 - **Google Sheets:** vira só mais um Service (`sheets.service.js`) e um
   endpoint em `api/endpoints.js` — já reservado (`ENDPOINTS.sheets.sync`).
 - **Endpoint dedicado de Dashboard/Analytics:** troca só o corpo de

@@ -5,4 +5,5 @@ module.exports = {
   DatabaseError: require('./DatabaseError'),
   ForbiddenError: require('./ForbiddenError'),
   ConflictError: require('./ConflictError'),
+  UnauthorizedError: require('./UnauthorizedError'),
 }

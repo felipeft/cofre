@@ -14,32 +14,42 @@ import { CardsProvider } from '@/contexts/CardsContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { RecurringExpensesProvider } from '@/contexts/RecurringExpensesContext'
 import { ROUTES } from '@/constants/routes'
+import { AuthProvider } from '@/contexts/AuthContext'
+import AuthGate from '@/components/auth/AuthGate'
 
-export default function App() {
+function AuthenticatedApp() {
   return (
     <CategoriesProvider>
       <CardsProvider>
         <RecurringExpensesProvider>
           <TransactionsProvider>
-            <ToastProvider>
-              <BrowserRouter>
-                <Routes>
-                  <Route element={<AppShell />}>
-                    <Route path={ROUTES.dashboard} element={<Dashboard />} />
-                    <Route path={ROUTES.register} element={<RegisterTransaction />} />
-                    <Route path={ROUTES.history} element={<History />} />
-                    <Route path={ROUTES.analytics} element={<Analytics />} />
-                    <Route path={ROUTES.categories} element={<Categories />} />
-                    <Route path={ROUTES.cards} element={<Cards />} />
-                    <Route path={ROUTES.recurringExpenses} element={<RecurringExpenses />} />
-                    <Route path={ROUTES.settings} element={<Settings />} />
-                  </Route>
-                </Routes>
-              </BrowserRouter>
-            </ToastProvider>
+            <Routes>
+              <Route element={<AppShell />}>
+                <Route path={ROUTES.dashboard} element={<Dashboard />} />
+                <Route path={ROUTES.register} element={<RegisterTransaction />} />
+                <Route path={ROUTES.history} element={<History />} />
+                <Route path={ROUTES.analytics} element={<Analytics />} />
+                <Route path={ROUTES.categories} element={<Categories />} />
+                <Route path={ROUTES.cards} element={<Cards />} />
+                <Route path={ROUTES.recurringExpenses} element={<RecurringExpenses />} />
+                <Route path={ROUTES.settings} element={<Settings />} />
+              </Route>
+            </Routes>
           </TransactionsProvider>
         </RecurringExpensesProvider>
       </CardsProvider>
     </CategoriesProvider>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <ToastProvider>
+        <BrowserRouter>
+          <AuthGate><AuthenticatedApp /></AuthGate>
+        </BrowserRouter>
+      </ToastProvider>
+    </AuthProvider>
   )
 }

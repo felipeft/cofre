@@ -5,7 +5,8 @@ gradualmente uma planilha de uso cotidiano por um sistema estruturado,
 confiável e preparado para evoluir com autenticação, integração ao Google
 Sheets, inteligência financeira, Engenharia de Dados e IA.
 
-> **Status atual:** Fase 3 concluída — Etapa 9, Gastos Recorrentes.
+> **Status atual:** Fase 4 em andamento — Etapa 10 implementada localmente e
+> aguardando validação de produção do Google OAuth, Turso e Safari no iPhone.
 
 ## Acesso
 
@@ -32,6 +33,8 @@ período sem uso pode levar alguns segundos enquanto o serviço é reativado.
 - Geração automática e idempotente das ocorrências recorrentes.
 - Pagamento manual de fatura para liberar o limite comprometido.
 - Interface responsiva para desktop e dispositivos móveis.
+- Login Google com whitelist de e-mails e sessão persistente HTTP-only.
+- Isolamento dos dados financeiros por usuário autenticado.
 
 ## Regras importantes do domínio
 
@@ -74,8 +77,8 @@ suas ocorrências anteriores permanecem intactas.
 
 - Node.js 22.x
 - Express 5
-- SQLite
-- better-sqlite3
+- libSQL (`@libsql/client`)
+- Turso em produção e arquivo SQLite/libSQL no desenvolvimento
 - Zod
 - dotenv
 - migrations SQL
@@ -95,6 +98,7 @@ suas ocorrências anteriores permanecem intactas.
 - GitHub
 - Vercel para o frontend
 - Render para o backend
+- Turso para persistência do banco
 
 ## Arquitetura
 
@@ -105,7 +109,7 @@ Frontend
 Page → Hook/Context → Service → API Client → HTTP
 
 Backend
-Route → Validation → Controller → Service → Domain/Repository → SQLite
+Route → Validation/Auth → Controller → Service → Domain/Repository → libSQL/Turso
                                              ↓
                                            Mapper
 ```
@@ -141,7 +145,9 @@ Estrutura principal:
 
 ## Banco de dados
 
-SQLite é a fonte oficial dos dados. A conexão usa foreign keys e modo WAL.
+O banco libSQL é a fonte oficial dos dados. Em produção ele fica no Turso;
+localmente, o mesmo client usa um arquivo SQLite. Foreign keys são habilitadas
+na conexão e as migrations são executadas automaticamente no bootstrap.
 As migrations são incrementais, executadas automaticamente no bootstrap e
 registradas em `schema_migrations`.
 
@@ -152,14 +158,16 @@ Entidades atuais:
 - `credit_cards`
 - `recurring_expenses`
 - `credit_card_payments`
+- `users`
+- `sessions`
+- `oauth_login_attempts`
 
 O banco de desenvolvimento está atualmente vazio, mantendo apenas sua
 estrutura e o histórico das migrations.
 
 ## Executando localmente
 
-Requisito: **Node.js 22.x**. Não use Node 24 com um `better-sqlite3`
-compilado para Node 22, pois módulos nativos usam ABIs diferentes.
+Requisito: **Node.js 22.x**.
 
 ### Backend
 
@@ -171,7 +179,7 @@ npm run dev
 ```
 
 A API fica disponível, por padrão, em `http://localhost:3000`. O bootstrap
-cria o SQLite e executa todas as migrations pendentes automaticamente.
+abre o banco local e executa todas as migrations pendentes automaticamente.
 
 ### Frontend
 
@@ -193,12 +201,20 @@ NODE_ENV=development
 PORT=3000
 DATABASE_PATH=src/database/cofre.db
 FRONTEND_URLS=http://localhost:5173
+TURSO_DATABASE_URL=
+TURSO_AUTH_TOKEN=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_CALLBACK_URL=http://localhost:5173/api/auth/google/callback
+AUTH_ALLOWED_EMAILS=felipeflw11@gmail.com
+AUTH_LEGACY_OWNER_EMAIL=felipeflw11@gmail.com
+SESSION_SECRET=
 ```
 
 Frontend:
 
 ```env
-VITE_API_URL=http://localhost:3000
+VITE_API_URL=/api
 ```
 
 Em produção, `FRONTEND_URLS` aceita múltiplas origens separadas por vírgula.
@@ -225,6 +241,7 @@ npm run build
 Principais grupos de endpoints:
 
 - `/`, `/health`, `/version`, `/status`
+- `/auth/google`, `/auth/google/callback`, `/auth/me`, `/auth/logout`
 - `/categories`
 - `/transactions`
 - `/transactions/summary`
@@ -243,7 +260,8 @@ O fluxo atual é baseado nos commits enviados ao GitHub:
 ```text
 GitHub
 ├── Vercel → frontend
-└── Render → backend + SQLite
+├── Render → backend
+└── Turso → banco libSQL persistente
 ```
 
 Antes de publicar uma etapa:
@@ -254,8 +272,8 @@ Antes de publicar uma etapa:
 4. validar CORS entre Vercel e Render;
 5. validar o fluxo principal no Safari do iPhone.
 
-> O SQLite armazenado no Render exige atenção à persistência do disco. O
-> banco não deve ser tratado como arquivo descartável durante novos deploys.
+O banco não depende do filesystem efêmero do Render: schema, dados e sessões
+persistentes ficam no Turso.
 
 ## Roadmap
 
@@ -266,9 +284,14 @@ Concluído:
 - Fase 3 — Regras Financeiras, incluindo cartões, parcelamentos e gastos
   recorrentes.
 
+Em andamento:
+
+- Fase 4, Etapa 10 — Google OAuth; falta validar produção e persistência no
+  Safari antes de considerar concluída.
+
 Próximas fases planejadas, ainda não iniciadas:
 
-1. Fase 4 — Google OAuth e configurações do usuário.
+1. Fase 4 — configurações do usuário após a conclusão da Etapa 10.
 2. Fase 5 — Google Sheets e sistema de sincronização.
 3. Fase 6 — Documentação e Engenharia de Software.
 4. Fase 7 — Inteligência Financeira.

@@ -18,26 +18,28 @@ const assert = require('node:assert/strict')
 
 const { ensureDatabaseReady } = require('../src/database/bootstrap')
 const { closeDatabase } = require('../src/database/connection')
-const categoryService = require('../src/services/category.service')
-const transactionService = require('../src/services/transaction.service')
+const { createTestUser, asUser } = require('./helpers/userScope')
+const USER_ID = 1
+const categoryService = asUser(require('../src/services/category.service'), USER_ID)
+const transactionService = asUser(require('../src/services/transaction.service'), USER_ID)
 const { ValidationError, ConflictError } = require('../src/errors')
 
-before(() => {
-  ensureDatabaseReady()
+before(async () => {
+  await ensureDatabaseReady()
+  await createTestUser({ id: USER_ID })
 })
 
-after(() => {
-  closeDatabase()
+after(async () => {
+  await closeDatabase()
   fs.rmSync(TEST_DB_PATH, { force: true })
   fs.rmSync(`${TEST_DB_PATH}-shm`, { force: true })
   fs.rmSync(`${TEST_DB_PATH}-wal`, { force: true })
 })
 
 describe('Regras financeiras — categorias como fontes de renda', () => {
-  test('categoria de despesa não pode ativar oferta/dízimo', () => {
-    assert.throws(
-      () =>
-        categoryService.createCategory({
+  test('categoria de despesa não pode ativar oferta/dízimo', async () => {
+    await assert.rejects(
+      categoryService.createCategory({
           name: 'Mercado',
           type: 'expense',
           color: '#f2666a',
@@ -53,19 +55,19 @@ describe('Regras financeiras — categorias como fontes de renda', () => {
     )
   })
 
-  test('não permite duas categorias de receita com o mesmo nome', () => {
-    categoryService.createCategory(baseCategory({ name: 'Bolsa', applyOffer: true, applyTithe: true }))
-    assert.throws(() => categoryService.createCategory(baseCategory({ name: 'bolsa' })), ConflictError)
+  test('não permite duas categorias de receita com o mesmo nome', async () => {
+    await categoryService.createCategory(baseCategory({ name: 'Bolsa', applyOffer: true, applyTithe: true }))
+    await assert.rejects(categoryService.createCategory(baseCategory({ name: 'bolsa' })), ConflictError)
   })
 })
 
 describe('Caso 6 — atualizar uma receita não duplica a obrigação calculada', () => {
-  test('editar o valor recalcula oferta/dízimo na MESMA transação, nunca cria outra', () => {
-    const emprego = categoryService.createCategory(
+  test('editar o valor recalcula oferta/dízimo na MESMA transação, nunca cria outra', async () => {
+    const emprego = await categoryService.createCategory(
       baseCategory({ name: 'Emprego CLT', applyOffer: true, applyTithe: true })
     )
 
-    const created = transactionService.createTransaction({
+    const created = await transactionService.createTransaction({
       description: 'Salário',
       amount: 10000,
       type: 'income',
@@ -81,17 +83,17 @@ describe('Caso 6 — atualizar uma receita não duplica a obrigação calculada'
     assert.equal(created.offerAmount, 100)
     assert.equal(created.titheAmount, 1000)
 
-    const updated = transactionService.updateTransaction(created.id, { amount: 2500 })
+    const updated = await transactionService.updateTransaction(created.id, { amount: 2500 })
     assert.equal(updated.id, created.id, 'mesma linha, não uma nova transação')
     assert.equal(updated.offerAmount, 25)
     assert.equal(updated.titheAmount, 250)
 
     // Reaplicar a mesma edição de novo (idempotência) não deve mudar nada.
-    const updatedAgain = transactionService.updateTransaction(created.id, { amount: 2500 })
+    const updatedAgain = await transactionService.updateTransaction(created.id, { amount: 2500 })
     assert.equal(updatedAgain.offerAmount, 25)
     assert.equal(updatedAgain.titheAmount, 250)
 
-    const list = transactionService.listTransactions({
+    const list = await transactionService.listTransactions({
       page: 1,
       limit: 50,
       sortBy: 'date',
@@ -103,12 +105,12 @@ describe('Caso 6 — atualizar uma receita não duplica a obrigação calculada'
 })
 
 describe('Caso 7 — histórico sobrevive à desativação da fonte', () => {
-  test('transação de uma fonte desativada continua consultável e com valores intactos', () => {
-    const supremus = categoryService.createCategory(
+  test('transação de uma fonte desativada continua consultável e com valores intactos', async () => {
+    const supremus = await categoryService.createCategory(
       baseCategory({ name: 'Supremus Service', applyOffer: true, applyTithe: true })
     )
 
-    const historic = transactionService.createTransaction({
+    const historic = await transactionService.createTransaction({
       description: 'Projeto antigo',
       amount: 1200,
       type: 'income',
@@ -123,31 +125,31 @@ describe('Caso 7 — histórico sobrevive à desativação da fonte', () => {
     })
 
     // "Supremus Service não gera renda há meses" -> desativa, não apaga.
-    const deactivated = categoryService.updateCategory(supremus.id, { isActive: false })
+    const deactivated = await categoryService.updateCategory(supremus.id, { isActive: false })
     assert.equal(deactivated.isActive, false)
 
     // Some da listagem padrão...
-    const activeOnly = categoryService.listCategories({ includeInactive: false })
+    const activeOnly = await categoryService.listCategories({ includeInactive: false })
     assert.ok(!activeOnly.some((c) => c.id === supremus.id))
 
     // ...mas continua existindo e consultável explicitamente.
-    const stillThere = categoryService.getCategoryById(supremus.id)
+    const stillThere = await categoryService.getCategoryById(supremus.id)
     assert.equal(stillThere.id, supremus.id)
 
     // E a transação histórica não foi tocada.
-    const stillConsultable = transactionService.getTransactionById(historic.id)
+    const stillConsultable = await transactionService.getTransactionById(historic.id)
     assert.equal(stillConsultable.amount, 1200)
     assert.equal(stillConsultable.offerAmount, 12)
     assert.equal(stillConsultable.titheAmount, 120)
     assert.equal(stillConsultable.category.id, supremus.id)
   })
 
-  test('mudar a taxa da fonte HOJE não altera obrigações já calculadas no passado', () => {
-    const freela = categoryService.createCategory(
+  test('mudar a taxa da fonte HOJE não altera obrigações já calculadas no passado', async () => {
+    const freela = await categoryService.createCategory(
       baseCategory({ name: 'Freelancer', applyOffer: true, offerRate: 0.01, applyTithe: true, titheRate: 0.1 })
     )
 
-    const past = transactionService.createTransaction({
+    const past = await transactionService.createTransaction({
       description: 'Projeto X',
       amount: 1000,
       type: 'income',
@@ -164,16 +166,16 @@ describe('Caso 7 — histórico sobrevive à desativação da fonte', () => {
     assert.equal(past.titheAmount, 100)
 
     // A taxa da fonte muda hoje...
-    categoryService.updateCategory(freela.id, { offerRate: 0.05, titheRate: 0.2 })
+    await categoryService.updateCategory(freela.id, { offerRate: 0.05, titheRate: 0.2 })
 
     // ...mas o registro histórico permanece com os valores originais —
     // exatamente a garantia que o domínio precisa dar (ver README).
-    const untouched = transactionService.getTransactionById(past.id)
+    const untouched = await transactionService.getTransactionById(past.id)
     assert.equal(untouched.offerAmount, 10)
     assert.equal(untouched.titheAmount, 100)
 
     // Uma NOVA transação, sim, já usa a taxa atualizada.
-    const future = transactionService.createTransaction({
+    const future = await transactionService.createTransaction({
       description: 'Projeto Y',
       amount: 1000,
       type: 'income',
@@ -192,8 +194,8 @@ describe('Caso 7 — histórico sobrevive à desativação da fonte', () => {
 })
 
 describe('Caso 8 — despesa recorrente representável sem depender do nome', () => {
-  test('is_recurring é uma propriedade da transação, não uma inferência do texto', () => {
-    const internet = categoryService.createCategory({
+  test('is_recurring é uma propriedade da transação, não uma inferência do texto', async () => {
+    const internet = await categoryService.createCategory({
       name: 'Assinaturas e Contas',
       type: 'expense',
       color: '#5b9ef5',
@@ -208,7 +210,7 @@ describe('Caso 8 — despesa recorrente representável sem depender do nome', ()
 
     // Duas despesas na MESMA categoria, mesmo texto de descrição — uma
     // marcada recorrente, outra não. A diferença é o campo, não o nome.
-    const recurring = transactionService.createTransaction({
+    const recurring = await transactionService.createTransaction({
       description: 'Serviço mensal',
       amount: 120,
       type: 'expense',
@@ -221,7 +223,7 @@ describe('Caso 8 — despesa recorrente representável sem depender do nome', ()
       tags: [],
       status: 'confirmed',
     })
-    const oneOff = transactionService.createTransaction({
+    const oneOff = await transactionService.createTransaction({
       description: 'Serviço mensal',
       amount: 45,
       type: 'expense',
@@ -245,9 +247,9 @@ describe('Caso 8 — despesa recorrente representável sem depender do nome', ()
 })
 
 describe('Resumo financeiro (GET /transactions/summary)', () => {
-  test('separa oferta/dízimo de despesas e não conta em dobro', () => {
-    const pai = categoryService.createCategory(baseCategory({ name: 'Pai (resumo)', applyOffer: true, applyTithe: false }))
-    const mercado = categoryService.createCategory({
+  test('separa oferta/dízimo de despesas e não conta em dobro', async () => {
+    const pai = await categoryService.createCategory(baseCategory({ name: 'Pai (resumo)', applyOffer: true, applyTithe: false }))
+    const mercado = await categoryService.createCategory({
       name: 'Mercado (resumo)',
       type: 'expense',
       color: '#f2666a',
@@ -260,7 +262,7 @@ describe('Resumo financeiro (GET /transactions/summary)', () => {
       titheRate: null,
     })
 
-    transactionService.createTransaction({
+    await transactionService.createTransaction({
       description: 'Ajuda',
       amount: 2000,
       type: 'income',
@@ -273,7 +275,7 @@ describe('Resumo financeiro (GET /transactions/summary)', () => {
       tags: [],
       status: 'confirmed',
     })
-    transactionService.createTransaction({
+    await transactionService.createTransaction({
       description: 'Feira',
       amount: 300,
       type: 'expense',
@@ -287,7 +289,7 @@ describe('Resumo financeiro (GET /transactions/summary)', () => {
       status: 'confirmed',
     })
 
-    const summary = transactionService.getFinancialSummary({ month: 5, year: 2030 })
+    const summary = await transactionService.getFinancialSummary({ month: 5, year: 2030 })
     assert.equal(summary.totalIncome, 2000)
     assert.equal(summary.totalExpenses, 300)
     assert.equal(summary.offerAmount, 20)
@@ -296,9 +298,9 @@ describe('Resumo financeiro (GET /transactions/summary)', () => {
     assert.equal(summary.balance, 1680) // 2000 - 300 - 20
   })
 
-  test('funciona para qualquer ano, não só 2026', () => {
-    const cat = categoryService.createCategory(baseCategory({ name: 'Fonte futura', applyOffer: true, applyTithe: true }))
-    transactionService.createTransaction({
+  test('funciona para qualquer ano, não só 2026', async () => {
+    const cat = await categoryService.createCategory(baseCategory({ name: 'Fonte futura', applyOffer: true, applyTithe: true }))
+    await transactionService.createTransaction({
       description: 'Renda futura',
       amount: 100,
       type: 'income',
@@ -311,7 +313,7 @@ describe('Resumo financeiro (GET /transactions/summary)', () => {
       tags: [],
       status: 'confirmed',
     })
-    const summary = transactionService.getFinancialSummary({ month: 1, year: 2032 })
+    const summary = await transactionService.getFinancialSummary({ month: 1, year: 2032 })
     assert.equal(summary.totalIncome, 100)
   })
 })

@@ -1,11 +1,13 @@
-import { Moon, Download, Upload, CloudUpload, Info, Vault } from 'lucide-react'
+import { Moon, Download, Upload, CloudUpload, Info, Vault, LogOut, UserRound } from 'lucide-react'
 import Header from '@/layout/Header'
 import SettingsGroup from '@/components/settings/SettingsGroup'
 import SettingsRow from '@/components/settings/SettingsRow'
 import { useToast } from '@/contexts/ToastContext'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function Settings() {
   const { showToast } = useToast()
+  const { user, logout } = useAuth()
 
   const simulate = (message) => () => showToast(message, 'info')
 
@@ -14,6 +16,12 @@ export default function Settings() {
       <Header title="Ajustes" subtitle="Preferências do aplicativo" />
 
       <div className="px-5 md:px-8 pb-8 max-w-[560px] flex flex-col gap-6">
+        <SettingsGroup title="Conta">
+          <SettingsRow icon={UserRound} label={user?.name || 'Conta Google'} value={user?.email} />
+          <SettingsRow icon={LogOut} label="Sair do Cofre" onClick={async () => {
+            try { await logout() } catch (error) { showToast(error.message || 'Não foi possível sair.', 'error') }
+          }} />
+        </SettingsGroup>
         <SettingsGroup title="Aparência">
           <SettingsRow icon={Moon} label="Tema" value="Escuro" onClick={simulate('Apenas o tema escuro está disponível por enquanto')} />
         </SettingsGroup>

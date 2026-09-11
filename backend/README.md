@@ -1,9 +1,10 @@
 # Cofre API — Backend
 
-API do sistema financeiro **Cofre**: Node.js + Express + SQLite
-(`better-sqlite3`). Inclui categorias, transações, regras financeiras
+API do sistema financeiro **Cofre**: Node.js + Express + libSQL/Turso.
+Inclui Google OAuth, sessões persistentes, categorias, transações, regras financeiras
 parametrizadas, cartões, parcelamentos, gastos recorrentes e pagamentos de
-fatura. Sem autenticação ainda — isso pertence à Fase 4.
+fatura e isolamento de dados por usuário. A Etapa 10 aguarda validação final
+em produção e no Safari do iPhone.
 
 ## Como rodar
 
@@ -13,9 +14,9 @@ npm install
 npm run dev
 ```
 
-Não é preciso nenhum passo manual de banco: na primeira execução o SQLite é
-criado automaticamente em `src/database/cofre.db` e as migrations pendentes
-rodam sozinhas.
+Não é preciso criar o schema manualmente: no desenvolvimento, o arquivo local
+é criado automaticamente; em produção, `TURSO_DATABASE_URL` e
+`TURSO_AUTH_TOKEN` apontam para o Turso. As migrations pendentes rodam no bootstrap.
 
 ## Testes
 
@@ -193,7 +194,7 @@ npm test          # testes automatizados (node --test)
 ## Arquitetura
 
 ```
-Routes → Controllers → Services → Repositories → SQLite
+Routes → Auth/Validation → Controllers → Services → Repositories → libSQL/Turso
                            ↓
                   domain/ (regras financeiras puras)
 ```
@@ -326,7 +327,7 @@ inclusive com valores que não dividem exatamente (R$100 ÷ 3, R$1000 ÷ 7).
 
 `POST /transactions` com `cardId` + `installmentTotal > 1` gera as N
 parcelas numa única chamada a `transactionRepository.createMany()`, que
-executa tudo dentro de um `db.transaction()` do better-sqlite3: **OU as N
+executa tudo dentro de uma transação libSQL: **OU as N
 parcelas são criadas, OU nenhuma** (rollback automático em qualquer erro no
 meio do lote — testado explicitamente forçando uma violação de FK no meio
 de um lote de 2 linhas). Não existe uma linha extra "da compra original":
@@ -494,5 +495,29 @@ pagamentos de fatura. Execute-a obrigatoriamente com Node.js 22.x:
 npm test
 ```
 
-O módulo nativo `better-sqlite3` precisa estar compilado para a mesma versão
-principal do Node usada na execução.
+O backend usa `@libsql/client`, sem depender do filesystem do Render para
+persistir dados ou sessões.
+
+---
+
+## Fase 4, Etapa 10 — Google OAuth
+
+**Status: implementada localmente; validação de produção pendente.**
+
+O backend executa Authorization Code Flow com PKCE, `state` e `nonce`, valida
+a assinatura e os claims do ID Token do Google e aplica a whitelist definida
+em `AUTH_ALLOWED_EMAILS`. Tokens do Google não são persistidos.
+
+As sessões usam identificadores aleatórios; somente o hash fica em `sessions`.
+O cookie é HTTP-only, `Secure` em produção, `SameSite=Lax` e possui duração
+configurável. As rotas de negócio exigem sessão e todos os repositories filtram
+simultaneamente pelo identificador do recurso e `user_id`.
+
+A migration `0009_add_authentication_and_user_ownership.sql` cria `users`,
+`sessions` e tentativas OAuth, adiciona `user_id` às entidades privadas e
+transforma unicidades globais em unicidades por usuário. Dados legados somente
+são reivindicados pelo e-mail explícito de `AUTH_LEGACY_OWNER_EMAIL`.
+
+Em produção, o frontend chama `/api`; a Vercel encaminha para o Render. Assim o
+cookie pertence ao site da Vercel e não depende de cookies de terceiros no
+Safari.

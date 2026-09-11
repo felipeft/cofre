@@ -1,7 +1,7 @@
 {
   "name": "cofre-backend",
   "version": "0.3.0",
-  "description": "API do Cofre - Node.js + Express + SQLite, com CRUD completo e regras financeiras parametrizadas.",
+  "description": "API do Cofre - Node.js + Express + libSQL/Turso, autenticação Google e regras financeiras.",
   "main": "src/server.js",
   "engines": {
     "node": "22.x"
@@ -17,7 +17,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "better-sqlite3": "^12.11.1",
+    "@libsql/client": "^0.18.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

@@ -24,9 +24,7 @@ function resolveOrigin(requestOrigin, callback) {
   return callback(new ForbiddenError(`Origin não permitida pelo CORS: ${requestOrigin}`))
 }
 
-// Este backend vai lidar com cookies de sessão HTTP-only na etapa de
-// autenticação, e cookies cross-origin exigem uma origin explícita —
-// `credentials: true` já deixa isso pronto.
+// Cookies de sessão HTTP-only exigem origin explícita e credenciais.
 const corsMiddleware = cors({
   origin: resolveOrigin,
   credentials: true,

@@ -9,7 +9,7 @@ const getRoot = asyncHandler(async (req, res) => {
 
 // GET /health
 const getHealth = asyncHandler(async (req, res) => {
-  const health = systemService.getHealth()
+  const health = await systemService.getHealth()
   const statusCode = health.status === 'ok' ? 200 : 503
   apiResponse.success(res, { data: health, statusCode })
 })
@@ -21,7 +21,7 @@ const getVersion = asyncHandler(async (req, res) => {
 
 // GET /status
 const getStatus = asyncHandler(async (req, res) => {
-  apiResponse.success(res, { data: systemService.getStatus() })
+  apiResponse.success(res, { data: await systemService.getStatus() })
 })
 
 module.exports = { getRoot, getHealth, getVersion, getStatus }
