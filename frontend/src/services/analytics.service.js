@@ -9,10 +9,19 @@ import {
 } from '@/utils/aggregations'
 
 export function getAnalyticsOverview(transactions, selectedMonth) {
+  const summary = getMonthSummary(transactions, selectedMonth)
+  const asIncomePercentage = (value) => summary.income > 0 ? (value / summary.income) * 100 : null
+
   return {
-    breakdown: getCategoryBreakdown(transactions, selectedMonth),
+    breakdown: getCategoryBreakdown(transactions, selectedMonth).map((item) => ({
+      ...item,
+      incomePercentage: asIncomePercentage(item.value),
+    })),
     trend: getMonthlyTrend(transactions, 6, selectedMonth),
-    summary: getMonthSummary(transactions, selectedMonth),
-    topExpenses: getTopExpenses(transactions, selectedMonth, 5),
+    summary,
+    topExpenses: getTopExpenses(transactions, selectedMonth, 5).map((item) => ({
+      ...item,
+      incomePercentage: asIncomePercentage(item.amount),
+    })),
   }
 }

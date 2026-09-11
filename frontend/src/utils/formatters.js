@@ -13,6 +13,11 @@ export function formatCompactCurrency(value) {
   return formatCurrency(value)
 }
 
+export function formatPercentage(value) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '—'
+  return `${value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+}
+
 export function formatDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00')
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })

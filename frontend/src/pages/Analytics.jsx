@@ -9,7 +9,7 @@ import MonthNavigator from '@/components/ui/MonthNavigator'
 import { SkeletonRow } from '@/components/ui/Loading'
 import { useAnalytics } from '@/hooks/useAnalytics'
 import { useSelectedMonth } from '@/hooks/useSelectedMonth'
-import { formatCurrency, formatDate } from '@/utils/formatters'
+import { formatCurrency, formatDate, formatPercentage } from '@/utils/formatters'
 import { monthLongLabel } from '@/utils/months'
 
 export default function Analytics() {
@@ -17,7 +17,7 @@ export default function Analytics() {
   const { selectedMonth } = monthSelection
   const { breakdown, trend, summary, topExpenses, loading, error } = useAnalytics(selectedMonth)
 
-  const pieData = breakdown.map((b) => ({ name: b.category.name, value: b.value, color: b.category.color }))
+  const pieData = breakdown.map((b) => ({ name: b.category.name, value: b.value, color: b.category.color, incomePercentage: b.incomePercentage }))
   const maxCategory = breakdown[0]?.value || 1
   const subtitle = `Visão detalhada de ${monthLongLabel(selectedMonth)}`
   const monthNavigator = (
@@ -68,7 +68,8 @@ export default function Analytics() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card className="p-4 md:p-5">
             <h3 className="text-[15px] font-semibold text-text mb-2">Distribuição das despesas</h3>
-            <CategoryPieChart data={pieData} />
+            <p className="text-[11px] text-text-faint">Percentuais em relação às receitas do mês</p>
+            <CategoryPieChart data={pieData} showIncomeComparison />
           </Card>
 
           <Card className="p-4 md:p-5">
@@ -96,7 +97,10 @@ export default function Analytics() {
                       style={{ width: `${(b.value / maxCategory) * 100}%`, backgroundColor: b.category.color }}
                     />
                   </div>
-                  <span className="num text-[12px] text-text-muted w-20 text-right shrink-0">{formatCurrency(b.value)}</span>
+                  <span className="w-24 shrink-0 text-right">
+                    <span className="num block text-[12px] text-text-muted">{formatCurrency(b.value)}</span>
+                    <span className="num block text-[10px] text-text-faint">{formatPercentage(b.incomePercentage)} da receita</span>
+                  </span>
                 </div>
               ))}
               {breakdown.length === 0 && (
@@ -124,7 +128,10 @@ export default function Analytics() {
                     <p className="text-[13px] text-text truncate">{t.description || t.category.name}</p>
                     <p className="text-[11px] text-text-muted">{formatDate(t.date)}</p>
                   </div>
-                  <span className="num text-[13px] font-semibold text-text shrink-0">{formatCurrency(t.amount)}</span>
+                  <span className="shrink-0 text-right">
+                    <span className="num block text-[13px] font-semibold text-text">{formatCurrency(t.amount)}</span>
+                    <span className="num block text-[10px] text-text-faint">{formatPercentage(t.incomePercentage)} da receita</span>
+                  </span>
                 </div>
               ))}
               {topExpenses.length === 0 && <p className="text-[13px] text-text-faint py-2">Sem despesas neste período.</p>}

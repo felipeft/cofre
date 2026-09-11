@@ -315,6 +315,11 @@ A navegação e os formulários são responsivos para uso pelo Safari no iPhone.
 No plano gratuito do Render, a primeira chamada após um período sem uso pode
 aguardar a reativação do backend.
 
+Na página de Análises, distribuição, barras por categoria e maiores gastos
+preservam os valores monetários e também mostram sua porcentagem sobre o total
+de receitas do mês selecionado. Sem receitas no período, a proporção é exibida
+como indisponível (`—`), evitando uma divisão enganosa por zero.
+
 ## Validação
 
 ```bash
