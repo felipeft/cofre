@@ -59,12 +59,23 @@ function finish(userId, runId, result) {
   return run(async (db) => {
     await db.prepare(`
       UPDATE google_sheets_sync_runs SET
-        status = @status, records_read = @recordsRead, records_imported = @recordsImported,
-        records_existing = @recordsExisting, records_exported = @recordsExported,
-        conflict_count = @conflictCount, invalid_count = @invalidCount,
-        details_json = @detailsJson, completed_at = datetime('now')
-      WHERE id = @runId AND user_id = @userId AND status = 'running'
-    `).run({ userId, runId, ...result, detailsJson: JSON.stringify(result.details || {}) })
+        status = ?, records_read = ?, records_imported = ?,
+        records_existing = ?, records_exported = ?,
+        conflict_count = ?, invalid_count = ?,
+        details_json = ?, completed_at = datetime('now')
+      WHERE id = ? AND user_id = ? AND status = 'running'
+    `).run(
+      result.status,
+      result.recordsRead,
+      result.recordsImported,
+      result.recordsExisting,
+      result.recordsExported,
+      result.conflictCount,
+      result.invalidCount,
+      JSON.stringify(result.details || {}),
+      runId,
+      userId
+    )
     return mapRow(await db.prepare('SELECT * FROM google_sheets_sync_runs WHERE id = ? AND user_id = ?').get(runId, userId))
   }, 'Não foi possível concluir o histórico da sincronização.')
 }
