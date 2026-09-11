@@ -4,8 +4,8 @@ API do sistema financeiro **Cofre**: Node.js + Express + libSQL/Turso.
 Inclui Google OAuth, sessões persistentes, perfil e preferências individuais,
 categorias, transações, regras financeiras parametrizadas, cartões,
 parcelamentos, gastos recorrentes, pagamentos de fatura e isolamento de dados
-por usuário. A Etapa 10 foi validada em produção no Chrome e no Safari do
-iPhone; a Etapa 11 aguarda somente validação da nova interface em produção.
+por usuário. A Fase 4 está concluída. A Etapa 12 adiciona integração opcional
+com Google Sheets e aguarda validação final contra as APIs reais em produção.
 
 ## Como rodar
 
@@ -527,8 +527,7 @@ Safari.
 
 ## Fase 4, Etapa 11 — Configurações do usuário
 
-**Status: implementação e testes locais concluídos; validação da interface em
-produção pendente.**
+**Status: concluída.**
 
 A migration `0010_create_user_settings.sql` acrescenta `display_name` a
 `users` e cria `user_settings` em relação 1:1, com criação automática para
@@ -566,6 +565,56 @@ Moeda, locale, timezone e tema não foram expostos nesta etapa: a aplicação
 ainda implementa concretamente apenas BRL, `pt-BR` e tema escuro, e persistir
 alternativas sem comportamento real criaria configurações artificiais.
 
-Validação local da Etapa 11: **84 testes aprovados, 0 falhas**, incluindo dois
+Validação local da Etapa 11 incluiu dois
 usuários, isolamento, atualização parcial, mass assignment, precedência de
 taxas, snapshot histórico e regressão integral das funcionalidades anteriores.
+
+---
+
+## Fase 5, Etapa 12 — Google Sheets
+
+**Status: implementação local concluída; validação das APIs reais em produção
+pendente.**
+
+A autorização é incremental e independente do login. O login continua usando
+somente identidade; a integração solicita voluntariamente o scope não sensível
+`drive.file`, com `state`, PKCE, nonce e acesso offline. Somente o refresh token
+é persistido, criptografado com AES-256-GCM; access tokens existem apenas em
+memória durante cada operação.
+
+A migration `0011_create_google_sheets_integrations.sql` cria a integração 1:1,
+tentativas OAuth persistentes e fingerprints de lotes importados. Cada operação
+usa exclusivamente `req.user.id`.
+
+Endpoints:
+
+| Método | Endpoint | Finalidade |
+|---|---|---|
+| `GET` | `/integrations/google-sheets` | Estado seguro da integração |
+| `GET` | `/integrations/google-sheets/connect` | Inicia consentimento incremental |
+| `GET` | `/integrations/google-sheets/callback` | Valida e persiste autorização |
+| `POST` | `/integrations/google-sheets/spreadsheet` | Cria e inicializa a planilha |
+| `POST` | `/integrations/google-sheets/export` | Exportação manual idempotente |
+| `POST` | `/integrations/google-sheets/import/preview` | Validação e resumo da importação |
+| `POST` | `/integrations/google-sheets/import` | Confirma lote validado e atômico |
+| `DELETE` | `/integrations/google-sheets` | Revoga credencial sem apagar arquivo |
+
+A planilha possui `Metadata`, `Categorias`, `Cartões`, `Gastos Recorrentes`,
+`Pagamentos de Fatura`, `Configurações` e abas anuais. Abas futuras necessárias
+para parcelas também são criadas. Exportações reconstroem somente intervalos
+gerenciados usando operações batch e `valueInputOption=RAW`; abas externas do
+usuário não são tocadas.
+
+A importação lê apenas o schema Cofre v1. IDs existentes divergentes são
+conflitos, referências precisam pertencer ao usuário e linhas sem ID podem ser
+inseridas como fatos novos. O preview é recalculado na confirmação, e o lote é
+gravado em uma transação libSQL com fingerprint idempotente.
+
+Variáveis adicionais:
+
+```env
+GOOGLE_SHEETS_CALLBACK_URL=http://localhost:5173/api/integrations/google-sheets/callback
+# GOOGLE_TOKEN_ENCRYPTION_KEY= # base64 de 32 bytes; nunca versionar
+```
+
+Suíte completa após a Etapa 12: **93 testes aprovados, 0 falhas**.

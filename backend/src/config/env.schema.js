@@ -46,7 +46,11 @@ const envSchema = z.object({
   SESSION_SECRET: z.string().min(32).optional(),
   SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(365).default(90),
   SESSION_COOKIE_NAME: z.string().min(1).default('cofre_session'),
-  GOOGLE_SHEETS_ID: z.string().optional(),
+  GOOGLE_SHEETS_CALLBACK_URL: z.string().url().optional(),
+  GOOGLE_TOKEN_ENCRYPTION_KEY: z.string().optional().refine((value) => {
+    if (!value) return true
+    try { return Buffer.from(value, 'base64').length === 32 } catch { return false }
+  }, 'GOOGLE_TOKEN_ENCRYPTION_KEY deve ser uma chave base64 de 32 bytes.'),
 }).superRefine((env, ctx) => {
   if (Boolean(env.TURSO_DATABASE_URL) !== Boolean(env.TURSO_AUTH_TOKEN)) {
     ctx.addIssue({ code: 'custom', path: ['TURSO_DATABASE_URL'], message: 'TURSO_DATABASE_URL e TURSO_AUTH_TOKEN devem ser configurados juntos.' })
@@ -56,6 +60,9 @@ const envSchema = z.object({
     if (!env[field]) ctx.addIssue({ code: 'custom', path: [field], message: `${field} é obrigatório em produção.` })
   }
   for (const field of ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_CALLBACK_URL', 'SESSION_SECRET']) {
+    if (!env[field]) ctx.addIssue({ code: 'custom', path: [field], message: `${field} é obrigatório em produção.` })
+  }
+  for (const field of ['GOOGLE_SHEETS_CALLBACK_URL', 'GOOGLE_TOKEN_ENCRYPTION_KEY']) {
     if (!env[field]) ctx.addIssue({ code: 'custom', path: [field], message: `${field} é obrigatório em produção.` })
   }
   if (env.AUTH_ALLOWED_EMAILS.length === 0) ctx.addIssue({ code: 'custom', path: ['AUTH_ALLOWED_EMAILS'], message: 'Informe ao menos um e-mail autorizado em produção.' })

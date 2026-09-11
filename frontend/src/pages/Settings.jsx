@@ -9,6 +9,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { useAuth } from '@/hooks/useAuth'
 import { useSettings } from '@/hooks/useSettings'
 import { settingsService } from '@/services/settings.service'
+import GoogleSheetsSettings from '@/components/settings/GoogleSheetsSettings'
 
 const percent = (rate) => String(rate * 100)
 const fraction = (value) => Number(String(value).replace(',', '.')) / 100
@@ -101,6 +102,10 @@ export default function Settings() {
           <SettingsRow icon={LogOut} label="Sair da conta" onClick={async () => {
             try { await logout() } catch (requestError) { showToast(requestError.message || 'Não foi possível sair.', 'error') }
           }} />
+        </SettingsGroup>
+
+        <SettingsGroup title="Google Sheets">
+          <GoogleSheetsSettings />
         </SettingsGroup>
       </div>
     </div>

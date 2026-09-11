@@ -34,6 +34,7 @@ src/
 │  ├─ recurringExpense.service.js  CRUD das definições recorrentes
 │  ├─ auth.service.js         sessão, início do login Google e logout
 │  ├─ settings.service.js     leitura/atualização de preferências e perfil
+│  ├─ googleSheets.service.js autorização, exportação e importação manuais
 │  ├─ dashboard.service.js    calcula indicadores a partir de GET /transactions (sem endpoint dedicado ainda)
 │  └─ analytics.service.js    idem, para a página de Análises
 │
@@ -45,6 +46,7 @@ src/
 │  ├─ useRecurringExpenses.js porta de entrada para recorrências
 │  ├─ useSettings.js          preferências persistidas do usuário
 │  ├─ useAuth.js              identidade, sessão e logout
+│  ├─ useGoogleSheetsIntegration.js estado local da integração opcional
 │  ├─ useDashboard.js         dados prontos + loading/error para a página Dashboard
 │  └─ useAnalytics.js         dados prontos + loading/error para a página Análises
 │
@@ -132,8 +134,9 @@ exclusão recusada pelo backend não faz o item desaparecer da interface.
 
 - **OAuth Google / sessão:** `AuthContext` consulta `/auth/me` antes de liberar
   a aplicação, evitando o piscar de telas; logout invalida a sessão no backend.
-- **Google Sheets:** vira só mais um Service (`sheets.service.js`) e um
-  endpoint em `api/endpoints.js` — já reservado (`ENDPOINTS.sheets.sync`).
+- **Google Sheets:** a integração manual utiliza `googleSheets.service.js` e
+  endpoints dedicados; a sincronização automática permanece reservada para a
+  Etapa 13.
 - **Endpoint dedicado de Dashboard/Analytics:** troca só o corpo de
   `dashboard.service.js`/`analytics.service.js` por uma chamada a
   `apiClient` — `useDashboard`/`useAnalytics` e as páginas não mudam.
@@ -245,8 +248,7 @@ cor personalizada escolhida pelo espectro visual ou por hexadecimal
 
 ## Fase 4, Etapa 11 — Configurações do usuário
 
-**Status: implementação e validação local concluídas; teste em produção e no
-Safari pendente.**
+**Status: concluída.**
 
 A rota `/configuracoes` organiza a interface em Perfil, Preferências
 financeiras, Conta e Sessão. Ela permite editar o nome preferido no Cofre,
@@ -262,6 +264,26 @@ sem exigir recarregar a página.
 A moeda continua sendo BRL e a apresentação `pt-BR`; não foi criada seleção
 artificial de moedas sem suporte a conversão. A página mantém o design escuro,
 layout responsivo e controles adequados ao uso móvel.
+
+---
+
+## Fase 5, Etapa 12 — Google Sheets
+
+**Status: interface e build concluídos; validação com a API real em produção
+pendente.**
+
+A seção Google Sheets em `/configuracoes` mantém estado próprio local, sem
+poluir `AuthContext` ou `SettingsContext`. Ela apresenta conexão, conta Google,
+planilha, ano inicial, última exportação/importação e ações para conectar,
+criar, abrir, exportar, visualizar importação, confirmar e desconectar.
+
+Os estados `Não conectado`, `Autorizado`, `Pronto`, `Autorização expirada` e
+`Arquivo não encontrado` possuem ações específicas. Tokens nunca chegam ao
+frontend. O preview mostra quantidades novas, existentes, inválidas e
+conflitantes antes de habilitar a confirmação.
+
+O layout usa os componentes existentes, mantém o tema escuro e reorganiza as
+ações em uma coluna no mobile e duas colunas quando houver espaço.
 
 ## Deploy e uso mobile
 

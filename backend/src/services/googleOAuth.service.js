@@ -88,4 +88,4 @@ async function verifyIdToken(token) {
   return payload
 }
 
-module.exports = { createAuthorizationUrl, exchangeCode }
+module.exports = { createAuthorizationUrl, exchangeCode, verifyIdToken }

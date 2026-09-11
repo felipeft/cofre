@@ -23,6 +23,7 @@ test('migration de autenticação preserva integralmente dados da Etapa 9', asyn
 
     const userId = Number((await db.execute("INSERT INTO users (google_sub, email, name) VALUES ('existing-sub', 'existing@example.com', 'Existing')")).lastInsertRowid)
     await db.executeMultiple(fs.readFileSync(path.join(migrations, '0010_create_user_settings.sql'), 'utf8'))
+    await db.executeMultiple(fs.readFileSync(path.join(migrations, '0011_create_google_sheets_integrations.sql'), 'utf8'))
 
     const category = (await db.execute({ sql: 'SELECT id, name, user_id FROM categories WHERE id = ?', args: [categoryId] })).rows[0]
     const transaction = (await db.execute({ sql: 'SELECT id, description, user_id FROM transactions WHERE id = ?', args: [transactionId] })).rows[0]
@@ -31,6 +32,8 @@ test('migration de autenticação preserva integralmente dados da Etapa 9', asyn
     assert.equal((await db.execute('PRAGMA foreign_key_check')).rows.length, 0)
     const settings = (await db.execute({ sql: 'SELECT default_offer_rate, default_tithe_rate FROM user_settings WHERE user_id = ?', args: [userId] })).rows[0]
     assert.deepEqual({ ...settings }, { default_offer_rate: 0.01, default_tithe_rate: 0.1 })
+    const integrationTables = await db.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('google_sheets_integrations', 'google_sheets_oauth_attempts', 'google_sheets_imports')")
+    assert.equal(integrationTables.rows.length, 3)
   } finally {
     db.close()
     for (const suffix of ['', '-shm', '-wal']) fs.rmSync(`${dbPath}${suffix}`, { force: true })

@@ -53,9 +53,10 @@ const config = Object.freeze({
     cookieName: env.SESSION_COOKIE_NAME,
   }),
 
-  // Preenchido quando a integração com Google Sheets for implementada.
   googleSheets: Object.freeze({
-    spreadsheetId: env.GOOGLE_SHEETS_ID ?? null,
+    callbackUrl: env.GOOGLE_SHEETS_CALLBACK_URL ?? null,
+    tokenEncryptionKey: env.GOOGLE_TOKEN_ENCRYPTION_KEY ?? null,
+    scope: 'https://www.googleapis.com/auth/drive.file',
   }),
 })
 

@@ -6,4 +6,5 @@ module.exports = {
   ForbiddenError: require('./ForbiddenError'),
   ConflictError: require('./ConflictError'),
   UnauthorizedError: require('./UnauthorizedError'),
+  GoogleIntegrationError: require('./GoogleIntegrationError'),
 }

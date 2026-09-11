@@ -98,6 +98,8 @@ describe('Google OAuth e sessão persistente', () => {
 
   test('rota protegida rejeita sessão ausente, inválida e expirada', async () => {
     assert.equal((await api('/categories')).status, 401)
+    assert.equal((await api('/integrations/google-sheets')).status, 401)
+    assert.equal((await api('/integrations/google-sheets/callback?code=x&state=y')).status, 401)
     assert.equal((await api('/categories', { cookie: 'cofre_session=invalid' })).status, 401)
     const expiredToken = 'expired-token'
     const user = await getDatabase().prepare("SELECT id FROM users WHERE email = 'felipeflw11@gmail.com'").get()

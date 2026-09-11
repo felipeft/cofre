@@ -5,9 +5,9 @@ gradualmente uma planilha de uso cotidiano por um sistema estruturado,
 confiável e preparado para evoluir com autenticação, integração ao Google
 Sheets, inteligência financeira, Engenharia de Dados e IA.
 
-> **Status atual:** Fase 4 em validação final — Etapa 10 concluída e validada
-> em produção no Chrome e no Safari do iPhone; Etapa 11 implementada e testada
-> localmente, aguardando validação da nova interface em produção.
+> **Status atual:** Fase 5 em andamento — Fase 4 concluída; Etapa 12 Google
+> Sheets implementada e testada localmente, aguardando validação com as APIs
+> Google em produção.
 
 ## Acesso
 
@@ -39,6 +39,8 @@ período sem uso pode levar alguns segundos enquanto o serviço é reativado.
 - Perfil com nome preferido no Cofre e identidade Google preservada.
 - Preferências financeiras individuais de oferta e dízimo.
 - Área de configurações com dados seguros da conta e da sessão atual.
+- Integração Google Sheets opcional por usuário, com exportação e importação
+  manuais, planilha anual padronizada e refresh token criptografado.
 
 ## Regras importantes do domínio
 
@@ -290,20 +292,22 @@ Concluído:
 - Fase 2 — Núcleo Financeiro.
 - Fase 3 — Regras Financeiras, incluindo cartões, parcelamentos e gastos
   recorrentes.
+- Fase 4 — Google OAuth, sessões persistentes e configurações individuais.
 
 Em andamento:
 
-- Fase 4, Etapa 11 — configurações do usuário implementadas e validadas pela
-  suíte automatizada; falta validar a nova página em produção e no Safari.
+- Fase 5, Etapa 12 — fundação Google Sheets, exportação e importação manuais;
+  falta validar consentimento, criação e operações na API real em produção.
 
 Concluído e validado em produção:
 
 - Fase 4, Etapa 10 — Google OAuth, whitelist, sessões persistentes, Turso e
   isolamento por usuário, incluindo uso no Chrome e Safari do iPhone.
+- Fase 4, Etapa 11 — perfil, settings e preferências financeiras por usuário.
 
 Próximas fases planejadas, ainda não iniciadas:
 
-1. Fase 5 — Google Sheets e sistema de sincronização.
+1. Fase 5, Etapa 13 — sistema de sincronização.
 2. Fase 6 — Documentação e Engenharia de Software.
 3. Fase 7 — Inteligência Financeira.
 4. Fase 8 — Engenharia de Dados.

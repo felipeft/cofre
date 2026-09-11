@@ -7,6 +7,7 @@ const recurringExpenseRoutes = require('./recurringExpense.routes')
 const authRoutes = require('./auth.routes')
 const settingsRoutes = require('./settings.routes')
 const profileRoutes = require('./profile.routes')
+const googleSheetsRoutes = require('./googleSheets.routes')
 const { requireAuth, protectAgainstCsrf } = require('../middlewares/auth.middleware')
 
 const router = Router()
@@ -20,5 +21,6 @@ router.use('/cards', cardRoutes)
 router.use('/recurring-expenses', recurringExpenseRoutes)
 router.use('/settings', settingsRoutes)
 router.use('/profile', profileRoutes)
+router.use('/integrations/google-sheets', googleSheetsRoutes)
 
 module.exports = router

@@ -25,6 +25,11 @@ export const ENDPOINTS = {
     logout: '/auth/logout',
   },
   sheets: {
-    sync: '/integrations/google-sheets/sync',
+    status: '/integrations/google-sheets',
+    connect: '/integrations/google-sheets/connect',
+    spreadsheet: '/integrations/google-sheets/spreadsheet',
+    export: '/integrations/google-sheets/export',
+    importPreview: '/integrations/google-sheets/import/preview',
+    import: '/integrations/google-sheets/import',
   },
 }
