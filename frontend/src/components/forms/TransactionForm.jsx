@@ -4,8 +4,7 @@ import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
 import { useCategories } from '@/hooks/useCategories'
 import { useCards } from '@/hooks/useCards'
-import { formatDateInput, formatCurrency, formatPercent } from '@/utils/formatters'
-import { useSettings } from '@/hooks/useSettings'
+import { formatDateInput, formatCurrency } from '@/utils/formatters'
 
 const defaultState = {
   type: 'expense',
@@ -21,7 +20,6 @@ export default function TransactionForm({ initial, onSubmit, onCancel, submitLab
   const [submitting, setSubmitting] = useState(false)
   const { categories: allCategories, loading: categoriesLoading } = useCategories()
   const { cards: allCards, loading: cardsLoading } = useCards()
-  const { settings } = useSettings()
 
   // Forma de pagamento — só existe para despesa (cartão de crédito não faz
   // sentido para receita, ver backend/src/services/transaction.service.js).
@@ -71,21 +69,7 @@ export default function TransactionForm({ initial, onSubmit, onCancel, submitLab
     set({ type, categoryId: firstOfType?.id ?? '' })
   }
 
-  // Prévia informativa de oferta/dízimo — NÃO é a fonte da verdade. O
-  // backend recalcula e persiste os valores reais (Transaction.offerAmount/
-  // titheAmount) ao salvar; isso aqui só ajuda o usuário a entender o que
-  // vai acontecer antes de confirmar. Quando a categoria não sobrescreve a
-  // taxa (offerRate/titheRate null), usa o padrão espelhado do backend só
-  // para exibição.
-  const selectedCategory = categories.find((c) => c.id === form.categoryId)
   const amountNumber = Number(form.amount) || 0
-  const showObligationsPreview =
-    form.type === 'income' && selectedCategory && amountNumber > 0 && (selectedCategory.applyOffer || selectedCategory.applyTithe)
-
-  const offerRate = selectedCategory?.offerRate ?? settings.defaultOfferRate
-  const titheRate = selectedCategory?.titheRate ?? settings.defaultTitheRate
-  const offerPreview = selectedCategory?.applyOffer ? amountNumber * offerRate : 0
-  const tithePreview = selectedCategory?.applyTithe ? amountNumber * titheRate : 0
 
   // Prévia informativa do parcelamento — mesma ideia: aproximação para o
   // usuário entender o que vai acontecer. O backend recalcula os valores
@@ -177,28 +161,6 @@ export default function TransactionForm({ initial, onSubmit, onCancel, submitLab
           </option>
         ))}
       </Select>
-
-      {showObligationsPreview && (
-        <div className="flex flex-col gap-1.5 rounded-control bg-surface-2 border border-border-soft p-3 text-[13px]">
-          <div className="flex items-center justify-between text-text-muted">
-            <span>Receita</span>
-            <span className="num text-text">{formatCurrency(amountNumber)}</span>
-          </div>
-          {selectedCategory.applyOffer && (
-            <div className="flex items-center justify-between text-text-muted">
-              <span>Oferta ({formatPercent(offerRate)})</span>
-              <span className="num text-income">{formatCurrency(offerPreview)}</span>
-            </div>
-          )}
-          {selectedCategory.applyTithe && (
-            <div className="flex items-center justify-between text-text-muted">
-              <span>Dízimo ({formatPercent(titheRate)})</span>
-              <span className="num text-income">{formatCurrency(tithePreview)}</span>
-            </div>
-          )}
-          <p className="text-[11px] text-text-faint pt-0.5">Valor estimado — calculado e salvo pelo backend ao confirmar.</p>
-        </div>
-      )}
 
       {form.type === 'expense' && activeCards.length > 0 && (
         <div className="flex flex-col gap-3">

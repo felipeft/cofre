@@ -27,12 +27,6 @@ export function formatDateInput(date = new Date()) {
   return date.toISOString().split('T')[0]
 }
 
-// Recebe a taxa como fração (0.01 = 1%), não como número já multiplicado —
-// mesma convenção usada pela API (Category.offerRate/titheRate).
-export function formatPercent(rate) {
-  return `${(rate * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`
-}
-
 export function relativeDayLabel(dateStr) {
   const today = formatDateInput(new Date())
   const yesterday = formatDateInput(new Date(Date.now() - 86400000))

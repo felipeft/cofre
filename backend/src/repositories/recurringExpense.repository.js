@@ -68,9 +68,9 @@ function createOccurrences(userId, rows) {
     const insert = tx.prepare(`INSERT OR IGNORE INTO transactions (
       user_id, description, amount, type, category_id, date, competence_month, competence_year, notes, source,
       is_recurring, is_fixed, card, card_id, installment_current, installment_total, installment_group_id,
-      tags, status, offer_amount, tithe_amount, offer_rate_applied, tithe_rate_applied, recurring_expense_id
+      tags, status, recurring_expense_id
     ) VALUES (@userId, @description, @amount, 'expense', @categoryId, @date, @competenceMonth, @competenceYear, @notes, @source,
-      1, 0, NULL, @cardId, NULL, NULL, NULL, '[]', 'confirmed', 0, 0, NULL, NULL, @recurringExpenseId)`)
+      1, 0, NULL, @cardId, NULL, NULL, NULL, '[]', 'confirmed', @recurringExpenseId)`)
     const changes = []
     for (const item of rows) changes.push((await insert.run({ userId, ...item })).changes)
     return changes

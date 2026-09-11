@@ -9,12 +9,12 @@ async function run(fn, errorMessage) {
   }
 }
 
-function create(userId, { name, type, color, icon, isActive, sortOrder, applyOffer, offerRate, applyTithe, titheRate }) {
+function create(userId, { name, type, color, icon, isActive, sortOrder }) {
   return run(async (db) => {
     const { lastInsertRowid } = await db
       .prepare(
-        `INSERT INTO categories (user_id, name, type, color, icon, is_active, sort_order, apply_offer, offer_rate, apply_tithe, tithe_rate)
-         VALUES (@userId, @name, @type, @color, @icon, @isActive, @sortOrder, @applyOffer, @offerRate, @applyTithe, @titheRate)`
+        `INSERT INTO categories (user_id, name, type, color, icon, is_active, sort_order)
+         VALUES (@userId, @name, @type, @color, @icon, @isActive, @sortOrder)`
       )
       .run({
         userId, name,
@@ -23,10 +23,6 @@ function create(userId, { name, type, color, icon, isActive, sortOrder, applyOff
         icon,
         isActive: isActive ? 1 : 0,
         sortOrder,
-        applyOffer: applyOffer ? 1 : 0,
-        offerRate: offerRate ?? null,
-        applyTithe: applyTithe ? 1 : 0,
-        titheRate: titheRate ?? null,
       })
 
     return db.prepare('SELECT * FROM categories WHERE id = ? AND user_id = ?').get(lastInsertRowid, userId)
@@ -79,12 +75,8 @@ function update(userId, id, patch) {
       icon: 'icon',
       isActive: 'is_active',
       sortOrder: 'sort_order',
-      applyOffer: 'apply_offer',
-      offerRate: 'offer_rate',
-      applyTithe: 'apply_tithe',
-      titheRate: 'tithe_rate',
     }
-    const booleanKeys = new Set(['isActive', 'applyOffer', 'applyTithe'])
+    const booleanKeys = new Set(['isActive'])
 
     const sets = []
     const params = { id, userId }

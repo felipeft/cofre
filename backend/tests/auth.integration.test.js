@@ -123,7 +123,7 @@ describe('isolamento de dados por usuário', () => {
   test('nomes iguais coexistem, mas GET/PUT/DELETE cruzados não acessam o recurso', async () => {
     const a = (await beginAndCallback('allowed')).sessionCookie
     const b = (await beginAndCallback('user-b')).sessionCookie
-    const category = { name: 'Mercado privado', type: 'expense', color: '#f2666a', icon: 'ShoppingCart', isActive: true, sortOrder: 0, applyOffer: false, offerRate: null, applyTithe: false, titheRate: null }
+    const category = { name: 'Mercado privado', type: 'expense', color: '#f2666a', icon: 'ShoppingCart', isActive: true, sortOrder: 0 }
     const createdAResponse = await api('/categories', { cookie: a, method: 'POST', body: category })
     assert.equal(createdAResponse.status, 201)
     const createdA = (await createdAResponse.json()).data
@@ -160,18 +160,14 @@ describe('perfil e configurações do usuário atual', () => {
     const b = (await beginAndCallback('user-b')).sessionCookie
     const defaultsA = await (await api('/settings', { cookie: a })).json()
     const defaultsB = await (await api('/settings', { cookie: b })).json()
-    assert.equal(defaultsA.data.defaultOfferRate, 0.01)
-    assert.equal(defaultsB.data.defaultOfferRate, 0.01)
     assert.equal(defaultsA.data.theme, 'system')
     assert.equal(defaultsB.data.theme, 'system')
 
-    const updated = await api('/settings', { cookie: a, method: 'PATCH', body: { defaultOfferRate: 0.025, theme: 'dark' } })
+    const updated = await api('/settings', { cookie: a, method: 'PATCH', body: { theme: 'dark' } })
     assert.equal(updated.status, 200)
     const updatedData = (await updated.json()).data
-    assert.equal(updatedData.defaultTitheRate, 0.1, 'PATCH parcial preserva a outra taxa')
     assert.equal(updatedData.theme, 'dark')
     const untouchedB = (await (await api('/settings', { cookie: b })).json()).data
-    assert.equal(untouchedB.defaultOfferRate, 0.01)
     assert.equal(untouchedB.theme, 'system')
   })
 
@@ -191,9 +187,8 @@ describe('perfil e configurações do usuário atual', () => {
     assert.ok(me.data.user.session.expiresAt)
   })
 
-  test('payload financeiro inválido é rejeitado', async () => {
+  test('payload de preferência inválido é rejeitado', async () => {
     const cookie = (await beginAndCallback('allowed')).sessionCookie
-    assert.equal((await api('/settings', { cookie, method: 'PATCH', body: { defaultOfferRate: 1.5 } })).status, 400)
     assert.equal((await api('/settings', { cookie, method: 'PATCH', body: { theme: 'sepia' } })).status, 400)
     assert.equal((await api('/settings', { cookie, method: 'PATCH', body: { userId: 2 } })).status, 400)
   })

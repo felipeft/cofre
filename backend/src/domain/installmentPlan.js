@@ -1,4 +1,4 @@
-const { roundCurrency } = require('./financialRules')
+const { roundCurrency } = require('../utils/money')
 const { deriveCompetenceFromDate } = require('../utils/competence')
 
 // Avança uma data (YYYY-MM-DD) em N meses, preservando o dia quando possível

@@ -16,8 +16,6 @@ function update(userId, patch) {
   return run(async (db) => {
     await db.prepare('INSERT OR IGNORE INTO user_settings (user_id) VALUES (?)').run(userId)
     const columns = {
-      defaultOfferRate: 'default_offer_rate',
-      defaultTitheRate: 'default_tithe_rate',
       theme: 'theme',
     }
     const sets = []

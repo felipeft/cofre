@@ -10,7 +10,8 @@ const { yearsFromStart, missingYearSheets } = require('../domain/googleSheetsCal
 const { buildYearSheet } = require('../domain/googleSheetsLayout')
 const { sheetRowToImportCandidate } = require('../utils/mappers/googleSheets.mapper')
 const {
-  SHEET_SCHEMA_VERSION, SPREADSHEET_NAME, TRANSACTION_HEADERS, TRANSACTIONS_MARKER, MANAGED_LAST_COLUMN,
+  SHEET_SCHEMA_VERSION, SPREADSHEET_NAME, TRANSACTION_HEADERS, TRANSACTIONS_MARKER,
+  MANAGED_LAST_COLUMN, MANAGED_COLUMN_COUNT, VISIBLE_TRANSACTION_COLUMN_COUNT,
 } = require('../constants/googleSheets')
 const UnauthorizedError = require('../errors/UnauthorizedError')
 const ConflictError = require('../errors/ConflictError')
@@ -116,7 +117,7 @@ async function ensureManagedSheets(token, spreadsheetId, startYear, currentYear)
   const spreadsheet = await googleClient.getSpreadsheet(token, spreadsheetId)
   const existing = spreadsheet.sheets.map((sheet) => sheet.properties.title)
   const missing = missingYearSheets(existing, startYear, currentYear).map(String)
-  if (missing.length) await googleClient.batchUpdate(token, spreadsheetId, missing.map((title) => ({ addSheet: { properties: { title, gridProperties: { rowCount: 2500, columnCount: TRANSACTION_HEADERS.length } } } })))
+  if (missing.length) await googleClient.batchUpdate(token, spreadsheetId, missing.map((title) => ({ addSheet: { properties: { title, gridProperties: { rowCount: 2500, columnCount: MANAGED_COLUMN_COUNT } } } })))
   return missing
 }
 
@@ -128,15 +129,15 @@ function formatRequests(spreadsheet, layouts, data) {
     const sheetId = sheet.properties.sheetId
     const layout = layouts[title]
     requests.push({ updateSheetProperties: { properties: { sheetId, gridProperties: { frozenRowCount: 2 } }, fields: 'gridProperties.frozenRowCount' } })
-    requests.push({ updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 15, endIndex: TRANSACTION_HEADERS.length }, properties: { hiddenByUser: true }, fields: 'hiddenByUser' } })
-    for (const rowIndex of [0, 3, 5, 6, 20, 21, layout.markerRow, layout.headerRow]) requests.push({ repeatCell: { range: { sheetId, startRowIndex: rowIndex, endRowIndex: rowIndex + 1, startColumnIndex: 0, endColumnIndex: 15 }, cell: { userEnteredFormat: { backgroundColor: { red: rowIndex === 0 ? 0.04 : 0.08, green: rowIndex === 0 ? 0.32 : 0.18, blue: rowIndex === 0 ? 0.22 : 0.2 }, textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
+    requests.push({ updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: VISIBLE_TRANSACTION_COLUMN_COUNT, endIndex: MANAGED_COLUMN_COUNT }, properties: { hiddenByUser: true }, fields: 'hiddenByUser' } })
+    for (const rowIndex of [0, 3, 5, 6, 20, 21, layout.markerRow, layout.headerRow]) requests.push({ repeatCell: { range: { sheetId, startRowIndex: rowIndex, endRowIndex: rowIndex + 1, startColumnIndex: 0, endColumnIndex: VISIBLE_TRANSACTION_COLUMN_COUNT }, cell: { userEnteredFormat: { backgroundColor: { red: rowIndex === 0 ? 0.04 : 0.08, green: rowIndex === 0 ? 0.32 : 0.18, blue: rowIndex === 0 ? 0.22 : 0.2 }, textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
     data.categories.filter((category) => category.type === 'expense').forEach((category, index) => {
       const color = sheetColor(category.color)
       if (color) requests.push({ repeatCell: { range: { sheetId, startRowIndex: layout.firstCategoryRow + index, endRowIndex: layout.firstCategoryRow + index + 1, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { textFormat: { foregroundColor: color, bold: true } } }, fields: 'userEnteredFormat.textFormat' } })
     })
-    requests.push({ autoResizeDimensions: { dimensions: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: 15 } } })
-    requests.push({ setBasicFilter: { filter: { range: { sheetId, startRowIndex: layout.headerRow, startColumnIndex: 0, endColumnIndex: 15 } } } })
-    for (const [startRow, endRow, startColumn, endColumn] of [[3, 4, 3, 12], [7, 19, 1, 6], [layout.firstCategoryRow, layout.firstCategoryRow + layout.categoryCount, 1, 14], [layout.firstTransactionRow, layout.firstTransactionRow + 2000, 5, 6], [layout.firstTransactionRow, layout.firstTransactionRow + 2000, 11, 13]]) if (endRow > startRow) requests.push({ repeatCell: { range: { sheetId, startRowIndex: startRow, endRowIndex: endRow, startColumnIndex: startColumn, endColumnIndex: endColumn }, cell: { userEnteredFormat: { numberFormat: { type: 'CURRENCY', pattern: 'R$ #,##0.00' } } }, fields: 'userEnteredFormat.numberFormat' } })
+    requests.push({ autoResizeDimensions: { dimensions: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: VISIBLE_TRANSACTION_COLUMN_COUNT } } })
+    requests.push({ setBasicFilter: { filter: { range: { sheetId, startRowIndex: layout.headerRow, startColumnIndex: 0, endColumnIndex: VISIBLE_TRANSACTION_COLUMN_COUNT } } } })
+    for (const [startRow, endRow, startColumn, endColumn] of [[3, 4, 3, 8], [7, 19, 1, 4], [layout.firstCategoryRow, layout.firstCategoryRow + layout.categoryCount, 1, 14], [layout.firstTransactionRow, layout.firstTransactionRow + 2000, 5, 6]]) if (endRow > startRow) requests.push({ repeatCell: { range: { sheetId, startRowIndex: startRow, endRowIndex: endRow, startColumnIndex: startColumn, endColumnIndex: endColumn }, cell: { userEnteredFormat: { numberFormat: { type: 'CURRENCY', pattern: 'R$ #,##0.00' } } }, fields: 'userEnteredFormat.numberFormat' } })
     const validations = [[2, ['Despesa']], [4, data.categories.filter((c) => c.type === 'expense' && c.is_active).map((c) => c.name)], [6, ['Dinheiro', 'Cartão']], [7, data.cards.filter((c) => c.is_active).map((c) => c.name)], [10, ['Confirmada', 'Pendente', 'Cancelada']]]
     for (const [column, values] of validations) if (values.length) requests.push({ setDataValidation: { range: { sheetId, startRowIndex: layout.firstTransactionRow, endRowIndex: layout.firstTransactionRow + 2000, startColumnIndex: column, endColumnIndex: column + 1 }, rule: { condition: { type: 'ONE_OF_LIST', values: values.map((userEnteredValue) => ({ userEnteredValue })) }, strict: true, showCustomUi: true } } })
   }
@@ -153,7 +154,7 @@ async function createSpreadsheet(userId, { startYear }, currentYear = new Date()
   const years = yearsFromStart(startYear, currentYear)
   if (!years.length) throw new ValidationError('O ano inicial não pode ser posterior ao ano atual.')
   const titles = years.map(String)
-  const created = await googleClient.createSpreadsheet(token, { properties: { title: SPREADSHEET_NAME }, sheets: titles.map((title) => ({ properties: { title, gridProperties: { rowCount: 2500, columnCount: TRANSACTION_HEADERS.length } } })) })
+  const created = await googleClient.createSpreadsheet(token, { properties: { title: SPREADSHEET_NAME }, sheets: titles.map((title) => ({ properties: { title, gridProperties: { rowCount: 2500, columnCount: MANAGED_COLUMN_COUNT } } })) })
   await repository.saveSpreadsheet(userId, { spreadsheetId: created.spreadsheetId, spreadsheetName: SPREADSHEET_NAME, startYear })
   logger.info('Planilha Cofre criada', { userId, spreadsheetId: created.spreadsheetId })
   await exportData(userId, currentYear)
@@ -201,14 +202,15 @@ async function readRows(userId) {
     const parsed = []
     for (let index = 0; index < yearRanges.length; index += 1) {
       const year = Number(years[index]); const rows = yearRanges[index]?.values || []; const metadata = rows[0] || []
-      if (Number(metadata[16]) !== SHEET_SCHEMA_VERSION || Number(metadata[18]) !== Number(userId) || Number(metadata[20]) !== year) {
+      const schemaVersion = Number(metadata[16])
+      if (![2, SHEET_SCHEMA_VERSION].includes(schemaVersion) || Number(metadata[18]) !== Number(userId) || Number(metadata[20]) !== year) {
         throw new ConflictError('A planilha não possui o layout esperado ou pertence a outro usuário.', [], 'GOOGLE_SHEET_SCHEMA_MISMATCH')
       }
       const markerIndex = rows.findIndex((row) => row[0] === TRANSACTIONS_MARKER)
       if (markerIndex < 0 || !rows[markerIndex + 1]) throw new ConflictError(`A seção de lançamentos da aba ${year} não foi encontrada.`, [], 'GOOGLE_SHEET_SCHEMA_MISMATCH')
       const headers = rows[markerIndex + 1]
       rows.slice(markerIndex + 2).forEach((row, rowIndex) => {
-        if (row.slice(0, 15).some((value) => value !== '')) parsed.push(sheetRowToImportCandidate(headers, row, markerIndex + rowIndex + 3, year))
+        if (row.slice(0, VISIBLE_TRANSACTION_COLUMN_COUNT).some((value) => value !== '')) parsed.push(sheetRowToImportCandidate(headers, row, markerIndex + rowIndex + 3, year, schemaVersion))
       })
     }
     return parsed

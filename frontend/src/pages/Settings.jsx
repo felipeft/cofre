@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { CalendarClock, LogOut, Mail, Monitor, Moon, ShieldCheck, Sun, UserRound } from 'lucide-react'
 import Header from '@/layout/Header'
 import SettingsGroup from '@/components/settings/SettingsGroup'
@@ -11,25 +11,15 @@ import { useSettings } from '@/hooks/useSettings'
 import { settingsService } from '@/services/settings.service'
 import GoogleSheetsSettings from '@/components/settings/GoogleSheetsSettings'
 
-const percent = (rate) => String(rate * 100)
-const fraction = (value) => Number(String(value).replace(',', '.')) / 100
 const dateTime = (value) => value ? new Date(`${value.replace(' ', 'T')}Z`).toLocaleString('pt-BR') : 'Indisponível'
 
 export default function Settings() {
   const { showToast } = useToast()
   const { user, logout, applyProfile } = useAuth()
-  const { settings, loading, error, update } = useSettings()
+  const { settings, loading, update } = useSettings()
   const [displayName, setDisplayName] = useState(user?.displayName || user?.name || '')
-  const [offerRate, setOfferRate] = useState(percent(settings.defaultOfferRate))
-  const [titheRate, setTitheRate] = useState(percent(settings.defaultTitheRate))
   const [savingProfile, setSavingProfile] = useState(false)
-  const [savingFinancial, setSavingFinancial] = useState(false)
   const [savingTheme, setSavingTheme] = useState(false)
-
-  useEffect(() => {
-    setOfferRate(percent(settings.defaultOfferRate))
-    setTitheRate(percent(settings.defaultTitheRate))
-  }, [settings.defaultOfferRate, settings.defaultTitheRate])
 
   const saveProfile = async (event) => {
     event.preventDefault()
@@ -43,21 +33,6 @@ export default function Settings() {
       showToast(requestError.message || 'Não foi possível salvar o perfil.', 'error')
     } finally {
       setSavingProfile(false)
-    }
-  }
-
-  const saveFinancial = async (event) => {
-    event.preventDefault()
-    setSavingFinancial(true)
-    try {
-      const saved = await update({ defaultOfferRate: fraction(offerRate), defaultTitheRate: fraction(titheRate) })
-      setOfferRate(percent(saved.defaultOfferRate))
-      setTitheRate(percent(saved.defaultTitheRate))
-      showToast('Preferências financeiras salvas', 'success')
-    } catch (requestError) {
-      showToast(requestError.message || 'Não foi possível salvar as preferências.', 'error')
-    } finally {
-      setSavingFinancial(false)
     }
   }
 
@@ -82,7 +57,7 @@ export default function Settings() {
 
   return (
     <div>
-      <Header title="Ajustes" subtitle="Perfil, preferências financeiras e sessão" />
+      <Header title="Ajustes" subtitle="Perfil, aparência, integrações e sessão" />
 
       <div className="px-5 md:px-8 pb-8 max-w-[620px] flex flex-col gap-6">
         <SettingsGroup title="Perfil">
@@ -135,16 +110,6 @@ export default function Settings() {
               No modo Sistema, o Cofre acompanha automaticamente a aparência do dispositivo. Sem preferência disponível, utiliza o tema claro.
             </p>
           </div>
-        </SettingsGroup>
-
-        <SettingsGroup title="Preferências financeiras">
-          <form onSubmit={saveFinancial} className="grid gap-4 p-4 sm:grid-cols-2">
-            <Input label="Oferta padrão (%)" type="number" inputMode="decimal" min="0" max="100" step="0.01" required value={offerRate} onChange={(event) => setOfferRate(event.target.value)} />
-            <Input label="Dízimo padrão (%)" type="number" inputMode="decimal" min="0" max="100" step="0.01" required value={titheRate} onChange={(event) => setTitheRate(event.target.value)} />
-            <p className="text-[12px] text-text-faint sm:col-span-2">Categorias com taxa própria continuam prevalecendo. Alterações afetam somente novos cálculos; transações antigas mantêm seu snapshot.</p>
-            <Button type="submit" className="sm:col-span-2" disabled={loading || savingFinancial}>{savingFinancial ? 'Salvando…' : 'Salvar preferências'}</Button>
-            {error && <p role="alert" className="text-[12px] text-expense sm:col-span-2">{error}</p>}
-          </form>
         </SettingsGroup>
 
         <SettingsGroup title="Conta e sessão">

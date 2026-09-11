@@ -68,9 +68,8 @@ function importTransactions(userId, candidates, fingerprint) {
       INSERT INTO transactions (
         user_id, description, amount, type, category_id, date, competence_month, competence_year,
         notes, source, is_recurring, is_fixed, card, card_id, installment_current, installment_total,
-        installment_group_id, tags, status, offer_amount, tithe_amount, offer_rate_applied,
-        tithe_rate_applied, recurring_expense_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        installment_group_id, tags, status, recurring_expense_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)
     `)
     const ids = []
     for (const item of candidates) {
@@ -79,8 +78,7 @@ function importTransactions(userId, candidates, fingerprint) {
         item.competenceMonth, item.competenceYear, item.notes, 'sheets_import',
         item.isRecurring ? 1 : 0, item.isFixed ? 1 : 0, item.cardId,
         item.installmentCurrent, item.installmentTotal, item.installmentGroupId,
-        JSON.stringify(item.tags), item.status, item.offerAmount, item.titheAmount,
-        item.offerRateApplied, item.titheRateApplied, item.recurringExpenseId
+        JSON.stringify(item.tags), item.status, item.recurringExpenseId
       )
       ids.push(result.lastInsertRowid)
     }

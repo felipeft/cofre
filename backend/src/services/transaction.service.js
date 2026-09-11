@@ -2,11 +2,9 @@ const { randomUUID } = require('crypto')
 const transactionRepository = require('../repositories/transaction.repository')
 const categoryRepository = require('../repositories/category.repository')
 const cardRepository = require('../repositories/card.repository')
-const settingsRepository = require('../repositories/settings.repository')
 const { mapTransactionRow } = require('../utils/mappers/transaction.mapper')
 const { buildPaginationMeta } = require('../utils/pagination')
 const { deriveCompetenceFromDate } = require('../utils/competence')
-const { calculateIncomeObligations } = require('../domain/financialRules')
 const { calculateFinancialSummary } = require('../domain/financialSummary')
 const { buildInstallmentPlan } = require('../domain/installmentPlan')
 const NotFoundError = require('../errors/NotFoundError')
@@ -56,25 +54,6 @@ function assertCardUsableForExpense(card, type) {
       { field: 'cardId', message: 'Cartão inativo.' },
     ])
   }
-}
-
-// Traduz a linha da categoria (snake_case, como vem do banco) para o
-// formato que o domínio de regras financeiras espera — ver
-// domain/financialRules.js. Mantém o domínio isolado do formato de
-// persistência, igual ao que os mappers já fazem para as respostas da API.
-function toDomainCategory(categoryRow) {
-  return {
-    type: categoryRow.type,
-    applyOffer: Boolean(categoryRow.apply_offer),
-    offerRate: categoryRow.offer_rate,
-    applyTithe: Boolean(categoryRow.apply_tithe),
-    titheRate: categoryRow.tithe_rate,
-  }
-}
-
-async function getFinancialDefaults(userId) {
-  const settings = await settingsRepository.findByUserId(userId)
-  return { offerRate: settings.default_offer_rate, titheRate: settings.default_tithe_rate }
 }
 
 async function listTransactions(userId, query) {
@@ -146,16 +125,9 @@ async function createTransaction(userId, input) {
       ? { competenceMonth: input.competenceMonth, competenceYear: input.competenceYear }
       : deriveCompetenceFromDate(input.date)
 
-  // A regra em si (domain/financialRules.js) já devolve zeros quando a
-  // categoria não é de receita ou não está elegível — chamar sempre aqui
-  // evita um `if (type === 'income')` espalhado pelo service.
-  const defaults = await getFinancialDefaults(userId)
-  const obligations = calculateIncomeObligations({ amount: input.amount, category: toDomainCategory(category), defaults })
-
   const row = await transactionRepository.create(userId, {
     ...input,
     ...competence,
-    ...obligations,
     tags: JSON.stringify(input.tags ?? []),
   })
 
@@ -196,13 +168,6 @@ async function createInstallmentPurchase(userId, input, cardRow) {
     installmentGroupId,
     tags: serializedTags,
     status: input.status,
-    // Despesa nunca gera oferta/dízimo — mesma regra de sempre, só que aqui
-    // não passa por calculateIncomeObligations porque já sabemos que é
-    // despesa (cartão só existe para despesa).
-    offerAmount: 0,
-    titheAmount: 0,
-    offerRateApplied: null,
-    titheRateApplied: null,
   }))
 
   const createdRows = await transactionRepository.createMany(userId, rows)
@@ -243,25 +208,9 @@ async function updateTransaction(userId, id, patch) {
     competencePatch = deriveCompetenceFromDate(patch.date)
   }
 
-  // Oferta/dízimo são recalculados sempre que algo que os afeta muda
-  // (valor, categoria ou tipo) — e sobrescrevem os mesmos campos da mesma
-  // linha, nunca criam um registro novo. É isso que garante que editar uma
-  // receita de R$2.000 para R$2.500 deixe a oferta em R$25, nunca R$20 e
-  // R$25 coexistindo (ver README, seção "Idempotência").
-  let obligationsPatch = {}
-  const amountChanged = patch.amount !== undefined
-  const categoryOrTypeChanged = patch.type !== undefined || patch.categoryId !== undefined
-  if (amountChanged || categoryOrTypeChanged) {
-    const categoryForCalc = effectiveCategoryRow ?? await categoryRepository.findById(userId, effectiveCategoryId)
-    const effectiveAmount = patch.amount ?? current.amount
-    const defaults = await getFinancialDefaults(userId)
-    obligationsPatch = calculateIncomeObligations({ amount: effectiveAmount, category: toDomainCategory(categoryForCalc), defaults })
-  }
-
   const row = await transactionRepository.update(userId, id, {
     ...patch,
     ...competencePatch,
-    ...obligationsPatch,
     tags: patch.tags !== undefined ? JSON.stringify(patch.tags) : undefined,
   })
 
@@ -273,9 +222,7 @@ async function deleteTransaction(userId, id) {
   await transactionRepository.remove(userId, id)
 }
 
-// Resumo financeiro de uma competência (mês/ano) — receitas, despesas,
-// oferta, dízimo e saldo. A regra de como esses números se combinam vive em
-// domain/financialSummary.js; aqui só busca os dados e delega o cálculo.
+// Resumo financeiro de uma competência (mês/ano).
 async function getFinancialSummary(userId, { month, year }) {
   await ensureRecurringExpensesGenerated(userId)
   const rows = await transactionRepository.findAllForSummary(userId, { month, year })

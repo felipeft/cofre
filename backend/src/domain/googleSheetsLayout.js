@@ -6,8 +6,7 @@ function totals(rows) {
   const active = rows.filter((row) => row.status !== 'cancelled')
   const income = sum(active.filter((row) => row.type === 'income'), 'amount')
   const expense = sum(active.filter((row) => row.type === 'expense'), 'amount')
-  const offer = sum(active, 'offer_amount'); const tithe = sum(active, 'tithe_amount')
-  return { income, expense, balance: Number((income - expense - offer - tithe).toFixed(2)), offer, tithe }
+  return { income, expense, balance: Number((income - expense).toFixed(2)) }
 }
 function buildYearSheet({ year, transactions, categories, now, userId }) {
   const annual = totals(transactions)
@@ -16,11 +15,11 @@ function buildYearSheet({ year, transactions, categories, now, userId }) {
   title[17] = 'cofre_user_id'; title[18] = userId
   title[19] = 'cofre_year'; title[20] = year
   const rows = [title, [`Visão financeira anual · última sincronização ${new Date(now).toLocaleString('pt-BR', { timeZone: 'America/Fortaleza' })}`], [],
-    ['RESUMO ANUAL', '', 'Receitas', annual.income, 'Despesas', annual.expense, 'Saldo', annual.balance, 'Oferta', annual.offer, 'Dízimo', annual.tithe], [],
-    ['RESUMO MENSAL'], ['Mês', 'Receitas', 'Despesas', 'Saldo', 'Oferta', 'Dízimo']]
+    ['RESUMO ANUAL', '', 'Receitas', annual.income, 'Despesas', annual.expense, 'Saldo', annual.balance], [],
+    ['RESUMO MENSAL'], ['Mês', 'Receitas', 'Despesas', 'Saldo']]
   for (let month = 1; month <= 12; month += 1) {
     const value = totals(transactions.filter((row) => Number(row.competence_month) === month))
-    rows.push([MONTH_NAMES[month - 1], value.income, value.expense, value.balance, value.offer, value.tithe])
+    rows.push([MONTH_NAMES[month - 1], value.income, value.expense, value.balance])
   }
   rows.push([], ['GASTOS POR CATEGORIA E MÊS'], ['Categoria', ...MONTH_NAMES.map((name) => name.slice(0, 3)), 'Total'])
   const expenseCategories = categories.filter((category) => category.type === 'expense')

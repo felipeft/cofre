@@ -250,16 +250,10 @@ cor personalizada escolhida pelo espectro visual ou por hexadecimal
 
 **Status: concluída.**
 
-A rota `/configuracoes` organiza a interface em Perfil, Aparência,
-Preferências financeiras, Conta e Sessão. Ela permite editar o nome preferido no Cofre,
-alterar os defaults de oferta e dízimo, consultar identidade Google e datas
-seguras da sessão, além de reutilizar o logout real do backend.
-
-Os formulários de receita consomem o `SettingsContext` para mostrar o cálculo
-com as taxas atuais. No formulário de categoria, oferta e dízimo podem herdar
-o padrão da conta ou receber override explícito. A API continua sendo a fonte
-de verdade, e estados de carregamento, salvamento, sucesso e erro são exibidos
-sem exigir recarregar a página.
+A rota `/configuracoes` organiza a interface em Perfil, Aparência, Conta,
+Sessão e Google Sheets. Ela permite editar o nome preferido no Cofre,
+consultar identidade Google e datas seguras da sessão, além de reutilizar o
+logout real do backend.
 
 A moeda continua sendo BRL e a apresentação `pt-BR`; não foi criada seleção
 artificial de moedas sem suporte a conversão. A aparência oferece Sistema,
@@ -281,12 +275,12 @@ criar, abrir, acessar a central de sincronização e desconectar.
 
 Os estados `Não conectado`, `Autorizado`, `Pronto`, `Autorização expirada` e
 `Arquivo não encontrado` possuem ações específicas. Tokens nunca chegam ao
-frontend. O layout v2 contém somente abas anuais, com resumo do ano, visão
+frontend. O layout v3 contém somente abas anuais, com resumo do ano, visão
 mensal, totais por categoria e lançamentos rotulados em português. Novas
 despesas simples podem ser registradas na primeira linha vazia.
 
-O layout usa os componentes existentes, mantém o tema escuro e reorganiza as
-ações em uma coluna no mobile e duas colunas quando houver espaço.
+O layout usa os componentes existentes, respeita os temas claro e escuro e
+reorganiza as ações em uma coluna no mobile e duas colunas quando houver espaço.
 
 ---
 

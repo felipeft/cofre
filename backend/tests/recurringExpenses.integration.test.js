@@ -16,7 +16,7 @@ const transactionService = asUser(require('../src/services/transaction.service')
 
 before(async () => { await ensureDatabaseReady(); await createTestUser({ id: USER_ID }) })
 after(async () => { await closeDatabase(); for (const suffix of ['', '-shm', '-wal']) fs.rmSync(`${TEST_DB_PATH}${suffix}`, { force: true }) })
-function expenseCategory() { return categoryService.createCategory({ name: 'Assinaturas', type: 'expense', color: '#f2666a', icon: 'ShoppingCart', isActive: true, sortOrder: 0, applyOffer: false, offerRate: null, applyTithe: false, titheRate: null }) }
+function expenseCategory() { return categoryService.createCategory({ name: 'Assinaturas', type: 'expense', color: '#f2666a', icon: 'ShoppingCart', isActive: true, sortOrder: 0 }) }
 function input(categoryId, overrides = {}) { return { description: 'Spotify', amount: 34.9, categoryId, dayOfMonth: 10, startDate: '2030-08-01', endDate: null, isActive: true, cardId: null, notes: 'teste', ...overrides } }
 
 describe('gastos recorrentes', () => {
@@ -38,7 +38,7 @@ describe('gastos recorrentes', () => {
     assert.equal(updated.at(-1).amount, 39.9)
   })
   test('ocorrência cancelada não é recriada e cartão é propagado sem parcelas', async () => {
-    const category = await categoryService.createCategory({ name: 'Serviços', type: 'expense', color: '#f2666a', icon: 'Wifi', isActive: true, sortOrder: 0, applyOffer: false, offerRate: null, applyTithe: false, titheRate: null })
+    const category = await categoryService.createCategory({ name: 'Serviços', type: 'expense', color: '#f2666a', icon: 'Wifi', isActive: true, sortOrder: 0 })
     const card = await cardService.createCard({ name: 'Cartão recorrente', creditLimit: 1000, closingDay: 10, dueDay: 20, isActive: true })
     const recurring = await recurringService.createRecurringExpense(input(category.id, { description: 'Internet', startDate: '2031-01-01', cardId: card.id }))
     await recurringService.ensureRecurringExpensesGenerated({ asOfDate: '2031-01-20' })
@@ -54,7 +54,7 @@ describe('gastos recorrentes', () => {
   })
 
   test('consultar mês futuro materializa recorrências até o período solicitado sem duplicar', async () => {
-    const category = await categoryService.createCategory({ name: 'Previsões futuras', type: 'expense', color: '#5b9ef5', icon: 'CalendarClock', isActive: true, sortOrder: 0, applyOffer: false, offerRate: null, applyTithe: false, titheRate: null })
+    const category = await categoryService.createCategory({ name: 'Previsões futuras', type: 'expense', color: '#5b9ef5', icon: 'CalendarClock', isActive: true, sortOrder: 0 })
     await recurringService.createRecurringExpense(input(category.id, { description: 'Assinatura futura', startDate: '2032-01-01' }))
 
     const march = await transactionService.listTransactions({ page: 1, limit: 20, sortBy: 'date', sortDir: 'asc', categoryId: category.id, month: 3, year: 2032 })

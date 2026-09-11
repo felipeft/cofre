@@ -41,14 +41,6 @@ function mapTransactionRow(row) {
         : null,
     tags: parseTags(row.tags),
     status: row.status,
-    // Snapshot de oferta/dízimo calculado no momento da criação/edição desta
-    // transação (ver domain/financialRules.js) — só tem valor não-zero em
-    // transações de receita cuja categoria está configurada para gerar
-    // oferta/dízimo.
-    offerAmount: row.offer_amount,
-    titheAmount: row.tithe_amount,
-    offerRateApplied: row.offer_rate_applied,
-    titheRateApplied: row.tithe_rate_applied,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     category:

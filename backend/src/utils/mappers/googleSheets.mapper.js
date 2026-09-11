@@ -1,6 +1,6 @@
 const { z } = require('zod')
 const crypto = require('crypto')
-const { TRANSACTION_HEADERS } = require('../../constants/googleSheets')
+const { TRANSACTION_HEADERS, VISIBLE_TRANSACTION_COLUMN_COUNT } = require('../../constants/googleSheets')
 
 const TYPE_TO_SHEET = { income: 'Receita', expense: 'Despesa' }
 const TYPE_FROM_SHEET = { receita: 'income', despesa: 'expense', income: 'income', expense: 'expense' }
@@ -34,13 +34,13 @@ function transactionToSheetRow(row) {
     row.amount, row.card_id ? 'Cartão' : 'Dinheiro', blank(row.card_name),
     row.installment_current ? `${row.installment_current}/${row.installment_total}` : '',
     row.is_recurring ? 'Sim' : 'Não', STATUS_TO_SHEET[row.status] || row.status,
-    row.offer_amount, row.tithe_amount, tags.join(', '), row.notes || '',
+    tags.join(', '), row.notes || '',
   ]
   return [...visible,
     row.competence_year, row.competence_month, row.category_id, blank(row.card_id),
     blank(row.installment_current), blank(row.installment_total), blank(row.installment_group_id),
-    blank(row.recurring_expense_id), blank(row.offer_rate_applied), blank(row.tithe_rate_applied),
-    row.source, Boolean(row.is_fixed), row.created_at, JSON.stringify(tags), visibleHash(visible),
+    blank(row.recurring_expense_id), row.source, Boolean(row.is_fixed), row.created_at,
+    JSON.stringify(tags), visibleHash(visible),
   ]
 }
 
@@ -54,18 +54,22 @@ const importSchema = z.object({
   paymentMethod: z.enum(['cash', 'card']), cardId: nullableId, cardName: z.string().trim().max(120).nullable(),
   installmentLabel: z.string().max(40), installmentCurrent: nullableId,
   installmentTotal: nullableId, installmentGroupId: z.string().max(200).nullable(), recurringExpenseId: nullableId,
-  offerAmount: z.number().min(0), titheAmount: z.number().min(0), offerRateApplied: z.number().min(0).max(1).nullable(),
-  titheRateApplied: z.number().min(0).max(1).nullable(), status: z.enum(['pending', 'confirmed', 'cancelled']),
+  status: z.enum(['pending', 'confirmed', 'cancelled']),
   source: z.string().min(1).max(80), isRecurring: z.boolean(), isFixed: z.boolean(),
   tags: z.array(z.string().max(100)).max(50), displayTags: z.string().max(2000), notes: z.string().max(2000),
   exportHash: z.string().regex(/^[a-f0-9]{64}$/).nullable(), sheetModified: z.boolean(),
 })
 
-function sheetRowToImportCandidate(headers, row, rowNumber, sheetYear) {
-  const missing = TRANSACTION_HEADERS.slice(0, 15).filter((header) => !headers.includes(header))
+function sheetRowToImportCandidate(headers, row, rowNumber, sheetYear, schemaVersion = 3) {
+  const requiredHeaders = TRANSACTION_HEADERS.slice(0, VISIBLE_TRANSACTION_COLUMN_COUNT)
+  const missing = requiredHeaders.filter((header) => !headers.includes(header))
   if (missing.length) return { success: false, rowNumber, errors: [`Cabeçalhos ausentes: ${missing.join(', ')}`] }
   const value = rowObject(headers, row)
-  const currentVisibleHash = visibleHash(TRANSACTION_HEADERS.slice(0, 15).map((header) => value[header]))
+  // Layouts v2 ainda são aceitos durante a primeira sincronização após a
+  // atualização. Usar as 15 colunas antigas mantém a detecção de edição
+  // intacta; a exportação seguinte reescreve a planilha no layout v3.
+  const visibleHeaders = schemaVersion === 2 ? headers.slice(0, 15) : requiredHeaders
+  const currentVisibleHash = visibleHash(visibleHeaders.map((header) => value[header]))
   const date = parseDate(value.Data)
   const dateParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date)
   let tags
@@ -81,8 +85,6 @@ function sheetRowToImportCandidate(headers, row, rowNumber, sheetYear) {
     cardName: paymentCard ? nullable(value['Cartão']) : null,
     installmentLabel: String(value.Parcela || ''), installmentCurrent: nullable(value._installment_current, Number), installmentTotal: nullable(value._installment_total, Number),
     installmentGroupId: nullable(value._installment_group_id), recurringExpenseId: nullable(value._recurring_expense_id, Number),
-    offerAmount: Number(value.Oferta || 0), titheAmount: Number(value['Dízimo'] || 0),
-    offerRateApplied: nullable(value._offer_rate_applied, Number), titheRateApplied: nullable(value._tithe_rate_applied, Number),
     status: STATUS_FROM_SHEET[normalized(value.Status)] || (transactionId ? null : 'confirmed'),
     source: String(value._source || 'sheets_import'), isRecurring: boolean(value.Recorrente), isFixed: boolean(value._is_fixed),
     tags, displayTags: String(value.Tags || ''), notes: String(value['Observações'] || ''),

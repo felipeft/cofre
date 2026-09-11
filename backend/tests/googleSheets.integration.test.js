@@ -90,7 +90,7 @@ test('cria abas anuais e exporta repetidamente sem duplicar', async () => {
   await sheetsService.ensureManagedSheets('access-token', 'sheet-user-a', 2024, 2027)
   assert.equal(google.state.sheets.filter((sheet) => sheet.properties.title === '2027').length, 1)
 
-  const category = await categories.createCategory({ name: 'Histórico', type: 'expense', color: '#ffffff', icon: 'Wallet', isActive: true, sortOrder: 0, applyOffer: false, offerRate: null, applyTithe: false, titheRate: null })
+  const category = await categories.createCategory({ name: 'Histórico', type: 'expense', color: '#ffffff', icon: 'Wallet', isActive: true, sortOrder: 0 })
   await transactions.createTransaction({ description: 'Café ☕', amount: 12.34, type: 'expense', categoryId: category.id, date: '2024-02-29', notes: '=texto seguro', source: 'manual', isRecurring: false, isFixed: false, tags: ['unicode'], status: 'confirmed' })
   await sheetsService.exportData(1, 2027)
   const first = google.state.values.get('2024').length

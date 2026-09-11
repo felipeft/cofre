@@ -1,13 +1,10 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
 import { settingsService } from '@/services/settings.service'
-import { DEFAULT_OFFER_RATE, DEFAULT_TITHE_RATE } from '@/constants/financialRules'
 import { applyResolvedTheme } from '@/utils/theme'
 
 export const SettingsContext = createContext(null)
 
 const FALLBACK_SETTINGS = {
-  defaultOfferRate: DEFAULT_OFFER_RATE,
-  defaultTitheRate: DEFAULT_TITHE_RATE,
   theme: 'system',
 }
 

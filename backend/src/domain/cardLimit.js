@@ -1,4 +1,4 @@
-const { roundCurrency } = require('./financialRules')
+const { roundCurrency } = require('../utils/money')
 
 /**
  * Limite usado = soma de todas as despesas em aberto (não canceladas)

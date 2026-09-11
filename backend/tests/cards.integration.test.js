@@ -62,10 +62,6 @@ function expenseCategory(overrides = {}) {
     icon: 'ShoppingCart',
     isActive: true,
     sortOrder: 0,
-    applyOffer: false,
-    offerRate: null,
-    applyTithe: false,
-    titheRate: null,
     ...overrides,
   })
 }
@@ -78,10 +74,6 @@ function incomeCategory(overrides = {}) {
     icon: 'Wallet',
     isActive: true,
     sortOrder: 0,
-    applyOffer: false,
-    offerRate: null,
-    applyTithe: false,
-    titheRate: null,
     ...overrides,
   })
 }

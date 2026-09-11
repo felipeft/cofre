@@ -5,9 +5,8 @@ gradualmente uma planilha de uso cotidiano por um sistema estruturado,
 confiável e preparado para evoluir com autenticação, integração ao Google
 Sheets, inteligência financeira, Engenharia de Dados e IA.
 
-> **Status atual:** Fase 5 em acabamento — Etapas 12 e 13 validadas em
-> produção; polimentos responsivos, navegação temporal e temas claro/escuro
-> implementados, aguardando validação final após o deploy.
+> **Status atual:** Fase 5 concluída — integração e sincronização Google,
+> planilha anual, navegação temporal, responsividade e temas finalizados.
 
 ## Acesso
 
@@ -26,8 +25,6 @@ período sem uso pode levar alguns segundos enquanto o serviço é reativado.
 - Pesquisa, filtros, paginação e ordenação do histórico.
 - Competência financeira separada da data do lançamento.
 - Dashboard e análises por período e categoria.
-- Regras parametrizadas de oferta e dízimo para categorias de receita.
-- Snapshot das regras financeiras aplicadas, preservando o histórico.
 - Cartões de crédito com limite, fechamento e vencimento.
 - Compras parceladas com geração atômica das parcelas e ajuste de centavos.
 - Gastos recorrentes mensais, com data inicial/final e cartão opcional.
@@ -37,7 +34,6 @@ período sem uso pode levar alguns segundos enquanto o serviço é reativado.
 - Login Google com whitelist de e-mails e sessão persistente HTTP-only.
 - Isolamento dos dados financeiros por usuário autenticado.
 - Perfil com nome preferido no Cofre e identidade Google preservada.
-- Preferências financeiras individuais de oferta e dízimo.
 - Aparência individual com temas Sistema, Claro e Escuro; Sistema acompanha
   o dispositivo e usa o tema claro como fallback.
 - Área de configurações com dados seguros da conta e da sessão atual.
@@ -52,18 +48,9 @@ período sem uso pode levar alguns segundos enquanto o serviço é reativado.
 
 ### Histórico financeiro
 
-Transações representam fatos financeiros. Alterar uma categoria, uma taxa ou
+Transações representam fatos financeiros. Alterar uma categoria ou
 uma definição recorrente não reescreve silenciosamente ocorrências já
 registradas.
-
-### Oferta e dízimo
-
-As regras são propriedades das categorias de receita, nunca nomes
-hardcoded. Uma taxa específica da categoria prevalece sobre a preferência
-do usuário, que por sua vez usa o default seguro do sistema como fallback.
-Os valores e as taxas efetivamente aplicadas são armazenados na transação
-para auditoria histórica, portanto mudanças futuras não alteram receitas
-anteriores.
 
 ### Parcelamento e recorrência
 
@@ -300,20 +287,17 @@ Concluído:
   recorrentes.
 - Fase 4 — Google OAuth, sessões persistentes e configurações individuais.
 
-Em andamento:
-
-- Polimento final da Fase 5 — schema visual v2 da planilha, com somente abas
-  anuais e cadastro controlado de despesas simples.
-
 Concluído e validado em produção:
 
 - Fase 4, Etapa 10 — Google OAuth, whitelist, sessões persistentes, Turso e
   isolamento por usuário, incluindo uso no Chrome e Safari do iPhone.
-- Fase 4, Etapa 11 — perfil, settings e preferências financeiras por usuário.
+- Fase 4, Etapa 11 — perfil, settings, aparência e sessão por usuário.
 - Fase 5, Etapa 12 — autorização incremental, planilha estruturada, exportação
   e importação idempotentes, validadas com as APIs reais em produção.
 - Fase 5, Etapa 13 — sincronização manual, conflitos, falhas, idempotência e
   histórico persistente, validados em produção.
+- Fase 5 — concluída integralmente após o polimento da planilha e a
+  simplificação final do modelo financeiro.
 
 Próximas fases planejadas, ainda não iniciadas:
 

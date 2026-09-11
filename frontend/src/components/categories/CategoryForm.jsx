@@ -4,43 +4,17 @@ import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
 import CategoryIcon from '@/components/ui/CategoryIcon'
 import { CATEGORY_COLOR_PALETTE, CATEGORY_ICON_OPTIONS } from '@/constants/categories'
-import { useSettings } from '@/hooks/useSettings'
-
-// Backend guarda a taxa como fração (0.01), mas o campo é mais natural de
-// digitar em porcentagem (1) — essa conversão fica só na borda do form.
-const toPercentString = (rate) => String(rate * 100)
-const toFraction = (percentString) => {
-  const value = Number(String(percentString).replace(',', '.'))
-  return Number.isFinite(value) ? value / 100 : 0
-}
 const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/
 
 export default function CategoryForm({ initial, onSubmit, onCancel }) {
-  const { settings } = useSettings()
   const [name, setName] = useState(initial?.name ?? '')
   const [type, setType] = useState(initial?.type ?? 'expense')
   const [color, setColor] = useState(initial?.color ?? CATEGORY_COLOR_PALETTE[0])
   const [customColor, setCustomColor] = useState(initial?.color ?? CATEGORY_COLOR_PALETTE[0])
   const [icon, setIcon] = useState(initial?.icon ?? CATEGORY_ICON_OPTIONS[0])
 
-  // Regras financeiras (oferta/dízimo) — só fazem sentido para categorias de
-  // receita (ver backend/src/domain/financialRules.js). Os campos usados
-  // aqui são exatamente os que a API já espera: applyOffer, offerRate,
-  // applyTithe, titheRate — nenhum campo novo foi inventado.
-  const [applyOffer, setApplyOffer] = useState(initial?.applyOffer ?? false)
-  const [customOfferRate, setCustomOfferRate] = useState(initial?.offerRate != null)
-  const [offerRatePercent, setOfferRatePercent] = useState(
-    toPercentString(initial?.offerRate ?? settings.defaultOfferRate)
-  )
-  const [applyTithe, setApplyTithe] = useState(initial?.applyTithe ?? false)
-  const [customTitheRate, setCustomTitheRate] = useState(initial?.titheRate != null)
-  const [titheRatePercent, setTitheRatePercent] = useState(
-    toPercentString(initial?.titheRate ?? settings.defaultTitheRate)
-  )
-
   const [submitting, setSubmitting] = useState(false)
 
-  const isIncome = type === 'income'
   const colorIsValid = HEX_COLOR_REGEX.test(color)
 
   const chooseCustomColor = (value) => {
@@ -59,13 +33,6 @@ export default function CategoryForm({ initial, onSubmit, onCancel }) {
         type,
         color,
         icon,
-        // Despesa nunca carrega regra de oferta/dízimo — o backend já
-        // recusaria (categoria de despesa não pode ativar essas flags),
-        // mas o formulário garante que a intenção nem chega a ser enviada.
-        applyOffer: isIncome ? applyOffer : false,
-        offerRate: isIncome && applyOffer && customOfferRate ? toFraction(offerRatePercent) : null,
-        applyTithe: isIncome ? applyTithe : false,
-        titheRate: isIncome && applyTithe && customTitheRate ? toFraction(titheRatePercent) : null,
       })
     } finally {
       setSubmitting(false)
@@ -145,44 +112,6 @@ export default function CategoryForm({ initial, onSubmit, onCancel }) {
         </div>
       </div>
 
-      {isIncome && (
-        <div className="flex flex-col gap-3 rounded-control bg-surface-2 border border-border-soft p-3">
-          <span className="text-[13px] font-medium text-text">Regras financeiras</span>
-
-          <RuleToggle
-            label="Aplicar oferta"
-            value={applyOffer}
-            onChange={setApplyOffer}
-          />
-          {applyOffer && (
-            <RateOverride
-              label="Taxa da oferta"
-              custom={customOfferRate}
-              onCustomChange={setCustomOfferRate}
-              defaultRate={settings.defaultOfferRate}
-              value={offerRatePercent}
-              onChange={setOfferRatePercent}
-            />
-          )}
-
-          <RuleToggle
-            label="Aplicar dízimo"
-            value={applyTithe}
-            onChange={setApplyTithe}
-          />
-          {applyTithe && (
-            <RateOverride
-              label="Taxa do dízimo"
-              custom={customTitheRate}
-              onCustomChange={setCustomTitheRate}
-              defaultRate={settings.defaultTitheRate}
-              value={titheRatePercent}
-              onChange={setTitheRatePercent}
-            />
-          )}
-        </div>
-      )}
-
       <div className="flex gap-3 mt-1">
         <Button type="button" variant="ghost" className="flex-1" onClick={onCancel} disabled={submitting}>
           Cancelar
@@ -192,55 +121,5 @@ export default function CategoryForm({ initial, onSubmit, onCancel }) {
         </Button>
       </div>
     </form>
-  )
-}
-
-function RuleToggle({ label, value, onChange }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-[13px] text-text-muted">{label}</span>
-      <div className="grid grid-cols-2 gap-1 rounded-[8px] bg-surface-3 p-1">
-        <button
-          type="button"
-          onClick={() => onChange(true)}
-          className={`focus-ring h-7 px-3 rounded-[6px] text-[12px] font-medium transition-colors ${
-            value ? 'bg-income/15 text-income' : 'text-text-faint'
-          }`}
-        >
-          Sim
-        </button>
-        <button
-          type="button"
-          onClick={() => onChange(false)}
-          className={`focus-ring h-7 px-3 rounded-[6px] text-[12px] font-medium transition-colors ${
-            !value ? 'bg-surface text-text' : 'text-text-faint'
-          }`}
-        >
-          Não
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function RateOverride({ label, custom, onCustomChange, defaultRate, value, onChange }) {
-  return (
-    <div className="flex flex-col gap-2 rounded-[8px] border border-border-soft p-2.5">
-      <RuleToggle label="Usar taxa personalizada" value={custom} onChange={onCustomChange} />
-      {custom ? (
-        <Input
-          label={`${label} (%)`}
-          type="number"
-          inputMode="decimal"
-          min="0"
-          max="100"
-          step="0.01"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-        />
-      ) : (
-        <p className="text-[12px] text-text-faint">Usará o padrão da conta: {(defaultRate * 100).toLocaleString('pt-BR')}%</p>
-      )}
-    </div>
   )
 }

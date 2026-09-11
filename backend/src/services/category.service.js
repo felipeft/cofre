@@ -4,7 +4,6 @@ const recurringExpenseRepository = require('../repositories/recurringExpense.rep
 const { mapCategoryRow } = require('../utils/mappers/category.mapper')
 const NotFoundError = require('../errors/NotFoundError')
 const ConflictError = require('../errors/ConflictError')
-const ValidationError = require('../errors/ValidationError')
 const ERROR_CODES = require('../constants/errorCodes')
 
 async function findExistingOrThrow(userId, id) {
@@ -24,19 +23,6 @@ async function assertNotDuplicate(userId, type, name, { excludeId } = {}) {
   }
 }
 
-// Oferta e dízimo são conceitos de receita — uma categoria de despesa
-// ativá-los não tem significado nenhum no domínio (não existe "dízimo do
-// Mercado"). Rejeitar aqui evita salvar uma configuração sem sentido que
-// silenciosamente nunca teria efeito (transaction.service só aplica a regra
-// quando type === 'income').
-function assertOfferTitheOnlyOnIncome(type, applyOffer, applyTithe) {
-  if (type !== 'income' && (applyOffer || applyTithe)) {
-    throw new ValidationError('Oferta e dízimo só podem ser configurados em categorias de receita.', [
-      { field: 'type', message: "applyOffer/applyTithe exigem type='income'." },
-    ])
-  }
-}
-
 async function listCategories(userId, { type, includeInactive }) {
   return (await categoryRepository.findAll(userId, { type, includeInactive })).map(mapCategoryRow)
 }
@@ -47,7 +33,6 @@ async function getCategoryById(userId, id) {
 
 async function createCategory(userId, input) {
   await assertNotDuplicate(userId, input.type, input.name)
-  assertOfferTitheOnlyOnIncome(input.type, input.applyOffer, input.applyTithe)
   const row = await categoryRepository.create(userId, input)
   return mapCategoryRow(row)
 }
@@ -60,10 +45,6 @@ async function updateCategory(userId, id, patch) {
   if (patch.type !== undefined || patch.name !== undefined) {
     await assertNotDuplicate(userId, effectiveType, effectiveName, { excludeId: id })
   }
-
-  const effectiveApplyOffer = patch.applyOffer ?? Boolean(current.apply_offer)
-  const effectiveApplyTithe = patch.applyTithe ?? Boolean(current.apply_tithe)
-  assertOfferTitheOnlyOnIncome(effectiveType, effectiveApplyOffer, effectiveApplyTithe)
 
   const row = await categoryRepository.update(userId, id, patch)
   return mapCategoryRow(row)

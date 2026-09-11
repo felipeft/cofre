@@ -26,14 +26,21 @@ test('migration de autenticação preserva integralmente dados da Etapa 9', asyn
     await db.executeMultiple(fs.readFileSync(path.join(migrations, '0011_create_google_sheets_integrations.sql'), 'utf8'))
     await db.executeMultiple(fs.readFileSync(path.join(migrations, '0012_create_google_sheets_sync_runs.sql'), 'utf8'))
     await db.executeMultiple(fs.readFileSync(path.join(migrations, '0013_add_theme_to_user_settings.sql'), 'utf8'))
+    await db.executeMultiple(fs.readFileSync(path.join(migrations, '0014_simplify_financial_model.sql'), 'utf8'))
 
     const category = (await db.execute({ sql: 'SELECT id, name, user_id FROM categories WHERE id = ?', args: [categoryId] })).rows[0]
     const transaction = (await db.execute({ sql: 'SELECT id, description, user_id FROM transactions WHERE id = ?', args: [transactionId] })).rows[0]
     assert.deepEqual({ ...category }, { id: categoryId, name: 'Legada', user_id: null })
     assert.deepEqual({ ...transaction }, { id: transactionId, description: 'Compra legada', user_id: null })
     assert.equal((await db.execute('PRAGMA foreign_key_check')).rows.length, 0)
-    const settings = (await db.execute({ sql: 'SELECT default_offer_rate, default_tithe_rate, theme FROM user_settings WHERE user_id = ?', args: [userId] })).rows[0]
-    assert.deepEqual({ ...settings }, { default_offer_rate: 0.01, default_tithe_rate: 0.1, theme: 'system' })
+    const settings = (await db.execute({ sql: 'SELECT theme FROM user_settings WHERE user_id = ?', args: [userId] })).rows[0]
+    assert.deepEqual({ ...settings }, { theme: 'system' })
+    const categoryColumns = (await db.execute('PRAGMA table_info(categories)')).rows.map((column) => column.name)
+    const transactionColumns = (await db.execute('PRAGMA table_info(transactions)')).rows.map((column) => column.name)
+    const settingsColumns = (await db.execute('PRAGMA table_info(user_settings)')).rows.map((column) => column.name)
+    assert.equal(categoryColumns.length, 10)
+    assert.equal(transactionColumns.length, 23)
+    assert.equal(settingsColumns.length, 4)
     const integrationTables = await db.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('google_sheets_integrations', 'google_sheets_oauth_attempts', 'google_sheets_imports')")
     assert.equal(integrationTables.rows.length, 3)
     const syncTable = await db.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'google_sheets_sync_runs'")

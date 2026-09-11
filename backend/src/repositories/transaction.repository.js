@@ -117,13 +117,13 @@ const INSERT_COLUMNS = `
   user_id, description, amount, type, category_id, date,
   competence_month, competence_year, notes, source,
   is_recurring, is_fixed, card, card_id, installment_current, installment_total,
-  installment_group_id, tags, status, offer_amount, tithe_amount, offer_rate_applied, tithe_rate_applied
+  installment_group_id, tags, status
 `
 const INSERT_PLACEHOLDERS = `
   @userId, @description, @amount, @type, @categoryId, @date,
   @competenceMonth, @competenceYear, @notes, @source,
   @isRecurring, @isFixed, @card, @cardId, @installmentCurrent, @installmentTotal,
-  @installmentGroupId, @tags, @status, @offerAmount, @titheAmount, @offerRateApplied, @titheRateApplied
+  @installmentGroupId, @tags, @status
 `
 
 function toInsertParams(userId, data) {
@@ -147,10 +147,6 @@ function toInsertParams(userId, data) {
     installmentGroupId: data.installmentGroupId ?? null,
     tags: data.tags,
     status: data.status,
-    offerAmount: data.offerAmount ?? 0,
-    titheAmount: data.titheAmount ?? 0,
-    offerRateApplied: data.offerRateApplied ?? null,
-    titheRateApplied: data.titheRateApplied ?? null,
   }
 }
 
@@ -200,10 +196,6 @@ const UPDATE_COLUMNS = {
   installmentGroupId: 'installment_group_id',
   tags: 'tags',
   status: 'status',
-  offerAmount: 'offer_amount',
-  titheAmount: 'tithe_amount',
-  offerRateApplied: 'offer_rate_applied',
-  titheRateApplied: 'tithe_rate_applied',
 }
 
 const BOOLEAN_KEYS = new Set(['isRecurring', 'isFixed'])

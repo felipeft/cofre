@@ -17,7 +17,7 @@ const { ConflictError, NotFoundError } = require('../src/errors')
 
 before(async () => { await ensureDatabaseReady(); await createTestUser({ id: USER_ID }) })
 after(async () => { await closeDatabase(); for (const suffix of ['', '-shm', '-wal']) fs.rmSync(`${TEST_DB_PATH}${suffix}`, { force: true }) })
-function category(name) { return categoryService.createCategory({ name, type: 'expense', color: '#f2666a', icon: 'ShoppingCart', isActive: true, sortOrder: 0, applyOffer: false, offerRate: null, applyTithe: false, titheRate: null }) }
+function category(name) { return categoryService.createCategory({ name, type: 'expense', color: '#f2666a', icon: 'ShoppingCart', isActive: true, sortOrder: 0 }) }
 
 test('DELETE de categoria é físico quando livre e é recusado quando há transações', async () => {
   const free = await category('Livre para apagar')
