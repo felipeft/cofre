@@ -1,10 +1,11 @@
 # Cofre API — Backend
 
 API do sistema financeiro **Cofre**: Node.js + Express + libSQL/Turso.
-Inclui Google OAuth, sessões persistentes, categorias, transações, regras financeiras
-parametrizadas, cartões, parcelamentos, gastos recorrentes e pagamentos de
-fatura e isolamento de dados por usuário. A Etapa 10 aguarda validação final
-em produção e no Safari do iPhone.
+Inclui Google OAuth, sessões persistentes, perfil e preferências individuais,
+categorias, transações, regras financeiras parametrizadas, cartões,
+parcelamentos, gastos recorrentes, pagamentos de fatura e isolamento de dados
+por usuário. A Etapa 10 foi validada em produção no Chrome e no Safari do
+iPhone; a Etapa 11 aguarda somente validação da nova interface em produção.
 
 ## Como rodar
 
@@ -502,7 +503,7 @@ persistir dados ou sessões.
 
 ## Fase 4, Etapa 10 — Google OAuth
 
-**Status: implementada localmente; validação de produção pendente.**
+**Status: concluída e validada em produção no Chrome e no Safari do iPhone.**
 
 O backend executa Authorization Code Flow com PKCE, `state` e `nonce`, valida
 a assinatura e os claims do ID Token do Google e aplica a whitelist definida
@@ -521,3 +522,50 @@ são reivindicados pelo e-mail explícito de `AUTH_LEGACY_OWNER_EMAIL`.
 Em produção, o frontend chama `/api`; a Vercel encaminha para o Render. Assim o
 cookie pertence ao site da Vercel e não depende de cookies de terceiros no
 Safari.
+
+---
+
+## Fase 4, Etapa 11 — Configurações do usuário
+
+**Status: implementação e testes locais concluídos; validação da interface em
+produção pendente.**
+
+A migration `0010_create_user_settings.sql` acrescenta `display_name` a
+`users` e cria `user_settings` em relação 1:1, com criação automática para
+novos usuários e backfill dos usuários existentes. Identidade externa
+(`google_sub`, e-mail e nome Google) continua separada do nome preferido no
+Cofre.
+
+As preferências implementadas possuem utilidade direta no domínio atual:
+
+| Campo | Default | Uso |
+|---|---:|---|
+| `default_offer_rate` | `0.01` | Oferta de novas receitas sem taxa específica na categoria |
+| `default_tithe_rate` | `0.10` | Dízimo de novas receitas sem taxa específica na categoria |
+
+A precedência é: taxa específica da categoria → preferência do usuário →
+constante do sistema. O Service carrega categoria e settings, passa as taxas
+explicitamente à função pura de domínio e grava o snapshot na transação.
+Alterar settings não recalcula o histórico.
+
+Endpoints autenticados, sempre orientados à sessão atual:
+
+| Método | Endpoint | Finalidade |
+|---|---|---|
+| `GET` | `/profile` | Identidade Google e perfil Cofre seguros |
+| `PATCH` | `/profile` | Atualiza somente `displayName` |
+| `GET` | `/settings` | Preferências do usuário, criando defaults se necessário |
+| `PATCH` | `/settings` | Atualização parcial validada das taxas padrão |
+
+Nenhum endpoint aceita `userId` como origem da autorização. Os schemas são
+estritos para impedir mass assignment de e-mail, identidade Google ou outro
+campo interno. `/auth/me` também informa apenas datas seguras da sessão atual,
+sem expor token ou hash.
+
+Moeda, locale, timezone e tema não foram expostos nesta etapa: a aplicação
+ainda implementa concretamente apenas BRL, `pt-BR` e tema escuro, e persistir
+alternativas sem comportamento real criaria configurações artificiais.
+
+Validação local da Etapa 11: **84 testes aprovados, 0 falhas**, incluindo dois
+usuários, isolamento, atualização parcial, mass assignment, precedência de
+taxas, snapshot histórico e regressão integral das funcionalidades anteriores.

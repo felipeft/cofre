@@ -2,8 +2,10 @@ import { NavLink } from 'react-router-dom'
 import { PanelLeftClose, PanelLeftOpen, Plus, Vault } from 'lucide-react'
 import { navItems } from './navItems'
 import { ROUTES } from '@/constants/routes'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function Sidebar({ collapsed, onToggle, onRegister }) {
+  const { user } = useAuth()
   return (
     <aside
       className={`hidden md:flex flex-col shrink-0 border-r border-border-soft bg-surface transition-[width] duration-200 ${collapsed ? 'w-[76px]' : 'w-[240px]'}`}
@@ -36,6 +38,10 @@ export default function Sidebar({ collapsed, onToggle, onRegister }) {
       </nav>
 
       <div className="p-3 flex flex-col gap-2 border-t border-border-soft">
+        <NavLink to={ROUTES.settings} className="focus-ring flex min-h-10 items-center gap-2 rounded-control px-2 text-text-muted hover:bg-surface-2">
+          {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="h-7 w-7 shrink-0 rounded-full" referrerPolicy="no-referrer" /> : <div className="h-7 w-7 shrink-0 rounded-full bg-income/15" />}
+          {!collapsed && <div className="min-w-0"><p className="truncate text-[12px] font-medium text-text">{user?.name}</p><p className="truncate text-[10px]">{user?.email}</p></div>}
+        </NavLink>
         <button
           onClick={onRegister}
           className="focus-ring flex items-center justify-center gap-2 h-11 rounded-control bg-income text-black font-medium text-[14px] hover:brightness-110 transition-all"

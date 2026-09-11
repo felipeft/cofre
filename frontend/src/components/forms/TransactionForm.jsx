@@ -5,7 +5,7 @@ import Button from '@/components/ui/Button'
 import { useCategories } from '@/hooks/useCategories'
 import { useCards } from '@/hooks/useCards'
 import { formatDateInput, formatCurrency, formatPercent } from '@/utils/formatters'
-import { DEFAULT_OFFER_RATE, DEFAULT_TITHE_RATE } from '@/constants/financialRules'
+import { useSettings } from '@/hooks/useSettings'
 
 const defaultState = {
   type: 'expense',
@@ -21,6 +21,7 @@ export default function TransactionForm({ initial, onSubmit, onCancel, submitLab
   const [submitting, setSubmitting] = useState(false)
   const { categories: allCategories, loading: categoriesLoading } = useCategories()
   const { cards: allCards, loading: cardsLoading } = useCards()
+  const { settings } = useSettings()
 
   // Forma de pagamento — só existe para despesa (cartão de crédito não faz
   // sentido para receita, ver backend/src/services/transaction.service.js).
@@ -81,8 +82,8 @@ export default function TransactionForm({ initial, onSubmit, onCancel, submitLab
   const showObligationsPreview =
     form.type === 'income' && selectedCategory && amountNumber > 0 && (selectedCategory.applyOffer || selectedCategory.applyTithe)
 
-  const offerRate = selectedCategory?.offerRate ?? DEFAULT_OFFER_RATE
-  const titheRate = selectedCategory?.titheRate ?? DEFAULT_TITHE_RATE
+  const offerRate = selectedCategory?.offerRate ?? settings.defaultOfferRate
+  const titheRate = selectedCategory?.titheRate ?? settings.defaultTitheRate
   const offerPreview = selectedCategory?.applyOffer ? amountNumber * offerRate : 0
   const tithePreview = selectedCategory?.applyTithe ? amountNumber * titheRate : 0
 

@@ -43,8 +43,9 @@ function createSession({ tokenHash, userId, expiresAt }) {
 
 function findSession(tokenHash) {
   return run((db) => db.prepare(`
-    SELECT s.token_hash, s.created_at, s.expires_at, s.last_seen_at,
-           u.id AS user_id, u.google_sub, u.email, u.name, u.avatar_url
+    SELECT s.token_hash, s.created_at AS session_created_at, s.expires_at, s.last_seen_at,
+           u.id AS user_id, u.google_sub, u.email, u.name, u.display_name,
+           u.avatar_url, u.created_at AS user_created_at, u.updated_at AS user_updated_at
     FROM sessions s JOIN users u ON u.id = s.user_id
     WHERE s.token_hash = ? AND s.expires_at > datetime('now')
   `).get(tokenHash), 'Não foi possível consultar a sessão.')

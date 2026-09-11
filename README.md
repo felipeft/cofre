@@ -5,8 +5,9 @@ gradualmente uma planilha de uso cotidiano por um sistema estruturado,
 confiável e preparado para evoluir com autenticação, integração ao Google
 Sheets, inteligência financeira, Engenharia de Dados e IA.
 
-> **Status atual:** Fase 4 em andamento — Etapa 10 implementada localmente e
-> aguardando validação de produção do Google OAuth, Turso e Safari no iPhone.
+> **Status atual:** Fase 4 em validação final — Etapa 10 concluída e validada
+> em produção no Chrome e no Safari do iPhone; Etapa 11 implementada e testada
+> localmente, aguardando validação da nova interface em produção.
 
 ## Acesso
 
@@ -35,6 +36,9 @@ período sem uso pode levar alguns segundos enquanto o serviço é reativado.
 - Interface responsiva para desktop e dispositivos móveis.
 - Login Google com whitelist de e-mails e sessão persistente HTTP-only.
 - Isolamento dos dados financeiros por usuário autenticado.
+- Perfil com nome preferido no Cofre e identidade Google preservada.
+- Preferências financeiras individuais de oferta e dízimo.
+- Área de configurações com dados seguros da conta e da sessão atual.
 
 ## Regras importantes do domínio
 
@@ -47,8 +51,11 @@ registradas.
 ### Oferta e dízimo
 
 As regras são propriedades das categorias de receita, nunca nomes
-hardcoded. Os valores e as taxas efetivamente aplicadas são armazenados na
-transação para auditoria histórica.
+hardcoded. Uma taxa específica da categoria prevalece sobre a preferência
+do usuário, que por sua vez usa o default seguro do sistema como fallback.
+Os valores e as taxas efetivamente aplicadas são armazenados na transação
+para auditoria histórica, portanto mudanças futuras não alteram receitas
+anteriores.
 
 ### Parcelamento e recorrência
 
@@ -286,18 +293,22 @@ Concluído:
 
 Em andamento:
 
-- Fase 4, Etapa 10 — Google OAuth; falta validar produção e persistência no
-  Safari antes de considerar concluída.
+- Fase 4, Etapa 11 — configurações do usuário implementadas e validadas pela
+  suíte automatizada; falta validar a nova página em produção e no Safari.
+
+Concluído e validado em produção:
+
+- Fase 4, Etapa 10 — Google OAuth, whitelist, sessões persistentes, Turso e
+  isolamento por usuário, incluindo uso no Chrome e Safari do iPhone.
 
 Próximas fases planejadas, ainda não iniciadas:
 
-1. Fase 4 — configurações do usuário após a conclusão da Etapa 10.
-2. Fase 5 — Google Sheets e sistema de sincronização.
-3. Fase 6 — Documentação e Engenharia de Software.
-4. Fase 7 — Inteligência Financeira.
-5. Fase 8 — Engenharia de Dados.
-6. Fase 9 — Inteligência Artificial e Machine Learning.
-7. Fase 10 — Polimento, containerização e CI/CD.
+1. Fase 5 — Google Sheets e sistema de sincronização.
+2. Fase 6 — Documentação e Engenharia de Software.
+3. Fase 7 — Inteligência Financeira.
+4. Fase 8 — Engenharia de Dados.
+5. Fase 9 — Inteligência Artificial e Machine Learning.
+6. Fase 10 — Polimento, containerização e CI/CD.
 
 O marco definido para o início do uso real completo é a conclusão da Etapa
 13, após autenticação e sincronização com Google Sheets. Nenhuma etapa futura

@@ -143,3 +143,48 @@ describe('isolamento de dados por usuário', () => {
     assert.equal((await api(`/transactions/${tx.id}`, { cookie: b, method: 'DELETE' })).status, 404)
   })
 })
+
+describe('perfil e configurações do usuário atual', () => {
+  test('rotas exigem autenticação e nunca recebem userId na URL', async () => {
+    assert.equal((await api('/settings')).status, 401)
+    assert.equal((await api('/profile')).status, 401)
+    const cookie = (await beginAndCallback('allowed')).sessionCookie
+    assert.equal((await api('/users/1/settings', { cookie })).status, 404)
+  })
+
+  test('dois usuários recebem e atualizam somente suas próprias preferências', async () => {
+    const a = (await beginAndCallback('allowed')).sessionCookie
+    const b = (await beginAndCallback('user-b')).sessionCookie
+    const defaultsA = await (await api('/settings', { cookie: a })).json()
+    const defaultsB = await (await api('/settings', { cookie: b })).json()
+    assert.equal(defaultsA.data.defaultOfferRate, 0.01)
+    assert.equal(defaultsB.data.defaultOfferRate, 0.01)
+
+    const updated = await api('/settings', { cookie: a, method: 'PATCH', body: { defaultOfferRate: 0.025 } })
+    assert.equal(updated.status, 200)
+    assert.equal((await updated.json()).data.defaultTitheRate, 0.1, 'PATCH parcial preserva a outra taxa')
+    assert.equal((await (await api('/settings', { cookie: b })).json()).data.defaultOfferRate, 0.01)
+  })
+
+  test('perfil permite somente displayName e /auth/me reflete a alteração', async () => {
+    const cookie = (await beginAndCallback('allowed')).sessionCookie
+    const updated = await api('/profile', { cookie, method: 'PATCH', body: { displayName: 'Felipe no Cofre' } })
+    assert.equal(updated.status, 200)
+    assert.equal((await updated.json()).data.displayName, 'Felipe no Cofre')
+
+    const forbiddenMassAssignment = await api('/profile', { cookie, method: 'PATCH', body: { email: 'attacker@example.com' } })
+    assert.equal(forbiddenMassAssignment.status, 400)
+    const me = await (await api('/auth/me', { cookie })).json()
+    assert.equal(me.data.user.name, 'Felipe no Cofre')
+    assert.equal(me.data.user.email, 'felipeflw11@gmail.com')
+    assert.equal(me.data.user.provider, 'google')
+    assert.ok(me.data.user.session.createdAt)
+    assert.ok(me.data.user.session.expiresAt)
+  })
+
+  test('payload financeiro inválido é rejeitado', async () => {
+    const cookie = (await beginAndCallback('allowed')).sessionCookie
+    assert.equal((await api('/settings', { cookie, method: 'PATCH', body: { defaultOfferRate: 1.5 } })).status, 400)
+    assert.equal((await api('/settings', { cookie, method: 'PATCH', body: { userId: 2 } })).status, 400)
+  })
+})

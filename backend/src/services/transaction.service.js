@@ -2,6 +2,7 @@ const { randomUUID } = require('crypto')
 const transactionRepository = require('../repositories/transaction.repository')
 const categoryRepository = require('../repositories/category.repository')
 const cardRepository = require('../repositories/card.repository')
+const settingsRepository = require('../repositories/settings.repository')
 const { mapTransactionRow } = require('../utils/mappers/transaction.mapper')
 const { buildPaginationMeta } = require('../utils/pagination')
 const { deriveCompetenceFromDate } = require('../utils/competence')
@@ -71,6 +72,11 @@ function toDomainCategory(categoryRow) {
   }
 }
 
+async function getFinancialDefaults(userId) {
+  const settings = await settingsRepository.findByUserId(userId)
+  return { offerRate: settings.default_offer_rate, titheRate: settings.default_tithe_rate }
+}
+
 async function listTransactions(userId, query) {
   await ensureRecurringExpensesGenerated(userId)
   const { page, limit, q, type, categoryId, cardId, installmentGroupId, month, year, dateFrom, dateTo, status, sortBy, sortDir } =
@@ -133,7 +139,8 @@ async function createTransaction(userId, input) {
   // A regra em si (domain/financialRules.js) já devolve zeros quando a
   // categoria não é de receita ou não está elegível — chamar sempre aqui
   // evita um `if (type === 'income')` espalhado pelo service.
-  const obligations = calculateIncomeObligations({ amount: input.amount, category: toDomainCategory(category) })
+  const defaults = await getFinancialDefaults(userId)
+  const obligations = calculateIncomeObligations({ amount: input.amount, category: toDomainCategory(category), defaults })
 
   const row = await transactionRepository.create(userId, {
     ...input,
@@ -237,7 +244,8 @@ async function updateTransaction(userId, id, patch) {
   if (amountChanged || categoryOrTypeChanged) {
     const categoryForCalc = effectiveCategoryRow ?? await categoryRepository.findById(userId, effectiveCategoryId)
     const effectiveAmount = patch.amount ?? current.amount
-    obligationsPatch = calculateIncomeObligations({ amount: effectiveAmount, category: toDomainCategory(categoryForCalc) })
+    const defaults = await getFinancialDefaults(userId)
+    obligationsPatch = calculateIncomeObligations({ amount: effectiveAmount, category: toDomainCategory(categoryForCalc), defaults })
   }
 
   const row = await transactionRepository.update(userId, id, {

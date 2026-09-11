@@ -16,29 +16,32 @@ import { RecurringExpensesProvider } from '@/contexts/RecurringExpensesContext'
 import { ROUTES } from '@/constants/routes'
 import { AuthProvider } from '@/contexts/AuthContext'
 import AuthGate from '@/components/auth/AuthGate'
+import { SettingsProvider } from '@/contexts/SettingsContext'
 
 function AuthenticatedApp() {
   return (
-    <CategoriesProvider>
-      <CardsProvider>
-        <RecurringExpensesProvider>
-          <TransactionsProvider>
-            <Routes>
-              <Route element={<AppShell />}>
-                <Route path={ROUTES.dashboard} element={<Dashboard />} />
-                <Route path={ROUTES.register} element={<RegisterTransaction />} />
-                <Route path={ROUTES.history} element={<History />} />
-                <Route path={ROUTES.analytics} element={<Analytics />} />
-                <Route path={ROUTES.categories} element={<Categories />} />
-                <Route path={ROUTES.cards} element={<Cards />} />
-                <Route path={ROUTES.recurringExpenses} element={<RecurringExpenses />} />
-                <Route path={ROUTES.settings} element={<Settings />} />
-              </Route>
-            </Routes>
-          </TransactionsProvider>
-        </RecurringExpensesProvider>
-      </CardsProvider>
-    </CategoriesProvider>
+    <SettingsProvider>
+      <CategoriesProvider>
+        <CardsProvider>
+          <RecurringExpensesProvider>
+            <TransactionsProvider>
+              <Routes>
+                <Route element={<AppShell />}>
+                  <Route path={ROUTES.dashboard} element={<Dashboard />} />
+                  <Route path={ROUTES.register} element={<RegisterTransaction />} />
+                  <Route path={ROUTES.history} element={<History />} />
+                  <Route path={ROUTES.analytics} element={<Analytics />} />
+                  <Route path={ROUTES.categories} element={<Categories />} />
+                  <Route path={ROUTES.cards} element={<Cards />} />
+                  <Route path={ROUTES.recurringExpenses} element={<RecurringExpenses />} />
+                  <Route path={ROUTES.settings} element={<Settings />} />
+                </Route>
+              </Routes>
+            </TransactionsProvider>
+          </RecurringExpensesProvider>
+        </CardsProvider>
+      </CategoriesProvider>
+    </SettingsProvider>
   )
 }
 

@@ -17,6 +17,8 @@ export const ENDPOINTS = {
   cardPayments: (id) => `/cards/${id}/payments`,
   recurringExpenses: '/recurring-expenses',
   recurringExpense: (id) => `/recurring-expenses/${id}`,
+  settings: '/settings',
+  profile: '/profile',
   auth: {
     google: '/auth/google',
     me: '/auth/me',

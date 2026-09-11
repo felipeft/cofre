@@ -28,6 +28,21 @@ export function AuthProvider({ children }) {
     setState({ loading: false, authenticated: false, user: null, error: null })
   }, [])
 
-  const value = useMemo(() => ({ ...state, refresh, logout, login: authService.beginGoogleLogin }), [state, refresh, logout])
+  const applyProfile = useCallback((profile) => {
+    setState((current) => ({
+      ...current,
+      user: current.user ? {
+        ...current.user,
+        name: profile.displayName,
+        displayName: profile.displayName,
+        googleName: profile.googleName,
+        email: profile.email,
+        avatarUrl: profile.avatarUrl,
+        createdAt: profile.createdAt,
+      } : null,
+    }))
+  }, [])
+
+  const value = useMemo(() => ({ ...state, refresh, logout, applyProfile, login: authService.beginGoogleLogin }), [state, refresh, logout, applyProfile])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

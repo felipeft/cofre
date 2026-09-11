@@ -98,6 +98,16 @@ describe('domain/financialRules — calculateIncomeObligations', () => {
     assert.equal(result.titheRateApplied, 0.1)
   })
 
+  test('override da categoria prevalece sobre defaults recebidos do usuário', () => {
+    const result = calculateIncomeObligations({
+      amount: 1000,
+      defaults: { offerRate: 0.02, titheRate: 0.2 },
+      category: incomeCategory({ applyOffer: true, offerRate: 0.015, applyTithe: true, titheRate: null }),
+    })
+    assert.equal(result.offerRateApplied, 0.015)
+    assert.equal(result.titheRateApplied, 0.2)
+  })
+
   test('arredondamento monetário a 2 casas', () => {
     const result = calculateIncomeObligations({
       amount: 33.33,

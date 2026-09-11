@@ -27,9 +27,13 @@ function resolveRate(categoryRate, defaultRate) {
  * `type`/`applyOffer`/`offerRate`/`applyTithe`/`titheRate`. A regra não faz
  * ideia se a fonte se chama "Pai", "Emprego" ou algo que ainda não existe.
  *
- * @param {{ amount: number, category: { type: string, applyOffer: boolean, offerRate: number|null, applyTithe: boolean, titheRate: number|null } }} input
+ * Precedência das taxas: override da categoria → preferência do usuário →
+ * default do sistema. O service carrega as preferências; o domínio recebe
+ * apenas números e continua puro.
+ *
+ * @param {{ amount: number, category: { type: string, applyOffer: boolean, offerRate: number|null, applyTithe: boolean, titheRate: number|null }, defaults?: { offerRate?: number, titheRate?: number } }} input
  */
-function calculateIncomeObligations({ amount, category }) {
+function calculateIncomeObligations({ amount, category, defaults = {} }) {
   // Só receita gera oferta/dízimo. Uma despesa (ou uma transação sem
   // categoria resolvida) nunca gera obrigação — devolve zeros explícitos em
   // vez de deixar `undefined` se propagar.
@@ -37,8 +41,10 @@ function calculateIncomeObligations({ amount, category }) {
     return { offerAmount: 0, titheAmount: 0, offerRateApplied: null, titheRateApplied: null }
   }
 
-  const offerRateApplied = category.applyOffer ? resolveRate(category.offerRate, DEFAULT_OFFER_RATE) : null
-  const titheRateApplied = category.applyTithe ? resolveRate(category.titheRate, DEFAULT_TITHE_RATE) : null
+  const userOfferRate = defaults.offerRate ?? DEFAULT_OFFER_RATE
+  const userTitheRate = defaults.titheRate ?? DEFAULT_TITHE_RATE
+  const offerRateApplied = category.applyOffer ? resolveRate(category.offerRate, userOfferRate) : null
+  const titheRateApplied = category.applyTithe ? resolveRate(category.titheRate, userTitheRate) : null
 
   return {
     offerAmount: offerRateApplied != null ? roundCurrency(amount * offerRateApplied) : 0,

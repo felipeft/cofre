@@ -1,8 +1,9 @@
 # Cofre — Frontend de controle financeiro pessoal
 
 Frontend em React 19 + Vite + Tailwind v4, integrado à API real do Cofre.
-Possui login Google, sessão consultada no backend e proteção da aplicação sem
-armazenar tokens no navegador. Nenhum dado é mockado — tudo vem do backend.
+Possui login Google, sessão consultada no backend, perfil e preferências
+financeiras individuais, sem armazenar tokens no navegador. Nenhum dado é
+mockado — tudo vem do backend.
 
 ## Como rodar
 
@@ -32,6 +33,7 @@ src/
 │  ├─ card.service.js         CRUD, resumo de limite e pagamento de fatura
 │  ├─ recurringExpense.service.js  CRUD das definições recorrentes
 │  ├─ auth.service.js         sessão, início do login Google e logout
+│  ├─ settings.service.js     leitura/atualização de preferências e perfil
 │  ├─ dashboard.service.js    calcula indicadores a partir de GET /transactions (sem endpoint dedicado ainda)
 │  └─ analytics.service.js    idem, para a página de Análises
 │
@@ -41,6 +43,8 @@ src/
 │  ├─ useCategories.js        porta de entrada para o Context de categorias
 │  ├─ useCards.js             porta de entrada para o Context de cartões
 │  ├─ useRecurringExpenses.js porta de entrada para recorrências
+│  ├─ useSettings.js          preferências persistidas do usuário
+│  ├─ useAuth.js              identidade, sessão e logout
 │  ├─ useDashboard.js         dados prontos + loading/error para a página Dashboard
 │  └─ useAnalytics.js         dados prontos + loading/error para a página Análises
 │
@@ -50,6 +54,7 @@ src/
 │  ├─ CardsContext.jsx         cartões ativos/inativos + CRUD
 │  ├─ RecurringExpensesContext.jsx  definições recorrentes + CRUD
 │  ├─ AuthContext.jsx           loading, usuário e estado autenticado
+│  ├─ SettingsContext.jsx       preferências financeiras globais do usuário
 │  └─ ToastContext.jsx         fila de notificações
 │
 ├─ constants/                Valores fixos fora dos componentes
@@ -115,6 +120,10 @@ exclusão recusada pelo backend não faz o item desaparecer da interface.
   saber na hora: virou Context para ter uma única fonte de verdade.
 - **`api/client.js` usa `credentials: 'include'`** e concentra o tratamento de
   `401`; o token de sessão nunca fica disponível ao JavaScript.
+- **Responsabilidades de autenticação e settings são separadas.** O
+  `AuthContext` mantém identidade, perfil e sessão; o `SettingsContext` mantém
+  as preferências persistidas usadas nos formulários financeiros. A resposta
+  validada pela API sempre substitui o estado local depois de salvar.
 - **Sem React Query/SWR.** Conforme pedido nesta etapa, o cache/estado de
   requisição é feito só com `useState`/`useEffect` nos hooks acima — simples
   o suficiente para o tamanho atual do app.
@@ -231,6 +240,28 @@ cria uma segunda movimentação financeira.
 O formulário de categorias oferece 20 cores predefinidas, 41 ícones e uma
 cor personalizada escolhida pelo espectro visual ou por hexadecimal
 `#RRGGBB`.
+
+---
+
+## Fase 4, Etapa 11 — Configurações do usuário
+
+**Status: implementação e validação local concluídas; teste em produção e no
+Safari pendente.**
+
+A rota `/configuracoes` organiza a interface em Perfil, Preferências
+financeiras, Conta e Sessão. Ela permite editar o nome preferido no Cofre,
+alterar os defaults de oferta e dízimo, consultar identidade Google e datas
+seguras da sessão, além de reutilizar o logout real do backend.
+
+Os formulários de receita consomem o `SettingsContext` para mostrar o cálculo
+com as taxas atuais. No formulário de categoria, oferta e dízimo podem herdar
+o padrão da conta ou receber override explícito. A API continua sendo a fonte
+de verdade, e estados de carregamento, salvamento, sucesso e erro são exibidos
+sem exigir recarregar a página.
+
+A moeda continua sendo BRL e a apresentação `pt-BR`; não foi criada seleção
+artificial de moedas sem suporte a conversão. A página mantém o design escuro,
+layout responsivo e controles adequados ao uso móvel.
 
 ## Deploy e uso mobile
 

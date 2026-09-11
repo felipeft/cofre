@@ -33,7 +33,26 @@ function verifySignedState(signedValue, expectedValue) {
 }
 
 function isAllowed(email) { return config.googleAuth.allowedEmails.includes(normalizeEmail(email)) }
-function mapUser(row) { return { id: row.user_id ?? row.id, email: row.email, name: row.name, avatarUrl: row.avatar_url ?? null } }
+function mapUser(row) {
+  const displayName = row.display_name || row.name
+  const user = {
+    id: row.user_id ?? row.id,
+    provider: 'google',
+    email: row.email,
+    name: displayName,
+    displayName,
+    googleName: row.name,
+    avatarUrl: row.avatar_url ?? null,
+    createdAt: row.user_created_at ?? row.created_at,
+  }
+  if (row.session_created_at) {
+    user.session = {
+      createdAt: row.session_created_at,
+      expiresAt: row.expires_at,
+    }
+  }
+  return user
+}
 
 async function beginGoogleLogin() {
   const state = randomToken()
