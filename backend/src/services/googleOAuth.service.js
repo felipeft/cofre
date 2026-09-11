@@ -47,7 +47,12 @@ async function exchangeCode({ code, codeVerifier }) {
     }),
   })
   const payload = await response.json().catch(() => ({}))
-  if (!response.ok || !payload.id_token) throw new Error('Google recusou a troca do código OAuth.')
+  if (!response.ok || !payload.id_token) {
+    const error = new Error('Google recusou a troca do código OAuth.')
+    error.code = 'GOOGLE_TOKEN_EXCHANGE_FAILED'
+    error.providerError = [payload.error, payload.error_description].filter(Boolean).join(': ') || `HTTP ${response.status}`
+    throw error
+  }
   return verifyIdToken(payload.id_token)
 }
 

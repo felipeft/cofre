@@ -3,6 +3,7 @@ const apiResponse = require('../utils/apiResponse')
 const asyncHandler = require('../utils/asyncHandler')
 const config = require('../config')
 const { parseCookies, serializeCookie } = require('../utils/cookies')
+const logger = require('../utils/logger')
 
 const google = asyncHandler(async (req, res) => {
   const login = await authService.beginGoogleLogin()
@@ -20,6 +21,12 @@ const callback = asyncHandler(async (req, res) => {
     res.setHeader('Set-Cookie', [clearState, sessionCookie])
     return res.redirect(result.redirectUrl)
   } catch (error) {
+    logger.error('Falha no callback do Google OAuth', {
+      requestId: req.id,
+      code: error.code || 'AUTH_CALLBACK_FAILED',
+      error: error.message,
+      providerError: error.providerError,
+    })
     res.setHeader('Set-Cookie', clearState)
     const reason = error.code === 'AUTH_NOT_ALLOWED' ? 'not_allowed' : 'failed'
     return res.redirect(`${authService.getFrontendUrl()}/?auth_error=${reason}`)
