@@ -1,12 +1,14 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
 import { settingsService } from '@/services/settings.service'
 import { DEFAULT_OFFER_RATE, DEFAULT_TITHE_RATE } from '@/constants/financialRules'
+import { applyResolvedTheme } from '@/utils/theme'
 
 export const SettingsContext = createContext(null)
 
 const FALLBACK_SETTINGS = {
   defaultOfferRate: DEFAULT_OFFER_RATE,
   defaultTitheRate: DEFAULT_TITHE_RATE,
+  theme: 'system',
 }
 
 export function SettingsProvider({ children }) {
@@ -30,6 +32,22 @@ export function SettingsProvider({ children }) {
   }, [])
 
   useEffect(() => { refresh().catch(() => {}) }, [refresh])
+
+  useEffect(() => {
+    const mediaQuery = typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-color-scheme: dark)')
+      : null
+    const apply = () => applyResolvedTheme(settings.theme ?? 'system', mediaQuery)
+    apply()
+
+    if (settings.theme !== 'system' || !mediaQuery) return undefined
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', apply)
+      return () => mediaQuery.removeEventListener('change', apply)
+    }
+    mediaQuery.addListener?.(apply)
+    return () => mediaQuery.removeListener?.(apply)
+  }, [settings.theme])
 
   const update = useCallback(async (patch) => {
     const response = await settingsService.update(patch)

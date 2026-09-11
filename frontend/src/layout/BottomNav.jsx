@@ -100,7 +100,7 @@ export default function BottomNav({ onRegister }) {
               type="button"
               onClick={handleRegister}
               aria-label="Registrar movimentação"
-              className="focus-ring flex size-[52px] items-center justify-center rounded-full bg-income text-black shadow-[0_4px_20px_rgba(62,207,142,0.35)] transition-transform active:scale-95"
+              className="focus-ring flex size-[52px] items-center justify-center rounded-full bg-income text-on-income shadow-[0_4px_20px_rgba(62,207,142,0.35)] transition-transform active:scale-95"
             >
               <Plus size={24} strokeWidth={2.5} />
             </button>

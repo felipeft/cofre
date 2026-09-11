@@ -6,8 +6,8 @@ confiável e preparado para evoluir com autenticação, integração ao Google
 Sheets, inteligência financeira, Engenharia de Dados e IA.
 
 > **Status atual:** Fase 5 em acabamento — Etapas 12 e 13 validadas em
-> produção; novo layout anual legível da planilha implementado localmente,
-> aguardando validação final após o deploy.
+> produção; polimentos responsivos, navegação temporal e temas claro/escuro
+> implementados, aguardando validação final após o deploy.
 
 ## Acesso
 
@@ -38,6 +38,8 @@ período sem uso pode levar alguns segundos enquanto o serviço é reativado.
 - Isolamento dos dados financeiros por usuário autenticado.
 - Perfil com nome preferido no Cofre e identidade Google preservada.
 - Preferências financeiras individuais de oferta e dízimo.
+- Aparência individual com temas Sistema, Claro e Escuro; Sistema acompanha
+  o dispositivo e usa o tema claro como fallback.
 - Área de configurações com dados seguros da conta e da sessão atual.
 - Integração Google Sheets opcional por usuário, com exportação e importação
   manuais, abas anuais legíveis e refresh token criptografado.

@@ -36,7 +36,7 @@ export default function Sidebar({ collapsed, onToggle, onRegister }) {
       <div className="p-3 flex flex-col gap-2 border-t border-border-soft">
         <button
           onClick={onRegister}
-          className="focus-ring flex items-center justify-center gap-2 h-11 rounded-control bg-income text-black font-medium text-[14px] hover:brightness-110 transition-all"
+          className="focus-ring flex items-center justify-center gap-2 h-11 rounded-control bg-income text-on-income font-medium text-[14px] hover:brightness-110 transition-all"
         >
           <Plus size={16} strokeWidth={2.5} />
           {!collapsed && <span>Registrar</span>}

@@ -6,6 +6,7 @@ const updateSettingsSchema = z
   .strictObject({
     defaultOfferRate: z.number().min(0, RATE_MESSAGE).max(1, RATE_MESSAGE).optional(),
     defaultTitheRate: z.number().min(0, RATE_MESSAGE).max(1, RATE_MESSAGE).optional(),
+    theme: z.enum(['system', 'light', 'dark']).optional(),
   })
   .refine((data) => Object.keys(data).length > 0, { message: 'Envie ao menos uma preferência para atualizar.' })
 

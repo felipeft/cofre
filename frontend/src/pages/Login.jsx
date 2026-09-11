@@ -24,7 +24,7 @@ export default function Login() {
           <p>Entre com uma conta autorizada. Sua sessão fica protegida em um cookie HTTP-only.</p>
         </div>
         {(oauthError || error) && <p role="alert" className="mb-4 rounded-control border border-expense/30 bg-expense-soft p-3 text-sm text-expense">{oauthError || error}</p>}
-        <button onClick={login} className="focus-ring flex h-12 w-full items-center justify-center gap-2 rounded-control bg-income font-semibold text-black transition-all hover:brightness-110">
+        <button onClick={login} className="focus-ring flex h-12 w-full items-center justify-center gap-2 rounded-control bg-income font-semibold text-on-income transition-all hover:brightness-110">
           <LogIn size={18} /> Entrar com Google
         </button>
       </section>

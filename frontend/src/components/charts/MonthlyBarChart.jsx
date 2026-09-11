@@ -28,7 +28,7 @@ export default function MonthlyBarChart({ data }) {
             tickLine={false}
             tick={{ fill: CHART_TICK_COLOR, fontSize: 12 }}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: '#1c1c1f' }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--color-surface-2)' }} />
           <Bar dataKey="receitas" fill={SEMANTIC_COLORS.income} radius={[4, 4, 0, 0]} maxBarSize={18} />
           <Bar dataKey="despesas" fill={SEMANTIC_COLORS.expense} radius={[4, 4, 0, 0]} maxBarSize={18} />
         </BarChart>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CalendarClock, LogOut, Mail, ShieldCheck, UserRound } from 'lucide-react'
+import { CalendarClock, LogOut, Mail, Monitor, Moon, ShieldCheck, Sun, UserRound } from 'lucide-react'
 import Header from '@/layout/Header'
 import SettingsGroup from '@/components/settings/SettingsGroup'
 import SettingsRow from '@/components/settings/SettingsRow'
@@ -24,6 +24,7 @@ export default function Settings() {
   const [titheRate, setTitheRate] = useState(percent(settings.defaultTitheRate))
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingFinancial, setSavingFinancial] = useState(false)
+  const [savingTheme, setSavingTheme] = useState(false)
 
   useEffect(() => {
     setOfferRate(percent(settings.defaultOfferRate))
@@ -60,6 +61,25 @@ export default function Settings() {
     }
   }
 
+  const saveTheme = async (theme) => {
+    if (savingTheme || theme === settings.theme) return
+    setSavingTheme(true)
+    try {
+      await update({ theme })
+      showToast('Aparência atualizada', 'success')
+    } catch (requestError) {
+      showToast(requestError.message || 'Não foi possível alterar a aparência.', 'error')
+    } finally {
+      setSavingTheme(false)
+    }
+  }
+
+  const themeOptions = [
+    { value: 'system', label: 'Sistema', description: 'Segue o dispositivo', icon: Monitor },
+    { value: 'light', label: 'Claro', description: 'Sempre claro', icon: Sun },
+    { value: 'dark', label: 'Escuro', description: 'Sempre escuro', icon: Moon },
+  ]
+
   return (
     <div>
       <Header title="Ajustes" subtitle="Perfil, preferências financeiras e sessão" />
@@ -81,6 +101,40 @@ export default function Settings() {
             <Input label="Nome de exibição no Cofre" value={displayName} maxLength={80} required onChange={(event) => setDisplayName(event.target.value)} />
             <Button type="submit" disabled={savingProfile || !displayName.trim()}>{savingProfile ? 'Salvando…' : 'Salvar perfil'}</Button>
           </form>
+        </SettingsGroup>
+
+        <SettingsGroup title="Aparência">
+          <div className="p-4">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Tema da interface">
+              {themeOptions.map(({ value, label, description, icon: Icon }) => {
+                const selected = settings.theme === value
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    disabled={loading || savingTheme}
+                    onClick={() => saveTheme(value)}
+                    className={`focus-ring flex min-h-[76px] items-center gap-3 rounded-control border p-3 text-left transition-colors disabled:opacity-50 ${
+                      selected
+                        ? 'border-income/50 bg-income/10 text-income'
+                        : 'border-border bg-surface-2 text-text hover:bg-surface-3'
+                    }`}
+                  >
+                    <Icon size={20} className="shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block text-[13px] font-semibold">{label}</span>
+                      <span className={`block text-[11px] ${selected ? 'text-income' : 'text-text-muted'}`}>{description}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+            <p className="mt-3 text-[12px] text-text-faint">
+              No modo Sistema, o Cofre acompanha automaticamente a aparência do dispositivo. Sem preferência disponível, utiliza o tema claro.
+            </p>
+          </div>
         </SettingsGroup>
 
         <SettingsGroup title="Preferências financeiras">

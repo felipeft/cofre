@@ -18,6 +18,7 @@ function update(userId, patch) {
     const columns = {
       defaultOfferRate: 'default_offer_rate',
       defaultTitheRate: 'default_tithe_rate',
+      theme: 'theme',
     }
     const sets = []
     const params = { userId }

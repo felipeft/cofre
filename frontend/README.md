@@ -1,7 +1,7 @@
 # Cofre — Frontend de controle financeiro pessoal
 
 Frontend em React 19 + Vite + Tailwind v4, integrado à API real do Cofre.
-Possui login Google, sessão consultada no backend, perfil e preferências
+Possui login Google, sessão consultada no backend, perfil, tema e preferências
 financeiras individuais, sem armazenar tokens no navegador. Nenhum dado é
 mockado — tudo vem do backend.
 
@@ -250,8 +250,8 @@ cor personalizada escolhida pelo espectro visual ou por hexadecimal
 
 **Status: concluída.**
 
-A rota `/configuracoes` organiza a interface em Perfil, Preferências
-financeiras, Conta e Sessão. Ela permite editar o nome preferido no Cofre,
+A rota `/configuracoes` organiza a interface em Perfil, Aparência,
+Preferências financeiras, Conta e Sessão. Ela permite editar o nome preferido no Cofre,
 alterar os defaults de oferta e dízimo, consultar identidade Google e datas
 seguras da sessão, além de reutilizar o logout real do backend.
 
@@ -262,8 +262,11 @@ de verdade, e estados de carregamento, salvamento, sucesso e erro são exibidos
 sem exigir recarregar a página.
 
 A moeda continua sendo BRL e a apresentação `pt-BR`; não foi criada seleção
-artificial de moedas sem suporte a conversão. A página mantém o design escuro,
-layout responsivo e controles adequados ao uso móvel.
+artificial de moedas sem suporte a conversão. A aparência oferece Sistema,
+Claro e Escuro. Sistema acompanha `prefers-color-scheme` e cai para Claro
+quando o dispositivo não fornece a preferência. A paleta usa tokens globais,
+incluindo gráficos e controles, e troca a marca para `icon-192-nobg.png` no
+tema claro e `icon-192.png` no escuro.
 
 ---
 

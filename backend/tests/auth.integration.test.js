@@ -162,11 +162,17 @@ describe('perfil e configurações do usuário atual', () => {
     const defaultsB = await (await api('/settings', { cookie: b })).json()
     assert.equal(defaultsA.data.defaultOfferRate, 0.01)
     assert.equal(defaultsB.data.defaultOfferRate, 0.01)
+    assert.equal(defaultsA.data.theme, 'system')
+    assert.equal(defaultsB.data.theme, 'system')
 
-    const updated = await api('/settings', { cookie: a, method: 'PATCH', body: { defaultOfferRate: 0.025 } })
+    const updated = await api('/settings', { cookie: a, method: 'PATCH', body: { defaultOfferRate: 0.025, theme: 'dark' } })
     assert.equal(updated.status, 200)
-    assert.equal((await updated.json()).data.defaultTitheRate, 0.1, 'PATCH parcial preserva a outra taxa')
-    assert.equal((await (await api('/settings', { cookie: b })).json()).data.defaultOfferRate, 0.01)
+    const updatedData = (await updated.json()).data
+    assert.equal(updatedData.defaultTitheRate, 0.1, 'PATCH parcial preserva a outra taxa')
+    assert.equal(updatedData.theme, 'dark')
+    const untouchedB = (await (await api('/settings', { cookie: b })).json()).data
+    assert.equal(untouchedB.defaultOfferRate, 0.01)
+    assert.equal(untouchedB.theme, 'system')
   })
 
   test('perfil permite somente displayName e /auth/me reflete a alteração', async () => {
@@ -188,6 +194,7 @@ describe('perfil e configurações do usuário atual', () => {
   test('payload financeiro inválido é rejeitado', async () => {
     const cookie = (await beginAndCallback('allowed')).sessionCookie
     assert.equal((await api('/settings', { cookie, method: 'PATCH', body: { defaultOfferRate: 1.5 } })).status, 400)
+    assert.equal((await api('/settings', { cookie, method: 'PATCH', body: { theme: 'sepia' } })).status, 400)
     assert.equal((await api('/settings', { cookie, method: 'PATCH', body: { userId: 2 } })).status, 400)
   })
 })

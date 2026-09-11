@@ -1,6 +1,6 @@
 const variants = {
-  primary: 'bg-income text-black hover:brightness-110 active:brightness-95',
-  secondary: 'bg-surface-3 text-text hover:bg-[#2a2a2e] border border-border',
+  primary: 'bg-income text-on-income hover:brightness-110 active:brightness-95',
+  secondary: 'bg-surface-3 text-text hover:brightness-95 border border-border',
   ghost: 'bg-transparent text-text-muted hover:text-text hover:bg-surface-2',
   danger: 'bg-expense/15 text-expense border border-expense/30 hover:bg-expense/25',
 }

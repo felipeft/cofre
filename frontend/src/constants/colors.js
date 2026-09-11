@@ -1,13 +1,11 @@
-// Espelha exatamente os tokens definidos em `styles/index.css` (@theme).
-// Necessário porque bibliotecas de gráfico (Recharts) recebem cor via prop
-// JS, não conseguem ler `var(--color-*)` diretamente em todos os contextos.
-// Qualquer mudança de paleta deve ser feita nos dois lugares.
+// Recharts aceita variáveis CSS nas propriedades SVG. Assim os gráficos
+// acompanham o tema resolvido sem duplicar a paleta em JavaScript.
 export const SEMANTIC_COLORS = {
-  income: '#3ecf8e',
-  expense: '#f2666a',
-  info: '#5b9ef5',
-  alert: '#f5a25b',
+  income: 'var(--color-income)',
+  expense: 'var(--color-expense)',
+  info: 'var(--color-info)',
+  alert: 'var(--color-alert)',
 }
 
-export const CHART_GRID_COLOR = '#27272a'
-export const CHART_TICK_COLOR = '#8b8b93'
+export const CHART_GRID_COLOR = 'var(--color-border)'
+export const CHART_TICK_COLOR = 'var(--color-text-muted)'

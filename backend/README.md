@@ -531,7 +531,9 @@ Safari.
 
 A migration `0010_create_user_settings.sql` acrescenta `display_name` a
 `users` e cria `user_settings` em relação 1:1, com criação automática para
-novos usuários e backfill dos usuários existentes. Identidade externa
+novos usuários e backfill dos usuários existentes. A migration sequencial
+`0013_add_theme_to_user_settings.sql` adiciona a preferência visual sem
+alterar migrations anteriores. Identidade externa
 (`google_sub`, e-mail e nome Google) continua separada do nome preferido no
 Cofre.
 
@@ -541,6 +543,7 @@ As preferências implementadas possuem utilidade direta no domínio atual:
 |---|---:|---|
 | `default_offer_rate` | `0.01` | Oferta de novas receitas sem taxa específica na categoria |
 | `default_tithe_rate` | `0.10` | Dízimo de novas receitas sem taxa específica na categoria |
+| `theme` | `system` | Tema Sistema, Claro (`light`) ou Escuro (`dark`) |
 
 A precedência é: taxa específica da categoria → preferência do usuário →
 constante do sistema. O Service carrega categoria e settings, passa as taxas
@@ -554,16 +557,16 @@ Endpoints autenticados, sempre orientados à sessão atual:
 | `GET` | `/profile` | Identidade Google e perfil Cofre seguros |
 | `PATCH` | `/profile` | Atualiza somente `displayName` |
 | `GET` | `/settings` | Preferências do usuário, criando defaults se necessário |
-| `PATCH` | `/settings` | Atualização parcial validada das taxas padrão |
+| `PATCH` | `/settings` | Atualização parcial validada das taxas e do tema |
 
 Nenhum endpoint aceita `userId` como origem da autorização. Os schemas são
 estritos para impedir mass assignment de e-mail, identidade Google ou outro
 campo interno. `/auth/me` também informa apenas datas seguras da sessão atual,
 sem expor token ou hash.
 
-Moeda, locale, timezone e tema não foram expostos nesta etapa: a aplicação
-ainda implementa concretamente apenas BRL, `pt-BR` e tema escuro, e persistir
-alternativas sem comportamento real criaria configurações artificiais.
+Moeda, locale e timezone permanecem fixos enquanto não houver comportamento
+real para alternativas. O tema passou a ser persistido porque Claro, Escuro
+e acompanhamento do dispositivo são implementados integralmente na interface.
 
 Validação local da Etapa 11 incluiu dois
 usuários, isolamento, atualização parcial, mass assignment, precedência de

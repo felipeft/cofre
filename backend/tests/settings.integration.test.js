@@ -67,15 +67,17 @@ function income(categoryId, description) {
 
 test('defaults existem para cada usuário e PATCH parcial preserva campos ausentes', async () => {
   assert.deepEqual(
-    (({ defaultOfferRate, defaultTitheRate }) => ({ defaultOfferRate, defaultTitheRate }))(await settingsA.getSettings()),
-    { defaultOfferRate: 0.01, defaultTitheRate: 0.1 }
+    (({ defaultOfferRate, defaultTitheRate, theme }) => ({ defaultOfferRate, defaultTitheRate, theme }))(await settingsA.getSettings()),
+    { defaultOfferRate: 0.01, defaultTitheRate: 0.1, theme: 'system' }
   )
-  await settingsA.updateSettings({ defaultOfferRate: 0.02 })
+  await settingsA.updateSettings({ defaultOfferRate: 0.02, theme: 'dark' })
   const updatedA = await settingsA.getSettings()
   const untouchedB = await settingsB.getSettings()
   assert.equal(updatedA.defaultOfferRate, 0.02)
   assert.equal(updatedA.defaultTitheRate, 0.1)
+  assert.equal(updatedA.theme, 'dark')
   assert.equal(untouchedB.defaultOfferRate, 0.01)
+  assert.equal(untouchedB.theme, 'system')
 })
 
 test('preferências financeiras são isoladas e snapshots históricos não mudam', async () => {
