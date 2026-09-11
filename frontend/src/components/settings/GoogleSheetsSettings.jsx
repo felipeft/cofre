@@ -47,7 +47,7 @@ export default function GoogleSheetsSettings() {
         <div className="h-10 w-10 rounded-xl bg-income/15 text-income flex items-center justify-center shrink-0"><FileSpreadsheet size={20} /></div>
         <div className="min-w-0 flex-1">
           <p className="text-[14px] font-medium">{labels[integration.status] || integration.status}</p>
-          <p className="text-[12px] text-text-muted mt-1">Backup e importação manual. O Cofre continua usando o banco como fonte oficial.</p>
+          <p className="text-[12px] text-text-muted mt-1">Visão financeira anual e cadastro de despesas simples. O Cofre continua sendo a fonte oficial.</p>
           {integration.googleAccountEmail && <p className="text-[12px] text-text-faint truncate mt-1">{integration.googleAccountEmail}</p>}
         </div>
       </div>

@@ -7,10 +7,10 @@ const defaultGoogleClient = require('./googleSheetsApi.client')
 const googleOAuth = require('./googleOAuth.service')
 const { encryptToken, decryptToken } = require('../utils/tokenEncryption')
 const { yearsFromStart, missingYearSheets } = require('../domain/googleSheetsCalendar')
-const { transactionToSheetRow, sheetRowToImportCandidate } = require('../utils/mappers/googleSheets.mapper')
+const { buildYearSheet } = require('../domain/googleSheetsLayout')
+const { sheetRowToImportCandidate } = require('../utils/mappers/googleSheets.mapper')
 const {
-  SHEET_SCHEMA_VERSION, SPREADSHEET_NAME, AUXILIARY_SHEETS, TRANSACTION_HEADERS,
-  CATEGORY_HEADERS, CARD_HEADERS, RECURRING_HEADERS, PAYMENT_HEADERS, SETTINGS_HEADERS,
+  SHEET_SCHEMA_VERSION, SPREADSHEET_NAME, TRANSACTION_HEADERS, TRANSACTIONS_MARKER, MANAGED_LAST_COLUMN,
 } = require('../constants/googleSheets')
 const UnauthorizedError = require('../errors/UnauthorizedError')
 const ConflictError = require('../errors/ConflictError')
@@ -33,6 +33,12 @@ function safeEqual(a, b) {
 function frontendRedirect(query = '') { return `${new URL(config.googleSheets.callbackUrl).origin}/configuracoes${query}` }
 function stateCookieSettings() { return { httpOnly: true, secure: config.isProduction, sameSite: 'Lax', path: '/api/integrations/google-sheets', maxAge: ATTEMPT_TTL_SECONDS } }
 function quote(title) { return `'${String(title).replaceAll("'", "''")}'` }
+function sheetColor(value) {
+  let hex = String(value || '').replace('#', '')
+  if (/^[a-f\d]{3}$/i.test(hex)) hex = hex.split('').map((part) => part + part).join('')
+  if (!/^[a-f\d]{6}$/i.test(hex)) return null
+  return { red: parseInt(hex.slice(0, 2), 16) / 255, green: parseInt(hex.slice(2, 4), 16) / 255, blue: parseInt(hex.slice(4, 6), 16) / 255 }
+}
 
 function mapIntegration(row, suggestedStartYear = null) {
   if (!row) return { status: 'not_connected', connected: false, suggestedStartYear }
@@ -109,35 +115,30 @@ async function getAccess(userId) {
 async function ensureManagedSheets(token, spreadsheetId, startYear, currentYear) {
   const spreadsheet = await googleClient.getSpreadsheet(token, spreadsheetId)
   const existing = spreadsheet.sheets.map((sheet) => sheet.properties.title)
-  const missing = [...AUXILIARY_SHEETS.filter((title) => !existing.includes(title)), ...missingYearSheets(existing, startYear, currentYear).map(String)]
-  if (missing.length) await googleClient.batchUpdate(token, spreadsheetId, missing.map((title) => ({ addSheet: { properties: { title } } })))
+  const missing = missingYearSheets(existing, startYear, currentYear).map(String)
+  if (missing.length) await googleClient.batchUpdate(token, spreadsheetId, missing.map((title) => ({ addSheet: { properties: { title, gridProperties: { rowCount: 2500, columnCount: TRANSACTION_HEADERS.length } } } })))
   return missing
 }
 
-function auxiliaryRows(data, now, userId, createdAt) {
-  return {
-    Metadata: [['key', 'value'], ['schema_version', SHEET_SCHEMA_VERSION], ['cofre_user_id', userId], ['created_by_cofre', true], ['created_at', createdAt], ['last_export_at', now]],
-    Categorias: [CATEGORY_HEADERS, ...data.categories.map((r) => [r.id, r.name, r.type, r.color, r.icon, Boolean(r.is_active), r.sort_order, Boolean(r.apply_offer), r.offer_rate ?? '', Boolean(r.apply_tithe), r.tithe_rate ?? '', r.created_at, r.updated_at])],
-    Cartões: [CARD_HEADERS, ...data.cards.map((r) => [r.id, r.name, r.credit_limit, r.closing_day, r.due_day, Boolean(r.is_active), r.created_at, r.updated_at])],
-    'Gastos Recorrentes': [RECURRING_HEADERS, ...data.recurringExpenses.map((r) => [r.id, r.description, r.amount, r.category_id, r.category_name, r.day_of_month, r.start_date, r.end_date ?? '', Boolean(r.is_active), r.card_id ?? '', r.card_name ?? '', r.notes, r.source, r.created_at, r.updated_at])],
-    'Pagamentos de Fatura': [PAYMENT_HEADERS, ...data.payments.map((r) => [r.id, r.card_id, r.card_name, r.amount, r.paid_at, r.notes, r.created_at])],
-    Configurações: [SETTINGS_HEADERS, [data.settings.default_offer_rate, data.settings.default_tithe_rate, data.settings.updated_at]],
-  }
-}
-
-function formatRequests(spreadsheet) {
+function formatRequests(spreadsheet, layouts, data) {
   const requests = []
   for (const sheet of spreadsheet.sheets) {
     const title = sheet.properties.title
-    if (!AUXILIARY_SHEETS.includes(title) && !/^\d{4}$/.test(title)) continue
+    if (!/^\d{4}$/.test(title) || !layouts[title]) continue
     const sheetId = sheet.properties.sheetId
-    requests.push({ updateSheetProperties: { properties: { sheetId, gridProperties: { frozenRowCount: 1 } }, fields: 'gridProperties.frozenRowCount' } })
-    requests.push({ repeatCell: { range: { sheetId, startRowIndex: 0, endRowIndex: 1 }, cell: { userEnteredFormat: { backgroundColor: { red: 0.08, green: 0.12, blue: 0.16 }, textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
-    requests.push({ autoResizeDimensions: { dimensions: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: /^\d{4}$/.test(title) ? TRANSACTION_HEADERS.length : 15 } } })
-    if (/^\d{4}$/.test(title)) {
-      requests.push({ setBasicFilter: { filter: { range: { sheetId, startRowIndex: 0, startColumnIndex: 0, endColumnIndex: TRANSACTION_HEADERS.length } } } })
-      for (const column of [8, 16, 17]) requests.push({ repeatCell: { range: { sheetId, startRowIndex: 1, startColumnIndex: column, endColumnIndex: column + 1 }, cell: { userEnteredFormat: { numberFormat: { type: 'CURRENCY', pattern: 'R$ #,##0.00' } } }, fields: 'userEnteredFormat.numberFormat' } })
-    }
+    const layout = layouts[title]
+    requests.push({ updateSheetProperties: { properties: { sheetId, gridProperties: { frozenRowCount: 2 } }, fields: 'gridProperties.frozenRowCount' } })
+    requests.push({ updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 15, endIndex: TRANSACTION_HEADERS.length }, properties: { hiddenByUser: true }, fields: 'hiddenByUser' } })
+    for (const rowIndex of [0, 3, 5, 6, 20, 21, layout.markerRow, layout.headerRow]) requests.push({ repeatCell: { range: { sheetId, startRowIndex: rowIndex, endRowIndex: rowIndex + 1, startColumnIndex: 0, endColumnIndex: 15 }, cell: { userEnteredFormat: { backgroundColor: { red: rowIndex === 0 ? 0.04 : 0.08, green: rowIndex === 0 ? 0.32 : 0.18, blue: rowIndex === 0 ? 0.22 : 0.2 }, textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
+    data.categories.filter((category) => category.type === 'expense').forEach((category, index) => {
+      const color = sheetColor(category.color)
+      if (color) requests.push({ repeatCell: { range: { sheetId, startRowIndex: layout.firstCategoryRow + index, endRowIndex: layout.firstCategoryRow + index + 1, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { textFormat: { foregroundColor: color, bold: true } } }, fields: 'userEnteredFormat.textFormat' } })
+    })
+    requests.push({ autoResizeDimensions: { dimensions: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: 15 } } })
+    requests.push({ setBasicFilter: { filter: { range: { sheetId, startRowIndex: layout.headerRow, startColumnIndex: 0, endColumnIndex: 15 } } } })
+    for (const [startRow, endRow, startColumn, endColumn] of [[3, 4, 3, 12], [7, 19, 1, 6], [layout.firstCategoryRow, layout.firstCategoryRow + layout.categoryCount, 1, 14], [layout.firstTransactionRow, layout.firstTransactionRow + 2000, 5, 6], [layout.firstTransactionRow, layout.firstTransactionRow + 2000, 11, 13]]) if (endRow > startRow) requests.push({ repeatCell: { range: { sheetId, startRowIndex: startRow, endRowIndex: endRow, startColumnIndex: startColumn, endColumnIndex: endColumn }, cell: { userEnteredFormat: { numberFormat: { type: 'CURRENCY', pattern: 'R$ #,##0.00' } } }, fields: 'userEnteredFormat.numberFormat' } })
+    const validations = [[2, ['Despesa']], [4, data.categories.filter((c) => c.type === 'expense' && c.is_active).map((c) => c.name)], [6, ['Dinheiro', 'Cartão']], [7, data.cards.filter((c) => c.is_active).map((c) => c.name)], [10, ['Confirmada', 'Pendente', 'Cancelada']]]
+    for (const [column, values] of validations) if (values.length) requests.push({ setDataValidation: { range: { sheetId, startRowIndex: layout.firstTransactionRow, endRowIndex: layout.firstTransactionRow + 2000, startColumnIndex: column, endColumnIndex: column + 1 }, rule: { condition: { type: 'ONE_OF_LIST', values: values.map((userEnteredValue) => ({ userEnteredValue })) }, strict: true, showCustomUi: true } } })
   }
   return requests
 }
@@ -151,8 +152,8 @@ async function createSpreadsheet(userId, { startYear }, currentYear = new Date()
   if (integration.spreadsheet_id && integration.status !== 'file_missing') throw new ConflictError('Este usuário já possui uma planilha do Cofre.')
   const years = yearsFromStart(startYear, currentYear)
   if (!years.length) throw new ValidationError('O ano inicial não pode ser posterior ao ano atual.')
-  const titles = [...AUXILIARY_SHEETS, ...years.map(String)]
-  const created = await googleClient.createSpreadsheet(token, { properties: { title: SPREADSHEET_NAME }, sheets: titles.map((title) => ({ properties: { title } })) })
+  const titles = years.map(String)
+  const created = await googleClient.createSpreadsheet(token, { properties: { title: SPREADSHEET_NAME }, sheets: titles.map((title) => ({ properties: { title, gridProperties: { rowCount: 2500, columnCount: TRANSACTION_HEADERS.length } } })) })
   await repository.saveSpreadsheet(userId, { spreadsheetId: created.spreadsheetId, spreadsheetName: SPREADSHEET_NAME, startYear })
   logger.info('Planilha Cofre criada', { userId, spreadsheetId: created.spreadsheetId })
   await exportData(userId, currentYear)
@@ -168,57 +169,25 @@ async function exportData(userId, currentYear = new Date().getUTCFullYear()) {
     await ensureManagedSheets(token, integration.spreadsheet_id, Number(integration.start_year), lastDataYear)
     const spreadsheet = await googleClient.getSpreadsheet(token, integration.spreadsheet_id)
     const now = new Date().toISOString()
-    const rows = auxiliaryRows(data, now, userId, integration.created_at)
+    const rows = {}; const layouts = {}
     for (const year of yearsFromStart(Number(integration.start_year), lastDataYear)) {
-      rows[String(year)] = [TRANSACTION_HEADERS, ...data.transactions.filter((row) => Number(row.competence_year) === year).map(transactionToSheetRow)]
+      layouts[String(year)] = buildYearSheet({ year, transactions: data.transactions.filter((row) => Number(row.competence_year) === year), categories: data.categories, now, userId })
+      rows[String(year)] = layouts[String(year)].values
     }
     const entries = Object.entries(rows)
-    await googleClient.batchClear(token, integration.spreadsheet_id, entries.map(([title]) => `${quote(title)}!A:AZ`))
+    await googleClient.batchClear(token, integration.spreadsheet_id, entries.map(([title]) => `${quote(title)}!A:${MANAGED_LAST_COLUMN}`))
     await googleClient.valuesBatchUpdate(token, integration.spreadsheet_id, entries.map(([title, values]) => ({ range: `${quote(title)}!A1`, majorDimension: 'ROWS', values })))
-    const formatting = formatRequests(spreadsheet)
+    const formatting = formatRequests(spreadsheet, layouts, data)
     if (formatting.length) await googleClient.batchUpdate(token, integration.spreadsheet_id, formatting)
     await repository.markOperation(userId, 'export')
     const breakdown = {
       transactions: data.transactions.length,
-      categories: data.categories.length,
-      cards: data.cards.length,
-      recurringExpenses: data.recurringExpenses.length,
-      cardPayments: data.payments.length,
-      settings: data.settings ? 1 : 0,
+      categorySummaries: data.categories.filter((category) => category.type === 'expense').length,
     }
     const exportedRecords = Object.values(breakdown).reduce((total, count) => total + count, 0)
     logger.info('Exportação Google Sheets concluída', { userId, transactionCount: data.transactions.length, exportedRecords })
     return { exportedTransactions: data.transactions.length, exportedRecords, breakdown, exportedAt: now }
   } catch (error) { await handleFileError(userId, error); throw error }
-}
-
-function nullableNumber(value) { return value == null || value === '' ? null : Number(value) }
-function storedTags(value) {
-  try { return JSON.parse(value || '[]') } catch { return [] }
-}
-function sameExisting(row, candidate) {
-  return row.date === candidate.date
-    && Number(row.competence_year) === candidate.competenceYear
-    && Number(row.competence_month) === candidate.competenceMonth
-    && row.type === candidate.type
-    && row.description === candidate.description
-    && Number(row.category_id) === candidate.categoryId
-    && Number(row.amount) === candidate.amount
-    && nullableNumber(row.card_id) === candidate.cardId
-    && nullableNumber(row.installment_current) === candidate.installmentCurrent
-    && nullableNumber(row.installment_total) === candidate.installmentTotal
-    && (row.installment_group_id || null) === candidate.installmentGroupId
-    && nullableNumber(row.recurring_expense_id) === candidate.recurringExpenseId
-    && Number(row.offer_amount) === candidate.offerAmount
-    && Number(row.tithe_amount) === candidate.titheAmount
-    && nullableNumber(row.offer_rate_applied) === candidate.offerRateApplied
-    && nullableNumber(row.tithe_rate_applied) === candidate.titheRateApplied
-    && row.status === candidate.status
-    && row.source === candidate.source
-    && Boolean(row.is_recurring) === candidate.isRecurring
-    && Boolean(row.is_fixed) === candidate.isFixed
-    && JSON.stringify(storedTags(row.tags)) === JSON.stringify(candidate.tags)
-    && (row.notes || '') === candidate.notes
 }
 
 async function readRows(userId) {
@@ -227,16 +196,20 @@ async function readRows(userId) {
   try {
     const spreadsheet = await googleClient.getSpreadsheet(token, integration.spreadsheet_id)
     const years = spreadsheet.sheets.map((sheet) => sheet.properties.title).filter((title) => /^\d{4}$/.test(title)).sort()
-    const payload = await googleClient.valuesBatchGet(token, integration.spreadsheet_id, [`${quote('Metadata')}!A:B`, ...years.map((year) => `${quote(year)}!A:AB`)])
-    const [metadataRange, ...yearRanges] = payload.valueRanges || []
-    const metadata = Object.fromEntries((metadataRange?.values || []).slice(1).map((row) => [String(row[0]), row[1]]))
-    if (Number(metadata.schema_version) !== SHEET_SCHEMA_VERSION || Number(metadata.cofre_user_id) !== Number(userId)) {
-      throw new ConflictError('A planilha não possui o schema esperado ou pertence a outro usuário.', [], 'GOOGLE_SHEET_SCHEMA_MISMATCH')
-    }
+    const payload = await googleClient.valuesBatchGet(token, integration.spreadsheet_id, years.map((year) => `${quote(year)}!A:${MANAGED_LAST_COLUMN}`))
+    const yearRanges = payload.valueRanges || []
     const parsed = []
-    for (const valueRange of yearRanges) {
-      const [headers = [], ...rows] = valueRange.values || []
-      rows.forEach((row, index) => { if (row.some((value) => value !== '')) parsed.push(sheetRowToImportCandidate(headers, row, index + 2)) })
+    for (let index = 0; index < yearRanges.length; index += 1) {
+      const year = Number(years[index]); const rows = yearRanges[index]?.values || []; const metadata = rows[0] || []
+      if (Number(metadata[16]) !== SHEET_SCHEMA_VERSION || Number(metadata[18]) !== Number(userId) || Number(metadata[20]) !== year) {
+        throw new ConflictError('A planilha não possui o layout esperado ou pertence a outro usuário.', [], 'GOOGLE_SHEET_SCHEMA_MISMATCH')
+      }
+      const markerIndex = rows.findIndex((row) => row[0] === TRANSACTIONS_MARKER)
+      if (markerIndex < 0 || !rows[markerIndex + 1]) throw new ConflictError(`A seção de lançamentos da aba ${year} não foi encontrada.`, [], 'GOOGLE_SHEET_SCHEMA_MISMATCH')
+      const headers = rows[markerIndex + 1]
+      rows.slice(markerIndex + 2).forEach((row, rowIndex) => {
+        if (row.slice(0, 15).some((value) => value !== '')) parsed.push(sheetRowToImportCandidate(headers, row, markerIndex + rowIndex + 3, year))
+      })
     }
     return parsed
   } catch (error) { await handleFileError(userId, error); throw error }
@@ -248,16 +221,22 @@ async function buildPreview(userId) {
   const result = { newRows: [], existing: [], invalid: [], conflicts: [] }
   for (const item of parsed) {
     if (!item.success) { result.invalid.push(item); continue }
-    const candidate = item.data
+    let candidate = item.data
+    const normalizedCategory = String(candidate.categoryName).trim().toLocaleLowerCase('pt-BR')
+    const categoryId = candidate.categoryId ?? refs.categoriesByName.get(`${candidate.type}:${normalizedCategory}`) ?? null
+    const normalizedCard = String(candidate.cardName || '').trim().toLocaleLowerCase('pt-BR')
+    const cardId = candidate.cardId ?? (normalizedCard ? refs.cardsByName.get(normalizedCard) : null) ?? null
+    candidate = { ...candidate, categoryId, cardId }
     const categoryType = refs.categories.get(candidate.categoryId)
-    if (!categoryType || categoryType !== candidate.type || (candidate.cardId && !refs.cards.has(candidate.cardId)) || (candidate.recurringExpenseId && !refs.recurring.has(candidate.recurringExpenseId))) {
+    if (!categoryType || categoryType !== candidate.type || (candidate.cardName && !candidate.cardId) || (candidate.cardId && !refs.cards.has(candidate.cardId)) || (candidate.recurringExpenseId && !refs.recurring.has(candidate.recurringExpenseId))) {
       result.conflicts.push({ rowNumber: item.rowNumber, reason: 'Categoria, cartão ou recorrência inválida para este usuário.' }); continue
     }
     if (!candidate.transactionId) { result.newRows.push({ rowNumber: item.rowNumber, data: candidate }); continue }
     const existing = existingById.get(candidate.transactionId)
     if (!existing) result.conflicts.push({ rowNumber: item.rowNumber, transactionId: candidate.transactionId, reason: 'ID desconhecido. Remova o ID para importar como novo.' })
-    else if (sameExisting(existing, candidate)) result.existing.push({ rowNumber: item.rowNumber, transactionId: candidate.transactionId })
-    else result.conflicts.push({ rowNumber: item.rowNumber, transactionId: candidate.transactionId, reason: 'A linha difere da transação existente no Cofre.' })
+    else if (!candidate.exportHash) result.conflicts.push({ rowNumber: item.rowNumber, transactionId: candidate.transactionId, reason: 'Esta linha com ID não foi gerada pelo Cofre.' })
+    else if (candidate.sheetModified) result.conflicts.push({ rowNumber: item.rowNumber, transactionId: candidate.transactionId, reason: 'Uma linha existente foi alterada na planilha. Edite-a no Cofre ou restaure seus valores.' })
+    else result.existing.push({ rowNumber: item.rowNumber, transactionId: candidate.transactionId })
   }
   const candidates = result.newRows.map((item) => item.data)
   return {

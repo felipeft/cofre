@@ -22,8 +22,13 @@ const sheetsService = require('../src/services/googleSheets.service')
 const syncService = require('../src/services/googleSheetsSync.service')
 const categories = asUser(require('../src/services/category.service'), 1)
 const transactions = asUser(require('../src/services/transaction.service'), 1)
+const { TRANSACTIONS_MARKER } = require('../src/constants/googleSheets')
 
 function titleFromRange(range) { return /^'((?:''|[^'])+)'!/.exec(range)?.[1].replaceAll("''", "'") }
+function transactionSection(rows) {
+  const marker = rows.findIndex((row) => row[0] === TRANSACTIONS_MARKER)
+  return { marker, header: marker + 1, first: marker + 2 }
+}
 
 function fakeGoogle() {
   const state = { nonce: null, sheets: [], values: new Map(), deleted: false, revoked: false, revokedCalled: false, nextSheetId: 1 }
@@ -79,7 +84,7 @@ test('autoriza incrementalmente, criptografa refresh token e isola usuários', a
 test('cria abas anuais e exporta repetidamente sem duplicar', async () => {
   const created = await sheetsService.createSpreadsheet(1, { startYear: 2024 }, 2026)
   assert.equal(created.spreadsheetId, 'sheet-user-a')
-  assert.deepEqual(google.state.sheets.map((sheet) => sheet.properties.title).filter((title) => /^\d{4}$/.test(title)), ['2024', '2025', '2026'])
+  assert.deepEqual(google.state.sheets.map((sheet) => sheet.properties.title), ['2024', '2025', '2026'])
   await sheetsService.ensureManagedSheets('access-token', 'sheet-user-a', 2024, 2027)
   assert.equal(google.state.sheets.filter((sheet) => sheet.properties.title === '2027').length, 1)
   await sheetsService.ensureManagedSheets('access-token', 'sheet-user-a', 2024, 2027)
@@ -87,19 +92,19 @@ test('cria abas anuais e exporta repetidamente sem duplicar', async () => {
 
   const category = await categories.createCategory({ name: 'Histórico', type: 'expense', color: '#ffffff', icon: 'Wallet', isActive: true, sortOrder: 0, applyOffer: false, offerRate: null, applyTithe: false, titheRate: null })
   await transactions.createTransaction({ description: 'Café ☕', amount: 12.34, type: 'expense', categoryId: category.id, date: '2024-02-29', notes: '=texto seguro', source: 'manual', isRecurring: false, isFixed: false, tags: ['unicode'], status: 'confirmed' })
-  await sheetsService.exportData(1, 2026)
+  await sheetsService.exportData(1, 2027)
   const first = google.state.values.get('2024').length
-  await sheetsService.exportData(1, 2026)
+  await sheetsService.exportData(1, 2027)
   assert.equal(google.state.values.get('2024').length, first)
-  assert.equal(google.state.values.get('2024')[1][8], 12.34)
+  const section = transactionSection(google.state.values.get('2024'))
+  assert.equal(google.state.values.get('2024')[section.first][5], 12.34)
 })
 
 test('preview e confirmação importam atomicamente e são idempotentes', async () => {
   const rows = google.state.values.get('2024')
-  const manual = [...rows[1]]
-  manual[0] = ''
-  manual[5] = 'Registro histórico manual'
-  manual[8] = 99.91
+  const manual = []
+  manual[1] = '01/03/2024'; manual[2] = 'Despesa'; manual[3] = 'Registro histórico manual'
+  manual[4] = 'Histórico'; manual[5] = 99.91; manual[6] = 'Dinheiro'; manual[10] = 'Confirmada'
   rows.push(manual)
   const preview = await sheetsService.previewImport(1)
   assert.deepEqual(preview.summary, { new: 1, existing: 1, invalid: 0, conflicts: 0 })
@@ -117,7 +122,7 @@ test('sincronização consolida importação e exportação com histórico idemp
   const completed = await syncService.synchronize(1, requestId)
   assert.equal(completed.status, 'success')
   assert.equal(completed.recordsImported, 0)
-  assert.ok(completed.recordsExported >= 4)
+  assert.ok(completed.recordsExported >= 3)
   assert.equal(completed.conflictCount, 0)
 
   const replay = await syncService.synchronize(1, requestId)
@@ -143,16 +148,26 @@ test('impede duas sincronizações simultâneas e recupera execução interrompi
 
 test('detecta divergência em campos históricos antes de sobrescrever a planilha', async () => {
   const rows = google.state.values.get('2024')
-  rows[1][23] = !rows[1][23]
+  const row = transactionSection(rows).first
+  rows[row][3] = `${rows[row][3]} alterada`
   const preview = await sheetsService.previewImport(1)
   assert.equal(preview.summary.conflicts, 1)
-  assert.match(preview.details.conflicts[0].reason, /difere da transação existente/)
-  rows[1][23] = !rows[1][23]
+  assert.match(preview.details.conflicts[0].reason, /alterada na planilha/)
+  rows[row][3] = rows[row][3].replace(' alterada', '')
+})
+
+test('alteração feita no Cofre não cria falso conflito com linha intacta da planilha', async () => {
+  await getDatabase().prepare("UPDATE transactions SET description = 'Café atualizado no Cofre', updated_at = datetime('now') WHERE id = 1 AND user_id = 1").run()
+  const preview = await sheetsService.previewImport(1)
+  assert.equal(preview.summary.conflicts, 0)
+  await sheetsService.exportData(1, 2027)
+  const rows = google.state.values.get('2024')
+  assert.equal(rows[transactionSection(rows).first][3], 'Café atualizado no Cofre')
 })
 
 test('detecta referência inválida, token revogado e planilha apagada sem afetar o Cofre', async () => {
   const rows = google.state.values.get('2024')
-  const invalid = [...rows[1]]; invalid[0] = ''; invalid[6] = 999999; rows.push(invalid)
+  const invalid = []; invalid[1] = '02/03/2024'; invalid[2] = 'Despesa'; invalid[3] = 'Inválida'; invalid[4] = 'Categoria inexistente'; invalid[5] = 10; rows.push(invalid)
   const preview = await sheetsService.previewImport(1)
   assert.equal(preview.summary.conflicts, 1)
   assert.equal(preview.canImport, false)

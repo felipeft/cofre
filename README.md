@@ -5,8 +5,8 @@ gradualmente uma planilha de uso cotidiano por um sistema estruturado,
 confiável e preparado para evoluir com autenticação, integração ao Google
 Sheets, inteligência financeira, Engenharia de Dados e IA.
 
-> **Status atual:** Fase 5 em andamento — Etapa 12 validada em produção e
-> Etapa 13 com sincronização manual implementada e testada localmente,
+> **Status atual:** Fase 5 em acabamento — Etapas 12 e 13 validadas em
+> produção; novo layout anual legível da planilha implementado localmente,
 > aguardando validação final após o deploy.
 
 ## Acesso
@@ -40,7 +40,9 @@ período sem uso pode levar alguns segundos enquanto o serviço é reativado.
 - Preferências financeiras individuais de oferta e dízimo.
 - Área de configurações com dados seguros da conta e da sessão atual.
 - Integração Google Sheets opcional por usuário, com exportação e importação
-  manuais, planilha anual padronizada e refresh token criptografado.
+  manuais, abas anuais legíveis e refresh token criptografado.
+- Cada ano apresenta resumo anual, visão dos 12 meses, despesas por categoria
+  e uma área de lançamentos compatível com os rótulos do aplicativo.
 - Central de sincronização manual com status, contagens, conflitos, falhas,
   idempotência e histórico persistente por usuário.
 
@@ -298,8 +300,8 @@ Concluído:
 
 Em andamento:
 
-- Fase 5, Etapa 13 — sistema de sincronização manual implementado localmente;
-  falta validar a nova central e o histórico em produção.
+- Polimento final da Fase 5 — schema visual v2 da planilha, com somente abas
+  anuais e cadastro controlado de despesas simples.
 
 Concluído e validado em produção:
 
@@ -308,6 +310,8 @@ Concluído e validado em produção:
 - Fase 4, Etapa 11 — perfil, settings e preferências financeiras por usuário.
 - Fase 5, Etapa 12 — autorização incremental, planilha estruturada, exportação
   e importação idempotentes, validadas com as APIs reais em produção.
+- Fase 5, Etapa 13 — sincronização manual, conflitos, falhas, idempotência e
+  histórico persistente, validados em produção.
 
 Próximas fases planejadas, ainda não iniciadas:
 

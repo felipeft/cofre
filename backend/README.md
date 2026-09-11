@@ -598,16 +598,18 @@ Endpoints:
 | `POST` | `/integrations/google-sheets/import` | Confirma lote validado e atômico |
 | `DELETE` | `/integrations/google-sheets` | Revoga credencial sem apagar arquivo |
 
-A planilha possui `Metadata`, `Categorias`, `Cartões`, `Gastos Recorrentes`,
-`Pagamentos de Fatura`, `Configurações` e abas anuais. Abas futuras necessárias
-para parcelas também são criadas. Exportações reconstroem somente intervalos
-gerenciados usando operações batch e `valueInputOption=RAW`; abas externas do
-usuário não são tocadas.
+A planilha usa o schema visual v2 e possui somente abas anuais. Cada ano contém
+resumo anual, visão dos 12 meses, despesas por categoria/mês e a área de
+lançamentos com rótulos em português. Metadados e identificadores técnicos
+indispensáveis à idempotência ficam em colunas ocultas da própria aba. Abas
+futuras necessárias para parcelas também são criadas.
 
-A importação lê apenas o schema Cofre v1. IDs existentes divergentes são
-conflitos, referências precisam pertencer ao usuário e linhas sem ID podem ser
-inseridas como fatos novos. O preview é recalculado na confirmação, e o lote é
-gravado em uma transação libSQL com fingerprint idempotente.
+A importação lê apenas o schema Cofre v2. Uma nova despesa pode ser cadastrada
+na primeira linha vazia preenchendo Data, Descrição, Categoria e Valor; listas
+de seleção oferecem categorias, cartões, pagamento e status válidos. Receitas,
+parcelamentos, recorrências, categorias e cartões continuam sendo criados ou
+editados somente pela interface do Cofre. IDs existentes divergentes são
+conflitos e o lote é gravado em uma transação libSQL com fingerprint idempotente.
 
 Variáveis adicionais:
 
@@ -622,8 +624,7 @@ Suíte completa após a Etapa 12: **93 testes aprovados, 0 falhas**.
 
 ## Fase 5, Etapa 13 — Sistema de Sincronização
 
-**Status: implementação local concluída; validação do novo fluxo em produção
-pendente.**
+**Status: concluída e validada em produção.**
 
 A migration `0012_create_google_sheets_sync_runs.sql` registra cada tentativa
 por usuário, com chave de idempotência, origem, estado, contagens, conflitos,
@@ -653,4 +654,4 @@ Falhas da API Google ficam registradas sem tokens ou detalhes sensíveis. O
 gatilho `automatic` já é representável no schema, mas nenhum scheduler foi
 adicionado: sincronização automática permanece deliberadamente posterior.
 
-Suíte completa após a Etapa 13: **96 testes aprovados, 0 falhas**.
+Suíte completa após o polimento visual da planilha: **99 testes aprovados, 0 falhas**.

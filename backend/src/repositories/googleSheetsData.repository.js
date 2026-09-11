@@ -33,12 +33,14 @@ function getExportData(userId) {
 
 function getOwnedReferences(userId) {
   return run(async (db) => {
-    const categories = await db.prepare('SELECT id, type FROM categories WHERE user_id = ?').all(userId)
-    const cards = await db.prepare('SELECT id FROM credit_cards WHERE user_id = ?').all(userId)
+    const categories = await db.prepare('SELECT id, type, name, is_active FROM categories WHERE user_id = ?').all(userId)
+    const cards = await db.prepare('SELECT id, name, is_active FROM credit_cards WHERE user_id = ?').all(userId)
     const recurring = await db.prepare('SELECT id FROM recurring_expenses WHERE user_id = ?').all(userId)
     return {
       categories: new Map(categories.map((row) => [Number(row.id), row.type])),
+      categoriesByName: new Map(categories.filter((row) => row.is_active).map((row) => [`${row.type}:${String(row.name).trim().toLocaleLowerCase('pt-BR')}`, Number(row.id)])),
       cards: new Set(cards.map((row) => Number(row.id))),
+      cardsByName: new Map(cards.filter((row) => row.is_active).map((row) => [String(row.name).trim().toLocaleLowerCase('pt-BR'), Number(row.id)])),
       recurring: new Set(recurring.map((row) => Number(row.id))),
     }
   }, 'Não foi possível validar as referências da importação.')
@@ -49,7 +51,13 @@ function findTransactionForImport(userId, id) {
 }
 
 function findTransactionsForImport(userId) {
-  return run((db) => db.prepare('SELECT * FROM transactions WHERE user_id = ?').all(userId), 'Não foi possível comparar as transações importadas.')
+  return run((db) => db.prepare(`
+    SELECT t.*, c.name AS category_name, cc.name AS card_name
+    FROM transactions t
+    JOIN categories c ON c.id = t.category_id
+    LEFT JOIN credit_cards cc ON cc.id = t.card_id
+    WHERE t.user_id = ?
+  `).all(userId), 'Não foi possível comparar as transações importadas.')
 }
 
 function importTransactions(userId, candidates, fingerprint) {

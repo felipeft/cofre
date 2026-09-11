@@ -274,12 +274,13 @@ layout responsivo e controles adequados ao uso móvel.
 A seção Google Sheets em `/configuracoes` mantém estado próprio local, sem
 poluir `AuthContext` ou `SettingsContext`. Ela apresenta conexão, conta Google,
 planilha, ano inicial, última exportação/importação e ações para conectar,
-criar, abrir, exportar, visualizar importação, confirmar e desconectar.
+criar, abrir, acessar a central de sincronização e desconectar.
 
 Os estados `Não conectado`, `Autorizado`, `Pronto`, `Autorização expirada` e
 `Arquivo não encontrado` possuem ações específicas. Tokens nunca chegam ao
-frontend. O preview mostra quantidades novas, existentes, inválidas e
-conflitantes antes de habilitar a confirmação.
+frontend. O layout v2 contém somente abas anuais, com resumo do ano, visão
+mensal, totais por categoria e lançamentos rotulados em português. Novas
+despesas simples podem ser registradas na primeira linha vazia.
 
 O layout usa os componentes existentes, mantém o tema escuro e reorganiza as
 ações em uma coluna no mobile e duas colunas quando houver espaço.
@@ -288,7 +289,7 @@ ações em uma coluna no mobile e duas colunas quando houver espaço.
 
 ## Fase 5, Etapa 13 — Sistema de Sincronização
 
-**Status: interface e build concluídos; validação em produção pendente.**
+**Status: concluída e validada em produção.**
 
 A rota `/sincronizacao`, acessível pela seção Google Sheets dos ajustes,
 centraliza o botão **Sincronizar agora**, o estado da operação, a última
