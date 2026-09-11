@@ -117,7 +117,7 @@ export default function TransactionForm({ initial, onSubmit, onCancel, submitLab
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-4">
       <div className="grid grid-cols-2 gap-2 rounded-control bg-surface-2 p-1">
         <button
           type="button"
@@ -142,7 +142,7 @@ export default function TransactionForm({ initial, onSubmit, onCancel, submitLab
       <div className="flex flex-col gap-1.5">
         <label className="text-[13px] font-medium text-text-muted">Valor</label>
         <div
-          className={`flex items-center h-16 rounded-control bg-surface-2 border px-4 transition-colors ${
+          className={`flex min-w-0 items-center h-16 rounded-control bg-surface-2 border px-4 transition-colors ${
             amountFocused ? 'border-income/50' : 'border-border'
           }`}
         >
@@ -158,7 +158,7 @@ export default function TransactionForm({ initial, onSubmit, onCancel, submitLab
               const v = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '')
               set({ amount: v })
             }}
-            className="num flex-1 bg-transparent text-[28px] font-semibold text-text placeholder:text-text-faint outline-none"
+            className="num min-w-0 w-full flex-1 bg-transparent text-[28px] font-semibold text-text placeholder:text-text-faint outline-none"
           />
         </div>
       </div>

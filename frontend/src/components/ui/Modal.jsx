@@ -17,12 +17,12 @@ export default function Modal({ open, onClose, title, children }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[2px] md:items-center md:px-4"
       style={{ animation: 'fade-in 0.15s ease-out' }}
       onClick={onClose}
     >
       <div
-        className="w-full md:w-[440px] max-h-[88vh] overflow-y-auto rounded-t-[20px] md:rounded-card bg-surface border border-border-soft p-5 md:p-6"
+        className="box-border max-h-[88vh] w-full min-w-0 max-w-full overflow-x-hidden overflow-y-auto rounded-t-[20px] border border-border-soft bg-surface p-5 md:w-[440px] md:max-w-[calc(100vw-2rem)] md:rounded-card md:p-6"
         style={{ animation: 'modal-in 0.18s cubic-bezier(0.16,1,0.3,1)' }}
         onClick={(e) => e.stopPropagation()}
       >
