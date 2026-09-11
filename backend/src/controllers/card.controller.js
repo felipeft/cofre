@@ -13,6 +13,11 @@ const getById = asyncHandler(async (req, res) => {
   apiResponse.success(res, { data })
 })
 
+const deletionPreview = asyncHandler(async (req, res) => {
+  const data = await cardService.getCardDeletionPreview(req.user.id, req.validated.params.id)
+  apiResponse.success(res, { data })
+})
+
 const create = asyncHandler(async (req, res) => {
   const data = await cardService.createCard(req.user.id, req.validated.body)
   apiResponse.success(res, { data, message: 'Cartão criado com sucesso.', statusCode: HTTP_STATUS.CREATED })
@@ -38,4 +43,4 @@ const registerPayment = asyncHandler(async (req, res) => {
   apiResponse.success(res, { data, message: 'Pagamento da fatura registrado com sucesso.', statusCode: HTTP_STATUS.CREATED })
 })
 
-module.exports = { list, getById, create, update, remove, getSummary, registerPayment }
+module.exports = { list, getById, deletionPreview, create, update, remove, getSummary, registerPayment }

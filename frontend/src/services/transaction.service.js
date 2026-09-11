@@ -58,3 +58,8 @@ export async function deleteTransaction(id) {
   await apiClient.delete(ENDPOINTS.transaction(id))
   return { id }
 }
+
+export async function getTransactionDeletionPreview(id) {
+  const { data } = await apiClient.get(ENDPOINTS.transactionDeletionPreview(id))
+  return data
+}

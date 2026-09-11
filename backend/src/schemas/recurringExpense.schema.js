@@ -21,4 +21,8 @@ const createRecurringExpenseSchema = z.object({ description: core.description, a
 const updateRecurringExpenseSchema = z.object({ description: core.description.optional(), amount: core.amount.optional(), categoryId: core.categoryId.optional(), dayOfMonth: core.dayOfMonth.optional(), startDate: core.startDate.optional(), endDate: core.endDate.optional(), isActive: core.isActive.optional(), cardId: core.cardId.optional(), notes: core.notes.optional(), source: core.source.optional() }).superRefine(dateOrder).refine((data) => Object.keys(data).length > 0, { message: 'Envie ao menos um campo para atualizar.' })
 const recurringExpenseIdParamSchema = z.object({ id: z.coerce.number().int().positive('id inválido.') })
 const listRecurringExpensesQuerySchema = z.object({ includeInactive: z.enum(['true', 'false']).optional().default('false').transform((value) => value === 'true') })
-module.exports = { createRecurringExpenseSchema, updateRecurringExpenseSchema, recurringExpenseIdParamSchema, listRecurringExpensesQuerySchema }
+const deleteRecurringExpenseSchema = z.strictObject({
+  mode: z.enum(['preserve-history', 'with-history']),
+  confirmation: z.literal('EXCLUIR RECORRÊNCIA'),
+})
+module.exports = { createRecurringExpenseSchema, updateRecurringExpenseSchema, recurringExpenseIdParamSchema, listRecurringExpensesQuerySchema, deleteRecurringExpenseSchema }

@@ -4,7 +4,8 @@ const asyncHandler = require('../utils/asyncHandler')
 const HTTP_STATUS = require('../constants/httpStatus')
 const list = asyncHandler(async (req, res) => apiResponse.success(res, { data: await service.listRecurringExpenses(req.user.id, req.validated.query) }))
 const getById = asyncHandler(async (req, res) => apiResponse.success(res, { data: await service.getRecurringExpenseById(req.user.id, req.validated.params.id) }))
+const deletionPreview = asyncHandler(async (req, res) => apiResponse.success(res, { data: await service.getRecurringExpenseDeletionPreview(req.user.id, req.validated.params.id) }))
 const create = asyncHandler(async (req, res) => apiResponse.success(res, { data: await service.createRecurringExpense(req.user.id, req.validated.body), message: 'Gasto recorrente criado com sucesso.', statusCode: HTTP_STATUS.CREATED }))
 const update = asyncHandler(async (req, res) => apiResponse.success(res, { data: await service.updateRecurringExpense(req.user.id, req.validated.params.id, req.validated.body), message: 'Gasto recorrente atualizado com sucesso.' }))
-const remove = asyncHandler(async (req, res) => apiResponse.success(res, { data: await service.deleteRecurringExpense(req.user.id, req.validated.params.id), message: 'Gasto recorrente desativado com sucesso.' }))
-module.exports = { list, getById, create, update, remove }
+const remove = asyncHandler(async (req, res) => apiResponse.success(res, { data: await service.deleteRecurringExpense(req.user.id, req.validated.params.id, req.validated.body), message: 'Gasto recorrente excluído com sucesso.' }))
+module.exports = { list, getById, deletionPreview, create, update, remove }

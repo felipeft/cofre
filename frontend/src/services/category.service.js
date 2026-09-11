@@ -41,3 +41,8 @@ export async function deleteCategory(id) {
   const { data, message } = await apiClient.delete(ENDPOINTS.category(id))
   return { ...data, message }
 }
+
+export async function getCategoryDeletionPreview(id) {
+  const response = await apiClient.get(ENDPOINTS.categoryDeletionPreview(id))
+  return response.data
+}

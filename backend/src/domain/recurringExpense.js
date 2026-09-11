@@ -18,6 +18,11 @@ function advanceMonth({ year, month }) {
   return month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 }
 }
 
+function nextMonthStart(date) {
+  const next = advanceMonth(monthStart(date))
+  return `${next.year}-${String(next.month).padStart(2, '0')}-01`
+}
+
 // Retorna os rascunhos de ocorrências entre start_date e o mês de referência.
 // O dia é "clampado" ao último dia do mês para não ocorrer rollover (31/02).
 function buildOccurrencesThrough(recurringExpense, asOfDate) {
@@ -42,4 +47,4 @@ function buildOccurrencesThrough(recurringExpense, asOfDate) {
   return occurrences
 }
 
-module.exports = { daysInMonth, buildOccurrenceDate, buildOccurrencesThrough }
+module.exports = { daysInMonth, buildOccurrenceDate, buildOccurrencesThrough, nextMonthStart }

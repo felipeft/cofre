@@ -32,6 +32,7 @@ async function synchronize(userId, idempotencyKey = crypto.randomUUID()) {
 
   const runId = started.run.id
   try {
+    const preExport = integration.requiresFullExport ? await sheetsService.exportData(userId) : null
     const preview = await sheetsService.previewImport(userId)
     const recordsRead = Object.values(preview.summary).reduce((total, value) => total + Number(value), 0)
     if (preview.summary.invalid || preview.summary.conflicts) {
@@ -50,7 +51,7 @@ async function synchronize(userId, idempotencyKey = crypto.randomUUID()) {
       const imported = await sheetsService.confirmImport(userId, preview.fingerprint)
       importedCount = imported.alreadyImported ? 0 : imported.importedCount
     }
-    const exported = await sheetsService.exportData(userId)
+    const exported = preExport ?? await sheetsService.exportData(userId)
     const completed = await repository.finish(userId, runId, {
       status: 'success', recordsRead, recordsImported: importedCount,
       recordsExisting: preview.summary.existing, recordsExported: exported.exportedRecords,

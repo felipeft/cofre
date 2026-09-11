@@ -13,6 +13,7 @@ const categoryService = asUser(require('../src/services/category.service'), USER
 const cardService = asUser(require('../src/services/card.service'), USER_ID)
 const recurringService = asUser(require('../src/services/recurringExpense.service'), USER_ID)
 const transactionService = asUser(require('../src/services/transaction.service'), USER_ID)
+const recurringRepository = require('../src/repositories/recurringExpense.repository')
 
 before(async () => { await ensureDatabaseReady(); await createTestUser({ id: USER_ID }) })
 after(async () => { await closeDatabase(); for (const suffix of ['', '-shm', '-wal']) fs.rmSync(`${TEST_DB_PATH}${suffix}`, { force: true }) })
@@ -48,7 +49,7 @@ describe('gastos recorrentes', () => {
     await recurringService.ensureRecurringExpensesGenerated({ asOfDate: '2031-01-20' })
     const stillOne = (await transactionService.listTransactions({ page: 1, limit: 20, sortBy: 'date', sortDir: 'asc', categoryId: category.id })).data
     assert.equal(stillOne.length, 1)
-    await recurringService.deleteRecurringExpense(recurring.id)
+    await recurringService.deleteRecurringExpense(recurring.id, { mode: 'preserve-history' })
     await recurringService.ensureRecurringExpensesGenerated({ asOfDate: '2031-03-20' })
     assert.equal((await transactionService.listTransactions({ page: 1, limit: 20, sortBy: 'date', sortDir: 'asc', categoryId: category.id })).data.length, 1)
   })
@@ -65,5 +66,33 @@ describe('gastos recorrentes', () => {
     const repeatedRange = await transactionService.listTransactions(rangeQuery)
     assert.deepEqual(firstRange.data.map((item) => item.date), ['2032-01-10', '2032-02-10', '2032-03-10'])
     assert.equal(repeatedRange.data.length, 3)
+  })
+
+  test('recorrência antiga é reconciliada uma vez e consultas seguintes processam somente o delta', async () => {
+    const category = await categoryService.createCategory({ name: 'Histórico longo', type: 'expense', color: '#5b9ef5', icon: 'CalendarClock', isActive: true, sortOrder: 0 })
+    await recurringRepository.create(USER_ID, input(category.id, { description: 'Desde 2019', startDate: '2019-01-01', source: 'recurring' }))
+
+    const initial = await recurringService.ensureRecurringExpensesGenerated({ asOfDate: '2026-09-20' })
+    const repeated = await recurringService.ensureRecurringExpensesGenerated({ asOfDate: '2026-09-20' })
+    const nextMonth = await recurringService.ensureRecurringExpensesGenerated({ asOfDate: '2026-10-20' })
+
+    assert.equal(initial.checked, 93)
+    assert.equal(initial.created, 93)
+    assert.deepEqual(repeated, { checked: 0, created: 0 })
+    assert.deepEqual(nextMonth, { checked: 1, created: 1 })
+  })
+
+  test('excluir uma ocorrência individual é definitivo e o checkpoint impede recriação', async () => {
+    const category = await categoryService.createCategory({ name: 'Exclusão de ocorrência', type: 'expense', color: '#5b9ef5', icon: 'CalendarClock', isActive: true, sortOrder: 0 })
+    const recurring = await recurringRepository.create(USER_ID, input(category.id, { description: 'Ocorrência removível', startDate: '2033-01-01', source: 'recurring' }))
+    await recurringService.ensureRecurringExpensesGenerated({ asOfDate: '2033-01-20' })
+    const occurrence = (await transactionService.listTransactions({ page: 1, limit: 20, sortBy: 'date', sortDir: 'asc', categoryId: category.id })).data[0]
+    const preview = await transactionService.getTransactionDeletionPreview(occurrence.id)
+    assert.equal(preview.isRecurringOccurrence, true)
+
+    await transactionService.deleteTransaction(occurrence.id)
+    assert.deepEqual(await recurringService.ensureRecurringExpensesGenerated({ asOfDate: '2033-01-20' }), { checked: 0, created: 0 })
+    assert.equal((await transactionService.listTransactions({ page: 1, limit: 20, sortBy: 'date', sortDir: 'asc', categoryId: category.id })).data.length, 0)
+    assert.ok(recurring.id)
   })
 })

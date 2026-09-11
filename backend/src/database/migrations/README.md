@@ -26,3 +26,6 @@ Sheets, `0012` o histórico idempotente de sincronizações e `0013` a
 preferência individual de tema (`system`, `light` ou `dark`). A `0014`
 simplifica definitivamente categorias, transações e configurações, preservando
 os registros existentes e removendo colunas de uma funcionalidade descontinuada.
+A `0015` acrescenta o checkpoint de reconciliação das recorrências, o marcador
+de exportação obrigatória do Google Sheets e índices para competências, cartões,
+datas e vínculos recorrentes.

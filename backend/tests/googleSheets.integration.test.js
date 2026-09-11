@@ -133,6 +133,22 @@ test('sincronização consolida importação e exportação com histórico idemp
   assert.equal((await syncService.getHistory(2, 20)).length, 0)
 })
 
+test('exclusão no Cofre força exportação antes da importação e não ressuscita linha antiga', async () => {
+  const category = (await categories.listCategories({ includeInactive: true })).find((item) => item.name === 'Histórico')
+  const created = await transactions.createTransaction({ description: 'Não pode ressuscitar', amount: 7, type: 'expense', categoryId: category.id, date: '2024-04-01', notes: '', source: 'manual', isRecurring: false, isFixed: false, tags: [], status: 'confirmed' })
+  await sheetsService.exportData(1, 2027)
+  assert.ok(google.state.values.get('2024').some((row) => row.includes('Não pode ressuscitar')))
+
+  await transactions.deleteTransaction(created.id)
+  assert.equal((await getDatabase().prepare('SELECT requires_full_export FROM google_sheets_integrations WHERE user_id = 1').get()).requires_full_export, 1)
+  const synchronized = await syncService.synchronize(1, '55555555-5555-4555-8555-555555555555')
+
+  assert.equal(synchronized.status, 'success')
+  assert.equal((await getDatabase().prepare('SELECT requires_full_export FROM google_sheets_integrations WHERE user_id = 1').get()).requires_full_export, 0)
+  assert.equal(google.state.values.get('2024').some((row) => row.includes('Não pode ressuscitar')), false)
+  assert.equal(await getDatabase().prepare('SELECT id FROM transactions WHERE id = ?').get(created.id), undefined)
+})
+
 test('impede duas sincronizações simultâneas e recupera execução interrompida', async () => {
   const db = getDatabase()
   await db.prepare("INSERT INTO google_sheets_sync_runs (user_id, idempotency_key) VALUES (1, 'active-test')").run()

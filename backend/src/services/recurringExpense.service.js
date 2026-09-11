@@ -2,7 +2,7 @@ const recurringExpenseRepository = require('../repositories/recurringExpense.rep
 const categoryRepository = require('../repositories/category.repository')
 const cardRepository = require('../repositories/card.repository')
 const { mapRecurringExpenseRow } = require('../utils/mappers/recurringExpense.mapper')
-const { buildOccurrencesThrough } = require('../domain/recurringExpense')
+const { buildOccurrencesThrough, nextMonthStart } = require('../domain/recurringExpense')
 const NotFoundError = require('../errors/NotFoundError')
 const ValidationError = require('../errors/ValidationError')
 
@@ -64,22 +64,37 @@ async function updateRecurringExpense(userId, id, patch) {
   await ensureRecurringExpensesGenerated(userId)
   return mapRecurringExpenseRow(row)
 }
-// DELETE é encerramento lógico deliberadamente: preserva configuração e fatos.
-async function deleteRecurringExpense(userId, id) {
+async function getRecurringExpenseDeletionPreview(userId, id) {
   await findExistingOrThrow(userId, id)
-  const row = await recurringExpenseRepository.update(userId, id, { isActive: false })
-  return mapRecurringExpenseRow(row)
+  const preview = await recurringExpenseRepository.deletionPreview(userId, id)
+  return {
+    id: preview.recurring.id,
+    description: preview.recurring.description,
+    transactionCount: Number(preview.impact.transaction_count),
+    totalAmount: Number(preview.impact.total_amount),
+    cardLimitImpact: Number(preview.impact.card_limit_impact),
+    firstDate: preview.impact.first_date ?? null,
+    lastDate: preview.impact.last_date ?? null,
+  }
+}
+
+async function deleteRecurringExpense(userId, id, { mode }) {
+  await findExistingOrThrow(userId, id)
+  return recurringExpenseRepository.remove(userId, id, { deleteTransactions: mode === 'with-history' })
 }
 
 async function ensureRecurringExpensesGenerated(userId, { asOfDate = todayIso() } = {}) {
   assertRealDate(asOfDate, 'asOfDate')
-  const rows = await recurringExpenseRepository.findActive(userId)
-  const drafts = rows.flatMap((row) => {
+  const throughDate = `${asOfDate.slice(0, 7)}-01`
+  const rows = await recurringExpenseRepository.findActivePending(userId, throughDate)
+  const plans = rows.map((row) => {
     const recurringExpense = mapRecurringExpenseRow(row)
     // Um cartão desativado não recebe novos lançamentos; os fatos já
     // gerados continuam preservados e a regra pode ser ajustada pelo usuário.
-    if (recurringExpense.card && !recurringExpense.card.isActive) return []
-    return buildOccurrencesThrough(recurringExpense, asOfDate).map((occurrence) => ({
+    if (recurringExpense.card && !recurringExpense.card.isActive) return null
+    const nextDate = row.generated_through ? nextMonthStart(row.generated_through) : recurringExpense.startDate
+    const effective = { ...recurringExpense, startDate: nextDate > recurringExpense.startDate ? nextDate : recurringExpense.startDate }
+    const occurrences = buildOccurrencesThrough(effective, asOfDate).map((occurrence) => ({
       description: recurringExpense.description,
       amount: recurringExpense.amount,
       categoryId: recurringExpense.categoryId,
@@ -89,9 +104,9 @@ async function ensureRecurringExpensesGenerated(userId, { asOfDate = todayIso() 
       recurringExpenseId: recurringExpense.id,
       ...occurrence,
     }))
-  })
-  const changes = await recurringExpenseRepository.createOccurrences(userId, drafts)
-  return { checked: drafts.length, created: changes.reduce((total, change) => total + change, 0) }
+    return { recurringExpenseId: recurringExpense.id, throughDate, occurrences }
+  }).filter(Boolean)
+  return recurringExpenseRepository.reconcileOccurrences(userId, plans)
 }
 
-module.exports = { listRecurringExpenses, getRecurringExpenseById, createRecurringExpense, updateRecurringExpense, deleteRecurringExpense, ensureRecurringExpensesGenerated }
+module.exports = { listRecurringExpenses, getRecurringExpenseById, getRecurringExpenseDeletionPreview, createRecurringExpense, updateRecurringExpense, deleteRecurringExpense, ensureRecurringExpensesGenerated }

@@ -34,6 +34,11 @@ export async function deleteCard(id) {
   return { ...data, message }
 }
 
+export async function getCardDeletionPreview(id) {
+  const response = await apiClient.get(ENDPOINTS.cardDeletionPreview(id))
+  return response.data
+}
+
 // Limite total/usado/disponível — o backend é a única fonte de verdade
 // desse cálculo (nunca recalculado no cliente).
 export async function getCardSummary(id) {

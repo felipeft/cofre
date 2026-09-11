@@ -98,15 +98,22 @@ exigem sessão válida.
 | `GET/PATCH /settings` | Consulta ou atualiza o tema |
 | `GET/POST /categories` | Lista ou cria categorias |
 | `GET/PUT/DELETE /categories/:id` | Opera uma categoria do usuário |
+| `GET /categories/:id/deletion-preview` | Informa vínculos que impedem excluir a categoria |
 | `GET/POST /transactions` | Lista ou cria movimentações |
 | `GET /transactions/summary` | Resumo mensal |
 | `GET/PUT/DELETE /transactions/:id` | Opera uma movimentação do usuário |
+| `GET /transactions/:id/deletion-preview` | Informa impacto da exclusão definitiva |
 | `GET/POST /cards` | Lista ou cria cartões |
 | `GET /cards/:id/summary` | Compras, pagamentos e limite |
 | `POST /cards/:id/payments` | Registra pagamento de fatura |
 | `PUT/DELETE /cards/:id` | Atualiza ou exclui cartão |
+| `GET /cards/:id/deletion-preview` | Informa transações, recorrências e pagamentos vinculados |
 | `GET/POST /recurring-expenses` | Lista ou cria definições recorrentes |
 | `GET/PUT/DELETE /recurring-expenses/:id` | Opera uma definição recorrente |
+| `GET /recurring-expenses/:id/deletion-preview` | Informa o histórico associado à recorrência |
+| `GET /data-management/preview` | Prévia de limpeza ou reset da conta atual |
+| `POST /data-management/clear-records` | Remove todos os registros financeiros |
+| `POST /data-management/reset` | Reseta toda a estrutura financeira do usuário |
 | `/integrations/google-sheets/*` | Conexão, planilha, importação e exportação |
 | `/sync/google-sheets/*` | Status, execução e histórico da sincronização |
 
@@ -117,9 +124,10 @@ categoria do mesmo usuário e do mesmo tipo. A exclusão é física quando não 
 vínculos; se houver transações ou recorrências, a API recusa a operação para
 preservar integridade histórica.
 
-Transações são sempre excluídas fisicamente. Definições recorrentes podem ser
-encerradas sem apagar ocorrências já geradas, pois essas ocorrências são fatos
-financeiros independentes.
+Transações são sempre excluídas fisicamente. Definições recorrentes são
+excluídas fisicamente e aceitam dois modos transacionais: preservar os fatos
+já gerados, removendo o vínculo, ou apagar também todas as ocorrências. As
+operações destrutivas globais exigem frases literais de confirmação.
 
 ## Cartões, parcelas e recorrências
 
@@ -128,6 +136,7 @@ financeiros independentes.
 - O último valor absorve diferenças de centavos.
 - Ocorrências recorrentes usam constraint única por definição e competência.
 - Consultas de períodos futuros materializam ocorrências necessárias de forma idempotente.
+- Um checkpoint por recorrência faz consultas repetidas processarem somente o delta mensal; a gravação das ocorrências usa um único lote transacional.
 - Excluir ou cancelar uma transação de cartão retira sua contribuição do limite.
 
 ## Google Sheets
@@ -148,6 +157,9 @@ um novo arquivo numerado.
 A migration `0014_simplify_financial_model.sql` simplifica o modelo financeiro:
 preserva categorias e movimentações existentes, remove metadados automáticos
 antigos de receitas e mantém somente a preferência visual em `user_settings`.
+A migration `0015_optimize_recurring_and_data_management.sql` adiciona os
+checkpoints, índices de consulta e o marcador que obriga o Sheets a receber o
+estado atual do Cofre antes de voltar a importar após uma exclusão.
 
 ## Testes
 

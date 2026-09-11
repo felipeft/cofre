@@ -78,9 +78,20 @@ function setActive(userId, id, isActive) {
 }
 
 function remove(userId, id) {
-  return run(async (db) => {
-    await db.prepare('DELETE FROM credit_cards WHERE id = ? AND user_id = ?').run(id, userId)
-  }, 'Não foi possível excluir o cartão.')
+  return run((db) => db.transaction(async (tx) => {
+    await tx.prepare('DELETE FROM credit_cards WHERE id = ? AND user_id = ?').run(id, userId)
+    await tx.prepare("UPDATE google_sheets_integrations SET requires_full_export = 1, updated_at = datetime('now') WHERE user_id = ?").run(userId)
+  }), 'Não foi possível excluir o cartão.')
 }
 
-module.exports = { create, findAll, findById, findByName, update, setActive, remove }
+function deletionPreview(userId, id) {
+  return run((db) => db.prepare(`
+    SELECT
+      (SELECT COUNT(*) FROM transactions WHERE user_id = @userId AND card_id = @id) AS transactions,
+      (SELECT COUNT(*) FROM recurring_expenses WHERE user_id = @userId AND card_id = @id) AS recurring_expenses,
+      (SELECT COUNT(*) FROM credit_card_payments WHERE user_id = @userId AND card_id = @id) AS payments,
+      (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = @userId AND card_id = @id AND status != 'cancelled') AS purchases_total
+  `).get({ userId, id }), 'Não foi possível calcular o impacto da exclusão do cartão.')
+}
+
+module.exports = { create, findAll, findById, findByName, update, setActive, deletionPreview, remove }

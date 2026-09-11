@@ -65,4 +65,17 @@ async function deleteCategory(userId, id) {
   return { category: null }
 }
 
-module.exports = { listCategories, getCategoryById, createCategory, updateCategory, deleteCategory }
+async function getCategoryDeletionPreview(userId, id) {
+  const category = mapCategoryRow(await findExistingOrThrow(userId, id))
+  const impact = await categoryRepository.deletionPreview(userId, id)
+  const transactions = Number(impact.transactions)
+  const recurringExpenses = Number(impact.recurring_expenses)
+  return {
+    category,
+    transactions,
+    recurringExpenses,
+    canDelete: transactions === 0 && recurringExpenses === 0,
+  }
+}
+
+module.exports = { listCategories, getCategoryById, getCategoryDeletionPreview, createCategory, updateCategory, deleteCategory }

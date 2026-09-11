@@ -55,6 +55,7 @@ function mapIntegration(row, suggestedStartYear = null) {
     lastExportAt: row.last_export_at,
     lastImportAt: row.last_import_at,
     lastErrorCode: row.last_error_code || null,
+    requiresFullExport: Boolean(row.requires_full_export),
     suggestedStartYear,
   }
 }
@@ -171,8 +172,14 @@ async function exportData(userId, currentYear = new Date().getUTCFullYear()) {
     const spreadsheet = await googleClient.getSpreadsheet(token, integration.spreadsheet_id)
     const now = new Date().toISOString()
     const rows = {}; const layouts = {}
+    const transactionsByYear = new Map()
+    for (const transaction of data.transactions) {
+      const year = Number(transaction.competence_year)
+      if (!transactionsByYear.has(year)) transactionsByYear.set(year, [])
+      transactionsByYear.get(year).push(transaction)
+    }
     for (const year of yearsFromStart(Number(integration.start_year), lastDataYear)) {
-      layouts[String(year)] = buildYearSheet({ year, transactions: data.transactions.filter((row) => Number(row.competence_year) === year), categories: data.categories, now, userId })
+      layouts[String(year)] = buildYearSheet({ year, transactions: transactionsByYear.get(year) || [], categories: data.categories, now, userId })
       rows[String(year)] = layouts[String(year)].values
     }
     const entries = Object.entries(rows)
@@ -218,6 +225,10 @@ async function readRows(userId) {
 }
 
 async function buildPreview(userId) {
+  const integration = await repository.findByUserId(userId)
+  if (integration?.requires_full_export) {
+    throw new ConflictError('Exporte o estado atual do Cofre antes de importar dados desta planilha.', [], 'GOOGLE_SHEET_FULL_EXPORT_REQUIRED')
+  }
   const [parsed, refs, existingRows] = await Promise.all([readRows(userId), dataRepository.getOwnedReferences(userId), dataRepository.findTransactionsForImport(userId)])
   const existingById = new Map(existingRows.map((row) => [Number(row.id), row]))
   const result = { newRows: [], existing: [], invalid: [], conflicts: [] }

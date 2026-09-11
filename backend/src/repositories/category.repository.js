@@ -102,9 +102,18 @@ function setActive(userId, id, isActive) {
 }
 
 function remove(userId, id) {
-  return run(async (db) => {
-    await db.prepare('DELETE FROM categories WHERE id = ? AND user_id = ?').run(id, userId)
-  }, 'Não foi possível excluir a categoria.')
+  return run((db) => db.transaction(async (tx) => {
+    await tx.prepare('DELETE FROM categories WHERE id = ? AND user_id = ?').run(id, userId)
+    await tx.prepare("UPDATE google_sheets_integrations SET requires_full_export = 1, updated_at = datetime('now') WHERE user_id = ?").run(userId)
+  }), 'Não foi possível excluir a categoria.')
 }
 
-module.exports = { create, findAll, findById, findByTypeAndName, update, setActive, remove }
+function deletionPreview(userId, id) {
+  return run((db) => db.prepare(`
+    SELECT
+      (SELECT COUNT(*) FROM transactions WHERE user_id = @userId AND category_id = @id) AS transactions,
+      (SELECT COUNT(*) FROM recurring_expenses WHERE user_id = @userId AND category_id = @id) AS recurring_expenses
+  `).get({ userId, id }), 'Não foi possível calcular o impacto da exclusão da categoria.')
+}
+
+module.exports = { create, findAll, findById, findByTypeAndName, update, setActive, deletionPreview, remove }

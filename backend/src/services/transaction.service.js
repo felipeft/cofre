@@ -5,7 +5,7 @@ const cardRepository = require('../repositories/card.repository')
 const { mapTransactionRow } = require('../utils/mappers/transaction.mapper')
 const { buildPaginationMeta } = require('../utils/pagination')
 const { deriveCompetenceFromDate } = require('../utils/competence')
-const { calculateFinancialSummary } = require('../domain/financialSummary')
+const { roundCurrency } = require('../utils/money')
 const { buildInstallmentPlan } = require('../domain/installmentPlan')
 const NotFoundError = require('../errors/NotFoundError')
 const ValidationError = require('../errors/ValidationError')
@@ -222,12 +222,30 @@ async function deleteTransaction(userId, id) {
   await transactionRepository.remove(userId, id)
 }
 
+async function getTransactionDeletionPreview(userId, id) {
+  const row = await findExistingOrThrow(userId, id)
+  const impact = await transactionRepository.deletionImpact(userId, row)
+  return {
+    id: row.id,
+    description: row.description,
+    amount: Number(row.amount),
+    type: row.type,
+    permanent: true,
+    isRecurringOccurrence: row.recurring_expense_id != null,
+    cardLimitReduction: row.card_id != null && row.status !== 'cancelled' ? Number(row.amount) : 0,
+    installmentGroupSize: impact.installmentCount,
+    deletesOnlyThisInstallment: impact.installmentCount > 1,
+  }
+}
+
 // Resumo financeiro de uma competência (mês/ano).
 async function getFinancialSummary(userId, { month, year }) {
-  await ensureRecurringExpensesGenerated(userId)
-  const rows = await transactionRepository.findAllForSummary(userId, { month, year })
-  const transactions = rows.map(mapTransactionRow)
-  return calculateFinancialSummary(transactions)
+  const lastDay = new Date(year, month, 0).getDate()
+  await ensureRecurringExpensesGenerated(userId, { asOfDate: `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}` })
+  const row = await transactionRepository.getSummary(userId, { month, year })
+  const totalIncome = roundCurrency(Number(row.total_income))
+  const totalExpenses = roundCurrency(Number(row.total_expenses))
+  return { totalIncome, totalExpenses, balance: roundCurrency(totalIncome - totalExpenses) }
 }
 
 module.exports = {
@@ -236,5 +254,6 @@ module.exports = {
   createTransaction,
   updateTransaction,
   deleteTransaction,
+  getTransactionDeletionPreview,
   getFinancialSummary,
 }

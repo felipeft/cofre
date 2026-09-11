@@ -219,26 +219,30 @@ function update(userId, id, patch) {
 }
 
 function remove(userId, id) {
-  return run(async (db) => {
-    await db.prepare('DELETE FROM transactions WHERE id = ? AND user_id = ?').run(id, userId)
-  }, 'Não foi possível excluir a transação.')
+  return run((db) => db.transaction(async (tx) => {
+    await tx.prepare('DELETE FROM transactions WHERE id = ? AND user_id = ?').run(id, userId)
+    await tx.prepare("UPDATE google_sheets_integrations SET requires_full_export = 1, updated_at = datetime('now') WHERE user_id = ?").run(userId)
+  }), 'Não foi possível excluir a transação.')
 }
 
-// Usado só pelo resumo financeiro (GET /transactions/summary): busca TODAS
-// as transações de uma competência, sem paginação — o resumo precisa somar
-// o período inteiro, não uma página dele. Separado de `findMany` para não
-// forçar esse método genérico a ter um "modo sem paginação" escondido atrás
-// de um parâmetro.
-function findAllForSummary(userId, { month, year }) {
-  return run(
-    (db) =>
-      db
-        .prepare(
-          `${SELECT_WITH_CATEGORY} WHERE t.user_id = @userId AND t.competence_month = @month AND t.competence_year = @year`
-        )
-        .all({ userId, month, year }),
-    'Não foi possível calcular o resumo financeiro.'
-  )
+function deletionImpact(userId, row) {
+  if (!row.installment_group_id) return Promise.resolve({ installmentCount: 0 })
+  return run(async (db) => {
+    const result = await db.prepare('SELECT COUNT(*) AS count FROM transactions WHERE user_id = ? AND installment_group_id = ?').get(userId, row.installment_group_id)
+    return { installmentCount: Number(result.count) }
+  }, 'Não foi possível calcular o impacto da exclusão.')
+}
+
+// O banco agrega diretamente; o endpoint não transfere todo o mês para o
+// Node apenas para somá-lo em memória.
+function getSummary(userId, { month, year }) {
+  return run((db) => db.prepare(`
+    SELECT
+      COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS total_income,
+      COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS total_expenses
+    FROM transactions
+    WHERE user_id = @userId AND competence_month = @month AND competence_year = @year
+  `).get({ userId, month, year }), 'Não foi possível calcular o resumo financeiro.')
 }
 
 // Usado pela regra de negócio de categorias: "não permitir excluir
@@ -282,5 +286,6 @@ module.exports = {
   existsByCategoryId,
   existsByCardId,
   findOpenByCardId,
-  findAllForSummary,
+  getSummary,
+  deletionImpact,
 }

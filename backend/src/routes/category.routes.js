@@ -11,6 +11,7 @@ const {
 const router = Router()
 
 router.get('/', validate(listCategoriesQuerySchema, 'query'), categoryController.list)
+router.get('/:id/deletion-preview', validate(categoryIdParamSchema, 'params'), categoryController.deletionPreview)
 router.get('/:id', validate(categoryIdParamSchema, 'params'), categoryController.getById)
 router.post('/', validate(createCategorySchema, 'body'), categoryController.create)
 router.put(

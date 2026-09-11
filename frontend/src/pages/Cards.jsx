@@ -59,12 +59,23 @@ export default function Cards() {
 
   const handleDelete = async () => {
     try {
-      const result = await removeCard(deleting.id)
+      const result = await removeCard(deleting.item.id)
       showToast(result.message ?? 'Cartão excluído')
     } catch (err) {
       showToast(err.message ?? 'Não foi possível excluir o cartão.', 'error')
     } finally {
       setDeleting(null)
+    }
+  }
+
+  const prepareDelete = async (card) => {
+    setDeleting({ item: card, preview: null, loading: true })
+    try {
+      const preview = await cardService.getCardDeletionPreview(card.id)
+      setDeleting((current) => current?.item.id === card.id ? { item: card, preview, loading: false } : current)
+    } catch (err) {
+      setDeleting(null)
+      showToast(err.message ?? 'Não foi possível calcular o impacto da exclusão.', 'error')
     }
   }
 
@@ -123,7 +134,7 @@ export default function Cards() {
                 card={c}
                 summary={summaries[c.id]}
                 onEdit={(card) => setModalState({ mode: 'edit', card })}
-                onDelete={setDeleting}
+                onDelete={prepareDelete}
                 onPay={(card, summary) => setPaying({ card, summary })}
               />
             ))}
@@ -140,8 +151,15 @@ export default function Cards() {
         onClose={() => setDeleting(null)}
         onConfirm={handleDelete}
         title="Excluir cartão"
-        description={`Excluir "${deleting?.name}"? Cartões com transações vinculadas não podem ser excluídos até que essas transações sejam removidas.`}
+        description={deleting?.loading
+          ? 'Calculando os vínculos deste cartão…'
+          : deleting?.preview?.canDelete
+            ? `O cartão "${deleting.item.name}" não possui registros vinculados e será removido definitivamente.`
+            : `O cartão "${deleting?.item.name}" possui ${deleting?.preview?.transactions ?? 0} movimentação(ões), ${deleting?.preview?.recurringExpenses ?? 0} recorrência(s) e ${deleting?.preview?.payments ?? 0} pagamento(s) de fatura. Ele não pode ser excluído enquanto esses vínculos existirem.`}
         confirmLabel="Excluir"
+        cancelLabel={deleting?.preview?.canDelete ? 'Cancelar' : 'Fechar'}
+        confirmDisabled={deleting?.loading}
+        hideConfirm={!deleting?.loading && !deleting?.preview?.canDelete}
       />
       <Modal open={!!paying} onClose={() => setPaying(null)} title="Registrar pagamento da fatura">
         {paying && <CardPaymentForm card={paying.card} summary={paying.summary} onSubmit={handlePayment} onCancel={() => setPaying(null)} />}

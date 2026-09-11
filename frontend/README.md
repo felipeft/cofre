@@ -212,7 +212,7 @@ qualquer cálculo de limite feito no cliente (sempre vem de
 
 **Status: concluída.**
 
-`pages/RecurringExpenses.jsx` permite listar, cadastrar, editar e desativar
+`pages/RecurringExpenses.jsx` permite listar, cadastrar, editar e excluir
 regras mensais. A tela usa `RecurringExpensesContext`,
 `useRecurringExpenses` e `services/recurringExpense.service.js`, mantendo o
 mesmo caminho Context → Service → API client das entidades existentes.
@@ -227,8 +227,9 @@ agregados sem um segundo sistema de dados.
 
 `RecurringExpenseForm` cadastra descrição, valor, categoria de despesa, dia
 do mês, início, fim opcional, cartão opcional, observações e atividade. A
-tela de gerenciamento inclui regras ativas e inativas. Desativar uma regra
-preserva todas as ocorrências já geradas.
+tela de gerenciamento inclui regras ativas e inativas. Antes de excluir, ela
+mostra quantidade, valor e período das ocorrências e permite preservar o
+histórico ou apagá-lo definitivamente, mediante confirmação textual.
 
 ### Pagamento manual de fatura
 
@@ -261,6 +262,12 @@ Claro e Escuro. Sistema acompanha `prefers-color-scheme` e cai para Claro
 quando o dispositivo não fornece a preferência. A paleta usa tokens globais,
 incluindo gráficos e controles, e troca a marca para `icon-192-nobg.png` no
 tema claro e `icon-192.png` no escuro.
+
+Em **Gerenciamento de dados**, duas ações destrutivas exibem contagens antes
+de qualquer alteração e exigem uma frase literal: limpar somente registros
+financeiros, preservando a estrutura, ou resetar toda a estrutura financeira.
+Categorias, cartões, movimentações e recorrências também consultam previews
+específicos para explicar vínculos e efeitos antes da confirmação.
 
 ---
 

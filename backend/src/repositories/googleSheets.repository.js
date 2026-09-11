@@ -55,7 +55,8 @@ function saveSpreadsheet(userId, { spreadsheetId, spreadsheetName, startYear }) 
 
 function markOperation(userId, operation) {
   const column = operation === 'export' ? 'last_export_at' : 'last_import_at'
-  return run((db) => db.prepare(`UPDATE google_sheets_integrations SET ${column} = datetime('now'), status = 'ready', last_error_code = NULL, last_error_at = NULL, updated_at = datetime('now') WHERE user_id = ?`).run(userId), 'Não foi possível atualizar o estado da integração.')
+  const clearExportRequirement = operation === 'export' ? ', requires_full_export = 0' : ''
+  return run((db) => db.prepare(`UPDATE google_sheets_integrations SET ${column} = datetime('now'), status = 'ready', last_error_code = NULL, last_error_at = NULL${clearExportRequirement}, updated_at = datetime('now') WHERE user_id = ?`).run(userId), 'Não foi possível atualizar o estado da integração.')
 }
 
 function markError(userId, { status, code, clearToken = false }) {

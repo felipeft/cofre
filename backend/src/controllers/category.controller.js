@@ -13,6 +13,11 @@ const getById = asyncHandler(async (req, res) => {
   apiResponse.success(res, { data })
 })
 
+const deletionPreview = asyncHandler(async (req, res) => {
+  const data = await categoryService.getCategoryDeletionPreview(req.user.id, req.validated.params.id)
+  apiResponse.success(res, { data })
+})
+
 const create = asyncHandler(async (req, res) => {
   const data = await categoryService.createCategory(req.user.id, req.validated.body)
   apiResponse.success(res, { data, message: 'Categoria criada com sucesso.', statusCode: HTTP_STATUS.CREATED })
@@ -28,4 +33,4 @@ const remove = asyncHandler(async (req, res) => {
   apiResponse.success(res, { data: { category }, message: 'Categoria excluída com sucesso.' })
 })
 
-module.exports = { list, getById, create, update, remove }
+module.exports = { list, getById, deletionPreview, create, update, remove }

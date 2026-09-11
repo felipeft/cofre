@@ -68,10 +68,22 @@ limite. A compra já é contabilizada como despesa; por isso o pagamento da
 fatura é registrado separadamente em `credit_card_payments` e apenas libera
 o limite, sem criar uma segunda despesa.
 
-Cartões e categorias sem vínculos podem ser excluídos fisicamente. Quando há
-transações associadas, a API recusa a exclusão para não apagar ou ocultar o
-histórico. Gastos recorrentes são encerrados por desativação explícita, e
-suas ocorrências anteriores permanecem intactas.
+Cartões e categorias sem vínculos podem ser excluídos fisicamente. A interface
+mostra antes da confirmação quantas transações, recorrências ou pagamentos
+impedem a remoção. Gastos recorrentes também são excluídos fisicamente, com
+escolha explícita entre preservar suas ocorrências como histórico independente
+ou apagar todas as ocorrências associadas.
+
+Em **Ajustes → Gerenciamento de dados**, o usuário pode limpar apenas os
+registros financeiros, preservando categorias, cartões e recorrências, ou
+resetar toda a estrutura financeira da conta. As duas operações exibem uma
+prévia, exigem uma frase de confirmação e são transacionais e isoladas por
+usuário. Quando há Google Sheets conectado, uma exportação obrigatória ocorre
+antes da próxima importação para impedir a restauração de dados apagados.
+
+A geração de recorrências mantém um checkpoint mensal por definição. Assim,
+uma recorrência iniciada há muitos anos é materializada uma única vez; nas
+consultas seguintes somente competências novas são processadas, em lote.
 
 ## Stack
 
@@ -229,8 +241,9 @@ npm test
 ```
 
 A suíte contém testes unitários para o domínio e testes de integração com
-SQLite temporário, incluindo regras financeiras, cartões, parcelamentos,
-recorrências, idempotência, pagamentos de fatura e exclusões.
+SQLite temporário, incluindo cartões, parcelamentos, recorrências históricas,
+idempotência, pagamentos de fatura, exclusões, reset e proteção contra
+ressurreição de registros pelo Google Sheets.
 
 ```bash
 cd frontend

@@ -62,6 +62,22 @@ async function deleteCard(userId, id) {
   return { card: null }
 }
 
+async function getCardDeletionPreview(userId, id) {
+  const card = mapCardRow(await findExistingOrThrow(userId, id))
+  const impact = await cardRepository.deletionPreview(userId, id)
+  const transactions = Number(impact.transactions)
+  const recurringExpenses = Number(impact.recurring_expenses)
+  const payments = Number(impact.payments)
+  return {
+    card,
+    transactions,
+    recurringExpenses,
+    payments,
+    purchasesTotal: Number(impact.purchases_total),
+    canDelete: transactions === 0 && recurringExpenses === 0 && payments === 0,
+  }
+}
+
 // GET /cards/:id/summary — limite total, usado e disponível (ver
 // domain/cardLimit.js para a regra de cálculo).
 async function getCardSummary(userId, id) {
@@ -99,4 +115,4 @@ async function registerPayment(userId, id, input) {
   return { payment: require('../utils/mappers/cardPayment.mapper').mapCardPaymentRow(row), summary: await getCardSummary(userId, id) }
 }
 
-module.exports = { listCards, getCardById, createCard, updateCard, deleteCard, getCardSummary, registerPayment }
+module.exports = { listCards, getCardById, getCardDeletionPreview, createCard, updateCard, deleteCard, getCardSummary, registerPayment }

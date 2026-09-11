@@ -9,6 +9,7 @@
 export const ENDPOINTS = {
   transactions: '/transactions',
   transaction: (id) => `/transactions/${id}`,
+  transactionDeletionPreview: (id) => `/transactions/${id}/deletion-preview`,
   categories: '/categories',
   category: (id) => `/categories/${id}`,
   cards: '/cards',
@@ -17,6 +18,14 @@ export const ENDPOINTS = {
   cardPayments: (id) => `/cards/${id}/payments`,
   recurringExpenses: '/recurring-expenses',
   recurringExpense: (id) => `/recurring-expenses/${id}`,
+  recurringExpenseDeletionPreview: (id) => `/recurring-expenses/${id}/deletion-preview`,
+  categoryDeletionPreview: (id) => `/categories/${id}/deletion-preview`,
+  cardDeletionPreview: (id) => `/cards/${id}/deletion-preview`,
+  dataManagement: {
+    preview: '/data-management/preview',
+    clearRecords: '/data-management/clear-records',
+    reset: '/data-management/reset',
+  },
   settings: '/settings',
   profile: '/profile',
   auth: {

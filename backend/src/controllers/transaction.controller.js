@@ -31,9 +31,14 @@ const remove = asyncHandler(async (req, res) => {
   apiResponse.success(res, { data: null, message: 'Transação excluída com sucesso.' })
 })
 
+const deletionPreview = asyncHandler(async (req, res) => {
+  const data = await transactionService.getTransactionDeletionPreview(req.user.id, req.validated.params.id)
+  apiResponse.success(res, { data })
+})
+
 const getSummary = asyncHandler(async (req, res) => {
   const data = await transactionService.getFinancialSummary(req.user.id, req.validated.query)
   apiResponse.success(res, { data })
 })
 
-module.exports = { list, getById, create, update, remove, getSummary }
+module.exports = { list, getById, deletionPreview, create, update, remove, getSummary }

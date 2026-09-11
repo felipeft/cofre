@@ -13,7 +13,7 @@ export function RecurringExpensesProvider({ children }) {
   useEffect(() => { refresh() }, [refresh])
   const createRecurringExpense = useCallback(async (payload) => { const created = await service.createRecurringExpense(payload); setRecurringExpenses((prev) => [...prev, created]); return created }, [])
   const editRecurringExpense = useCallback(async (id, patch) => { const updated = await service.updateRecurringExpense(id, patch); setRecurringExpenses((prev) => prev.map((item) => item.id === id ? updated : item)); return updated }, [])
-  const removeRecurringExpense = useCallback(async (id) => { const result = await service.deleteRecurringExpense(id); setRecurringExpenses((prev) => prev.map((item) => item.id === id ? result : item)); return result }, [])
+  const removeRecurringExpense = useCallback(async (id, mode) => { const result = await service.deleteRecurringExpense(id, mode); setRecurringExpenses((prev) => prev.filter((item) => item.id !== id)); return result }, [])
   const value = useMemo(() => ({ recurringExpenses, loading, error, refresh, createRecurringExpense, editRecurringExpense, removeRecurringExpense }), [recurringExpenses, loading, error, refresh, createRecurringExpense, editRecurringExpense, removeRecurringExpense])
   return <RecurringExpensesContext.Provider value={value}>{children}</RecurringExpensesContext.Provider>
 }

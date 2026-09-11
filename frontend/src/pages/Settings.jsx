@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useSettings } from '@/hooks/useSettings'
 import { settingsService } from '@/services/settings.service'
 import GoogleSheetsSettings from '@/components/settings/GoogleSheetsSettings'
+import DataManagementSettings from '@/components/settings/DataManagementSettings'
 
 const dateTime = (value) => value ? new Date(`${value.replace(' ', 'T')}Z`).toLocaleString('pt-BR') : 'Indisponível'
 
@@ -125,6 +126,10 @@ export default function Settings() {
 
         <SettingsGroup title="Google Sheets">
           <GoogleSheetsSettings />
+        </SettingsGroup>
+
+        <SettingsGroup title="Gerenciamento de dados">
+          <DataManagementSettings />
         </SettingsGroup>
       </div>
     </div>

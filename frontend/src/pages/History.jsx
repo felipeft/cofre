@@ -17,6 +17,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { useTransactionsList } from '@/hooks/useTransactionsList'
 import { formatCurrency, formatDate } from '@/utils/formatters'
 import { monthKey, parseMonthKey } from '@/utils/months'
+import { getTransactionDeletionPreview } from '@/services/transaction.service'
 
 function localDateInput(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -90,11 +91,22 @@ export default function History() {
 
   const handleDelete = async () => {
     try {
-      await deleteTransaction(deleting.id)
+      await deleteTransaction(deleting.item.id)
       showToast('Movimentação excluída', 'info')
     } catch (err) {
       showToast(err.message ?? 'Não foi possível excluir a movimentação.', 'error')
     } finally {
+      setDeleting(null)
+    }
+  }
+
+  const prepareDelete = async (item) => {
+    setDeleting({ item, preview: null, loading: true })
+    try {
+      const preview = await getTransactionDeletionPreview(item.id)
+      setDeleting((current) => current?.item.id === item.id ? { item, preview, loading: false } : current)
+    } catch (err) {
+      showToast(err.message ?? 'Não foi possível calcular o impacto da exclusão.', 'error')
       setDeleting(null)
     }
   }
@@ -222,7 +234,7 @@ export default function History() {
                     <button onClick={() => setEditing(t)} className="focus-ring rounded-[6px] p-1.5 text-text-faint hover:text-text hover:bg-surface-2" aria-label="Editar">
                       <Pencil size={14} />
                     </button>
-                    <button onClick={() => setDeleting(t)} className="focus-ring rounded-[6px] p-1.5 text-text-faint hover:text-expense hover:bg-expense/10" aria-label="Excluir">
+                    <button onClick={() => prepareDelete(t)} className="focus-ring rounded-[6px] p-1.5 text-text-faint hover:text-expense hover:bg-expense/10" aria-label="Excluir">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -271,7 +283,7 @@ export default function History() {
                           <button onClick={() => setEditing(t)} className="focus-ring rounded-[6px] p-1.5 text-text-faint hover:text-text hover:bg-surface-2" aria-label="Editar">
                             <Pencil size={14} />
                           </button>
-                          <button onClick={() => setDeleting(t)} className="focus-ring rounded-[6px] p-1.5 text-text-faint hover:text-expense hover:bg-expense/10" aria-label="Excluir">
+                          <button onClick={() => prepareDelete(t)} className="focus-ring rounded-[6px] p-1.5 text-text-faint hover:text-expense hover:bg-expense/10" aria-label="Excluir">
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -331,8 +343,11 @@ export default function History() {
         onClose={() => setDeleting(null)}
         onConfirm={handleDelete}
         title="Excluir movimentação"
-        description={`Tem certeza que deseja excluir "${deleting?.description || deleting?.category?.name}"? Essa ação não pode ser desfeita.`}
+        description={deleting?.loading
+          ? 'Calculando o impacto da exclusão…'
+          : `"${deleting?.item.description || deleting?.item.category?.name}" será removida definitivamente.${deleting?.preview?.cardLimitReduction ? ` O limite do cartão será liberado em ${formatCurrency(deleting.preview.cardLimitReduction)}.` : ''}${deleting?.preview?.isRecurringOccurrence ? ' Esta ocorrência não será recriada automaticamente.' : ''}${deleting?.preview?.deletesOnlyThisInstallment ? ` Somente esta parcela será apagada; as outras ${deleting.preview.installmentGroupSize - 1} permanecerão.` : ''}`}
         confirmLabel="Excluir"
+        confirmDisabled={deleting?.loading || !deleting?.preview}
       />
     </div>
   )

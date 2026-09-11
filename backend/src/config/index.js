@@ -27,8 +27,11 @@ const config = Object.freeze({
 
   database: Object.freeze({
     path: path.resolve(process.cwd(), env.DATABASE_PATH),
-    tursoUrl: env.TURSO_DATABASE_URL ?? null,
-    tursoAuthToken: env.TURSO_AUTH_TOKEN ?? null,
+    // Testes de integração sempre usam o arquivo temporário informado por
+    // DATABASE_PATH. Isso impede que um .env local com credenciais do Turso
+    // faça a suíte tocar acidentalmente o banco real.
+    tursoUrl: env.NODE_ENV === 'test' ? null : (env.TURSO_DATABASE_URL ?? null),
+    tursoAuthToken: env.NODE_ENV === 'test' ? null : (env.TURSO_AUTH_TOKEN ?? null),
   }),
 
   // Timeouts e limites gerais da aplicação. Centralizados aqui para que

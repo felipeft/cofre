@@ -7,35 +7,44 @@ async function run(fn, message) {
 
 function getExportData(userId) {
   return run(async (db) => {
-    const transactions = await db.prepare(`
+    const results = await db.batch([{
+      sql: `
       SELECT t.*, c.name AS category_name, cc.name AS card_name
       FROM transactions t
       JOIN categories c ON c.id = t.category_id
       LEFT JOIN credit_cards cc ON cc.id = t.card_id
       WHERE t.user_id = ? ORDER BY t.competence_year, t.date, t.id
-    `).all(userId)
-    const categories = await db.prepare('SELECT * FROM categories WHERE user_id = ? ORDER BY type, sort_order, name COLLATE NOCASE').all(userId)
-    const cards = await db.prepare('SELECT * FROM credit_cards WHERE user_id = ? ORDER BY name COLLATE NOCASE').all(userId)
-    const recurringExpenses = await db.prepare(`
+    `, args: [userId] }, {
+      sql: 'SELECT * FROM categories WHERE user_id = ? ORDER BY type, sort_order, name COLLATE NOCASE', args: [userId],
+    }, {
+      sql: 'SELECT * FROM credit_cards WHERE user_id = ? ORDER BY name COLLATE NOCASE', args: [userId],
+    }, {
+      sql: `
       SELECT r.*, c.name AS category_name, cc.name AS card_name
       FROM recurring_expenses r JOIN categories c ON c.id = r.category_id
       LEFT JOIN credit_cards cc ON cc.id = r.card_id
       WHERE r.user_id = ? ORDER BY r.id
-    `).all(userId)
-    const payments = await db.prepare(`
+    `, args: [userId] }, {
+      sql: `
       SELECT p.*, cc.name AS card_name FROM credit_card_payments p
       JOIN credit_cards cc ON cc.id = p.card_id WHERE p.user_id = ? ORDER BY p.paid_at, p.id
-    `).all(userId)
-    const settings = await db.prepare('SELECT * FROM user_settings WHERE user_id = ?').get(userId)
+    `, args: [userId] }, {
+      sql: 'SELECT * FROM user_settings WHERE user_id = ?', args: [userId],
+    }], 'read')
+    const [transactions, categories, cards, recurringExpenses, payments] = results.map((result) => Array.from(result.rows))
+    const settings = results[5].rows[0]
     return { transactions, categories, cards, recurringExpenses, payments, settings }
   }, 'Não foi possível preparar os dados para exportação.')
 }
 
 function getOwnedReferences(userId) {
   return run(async (db) => {
-    const categories = await db.prepare('SELECT id, type, name, is_active FROM categories WHERE user_id = ?').all(userId)
-    const cards = await db.prepare('SELECT id, name, is_active FROM credit_cards WHERE user_id = ?').all(userId)
-    const recurring = await db.prepare('SELECT id FROM recurring_expenses WHERE user_id = ?').all(userId)
+    const results = await db.batch([
+      { sql: 'SELECT id, type, name, is_active FROM categories WHERE user_id = ?', args: [userId] },
+      { sql: 'SELECT id, name, is_active FROM credit_cards WHERE user_id = ?', args: [userId] },
+      { sql: 'SELECT id FROM recurring_expenses WHERE user_id = ?', args: [userId] },
+    ], 'read')
+    const [categories, cards, recurring] = results.map((result) => Array.from(result.rows))
     return {
       categories: new Map(categories.map((row) => [Number(row.id), row.type])),
       categoriesByName: new Map(categories.filter((row) => row.is_active).map((row) => [`${row.type}:${String(row.name).trim().toLocaleLowerCase('pt-BR')}`, Number(row.id)])),
