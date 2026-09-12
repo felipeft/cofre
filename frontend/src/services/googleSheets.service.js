@@ -1,4 +1,4 @@
-import { apiClient } from '@/api/client'
+import { apiClient } from '@cofre-api-client'
 import { ENDPOINTS } from '@/api/endpoints'
 
 export const googleSheetsService = {

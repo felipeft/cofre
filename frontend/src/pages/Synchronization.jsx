@@ -6,6 +6,7 @@ import Card from '@/components/ui/Card'
 import { ROUTES } from '@/constants/routes'
 import { useToast } from '@/contexts/ToastContext'
 import { useGoogleSheetsSync } from '@/hooks/useGoogleSheetsSync'
+import { isDemoMode } from '@/config/appMode'
 
 const statusMeta = {
   running: { label: 'Em andamento', icon: RefreshCw, color: 'text-income' },
@@ -67,6 +68,28 @@ function RunSummary({ run, compact = false }) {
 }
 
 export default function Synchronization() {
+  return isDemoMode ? <DemoSynchronization /> : <ProductionSynchronization />
+}
+
+function DemoSynchronization() {
+  return (
+    <div>
+      <Header title="Sincronização" subtitle="Integrações externas do Cofre" />
+      <div className="max-w-[760px] px-5 pb-8 md:px-8">
+        <Card className="flex flex-col items-start gap-3 p-5">
+          <FileWarning size={24} className="text-info" />
+          <div>
+            <h2 className="text-[15px] font-semibold text-text">Google Sheets desativado na demonstração</h2>
+            <p className="mt-1 text-[13px] leading-relaxed text-text-muted">A versão de produção possui sincronização manual, histórico, conflitos e tratamento de falhas. Esta demonstração não solicita permissões Google e não envia dados para serviços externos.</p>
+          </div>
+          <Link to={ROUTES.settings} className="focus-ring rounded-control border border-border bg-surface-2 px-4 py-2 text-[13px] font-medium text-text">Ver detalhes nos ajustes</Link>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+function ProductionSynchronization() {
   const { showToast } = useToast()
   const sync = useGoogleSheetsSync()
   const running = sync.status?.latest?.status === 'running'

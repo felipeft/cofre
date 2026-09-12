@@ -16,7 +16,7 @@ function mulberry32(seed) {
 const rand = mulberry32(42)
 
 const expenseDescriptions = {
-  mercado: ['Compra do mês', 'Garrafão de água Tony', 'Feira da semana', 'Hortifruti', 'Padaria'],
+  mercado: ['Compra do mês', 'Itens de mercearia', 'Feira da semana', 'Hortifruti', 'Padaria'],
   transporte: ['Uber', 'Combustível', 'Estacionamento', 'Ônibus', '99'],
   alimentacao: ['Almoço', 'Ifood', 'Café', 'Lanche da tarde', 'Jantar fora'],
   moradia: ['Aluguel', 'Conta de luz', 'Conta de água', 'Internet', 'Condomínio'],

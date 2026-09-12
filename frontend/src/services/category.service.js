@@ -1,7 +1,7 @@
 // Camada de acesso a dados de categorias. Nenhuma página ou hook fala com o
 // backend diretamente — tudo passa por aqui, que é o único arquivo (fora de
 // api/client.js) que conhece a forma exata da resposta da API.
-import { apiClient } from '@/api/client'
+import { apiClient } from '@cofre-api-client'
 import { ENDPOINTS } from '@/api/endpoints'
 
 function buildQuery(params) {

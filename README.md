@@ -5,8 +5,8 @@ gradualmente uma planilha de uso cotidiano por um sistema estruturado,
 confiável e preparado para evoluir com autenticação, integração ao Google
 Sheets, inteligência financeira, Engenharia de Dados e IA.
 
-> **Status atual:** Fase 5 concluída — integração e sincronização Google,
-> planilha anual, navegação temporal, responsividade e temas finalizados.
+> **Status atual:** Fase 5 concluída e ambiente público de demonstração
+> implementado, antes do início da Fase 6 de documentação.
 
 ## Acesso
 
@@ -17,6 +17,11 @@ O frontend está hospedado na Vercel e o backend no Render. A interface é
 responsiva e destinada também ao uso diário pelo Safari no iPhone. Como o
 backend utiliza o plano gratuito do Render, a primeira requisição após um
 período sem uso pode levar alguns segundos enquanto o serviço é reativado.
+
+O mesmo repositório também pode gerar um deployment **Demo** totalmente
+local ao navegador. Nesse build não há login, API, Turso ou Google Sheets:
+um adaptador de infraestrutura usa dados sintéticos em um único namespace
+do `localStorage`, com restauração explícita do seed.
 
 ## Funcionalidades atuais
 
@@ -121,6 +126,9 @@ O projeto mantém regras de negócio fora das bordas HTTP e da persistência.
 ```text
 Frontend
 Page → Hook/Context → Service → API Client → HTTP
+
+Demo
+Page → Hook/Context → Service → Demo Adapter → localStorage
 
 Backend
 Route → Validation/Auth → Controller → Service → Domain/Repository → libSQL/Turso
@@ -228,8 +236,19 @@ SESSION_SECRET=
 Frontend:
 
 ```env
+VITE_APP_MODE=production
 VITE_API_URL=/api
 ```
+
+Demo:
+
+```env
+VITE_APP_MODE=demo
+```
+
+O build Demo recusa `VITE_API_URL`. O deployment público usa o
+`vercel.json` da raiz, que não possui rewrite para a API e aplica uma CSP
+com `connect-src 'none'`. A produção continua usando `frontend/vercel.json`.
 
 Em produção, `FRONTEND_URLS` aceita múltiplas origens separadas por vírgula.
 
@@ -248,7 +267,9 @@ ressurreição de registros pelo Google Sheets.
 ```bash
 cd frontend
 npm run lint
+npm run test:demo
 npm run build
+VITE_APP_MODE=demo npm run build
 ```
 
 ## API atual

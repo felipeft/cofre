@@ -11,6 +11,8 @@ import { useSettings } from '@/hooks/useSettings'
 import { settingsService } from '@/services/settings.service'
 import GoogleSheetsSettings from '@/components/settings/GoogleSheetsSettings'
 import DataManagementSettings from '@/components/settings/DataManagementSettings'
+import DemoDataSettings from '@/components/settings/DemoDataSettings'
+import { isDemoMode } from '@/config/appMode'
 
 const dateTime = (value) => value ? new Date(`${value.replace(' ', 'T')}Z`).toLocaleString('pt-BR') : 'Indisponível'
 
@@ -71,7 +73,7 @@ export default function Settings() {
               )}
               <div className="min-w-0">
                 <p className="truncate text-[14px] font-medium">{user?.googleName || user?.name}</p>
-                <p className="truncate text-[12px] text-text-muted">Nome fornecido pelo Google</p>
+                <p className="truncate text-[12px] text-text-muted">{isDemoMode ? 'Identidade fictícia da demonstração' : 'Nome fornecido pelo Google'}</p>
               </div>
             </div>
             <Input label="Nome de exibição no Cofre" value={displayName} maxLength={80} required onChange={(event) => setDisplayName(event.target.value)} />
@@ -114,14 +116,18 @@ export default function Settings() {
         </SettingsGroup>
 
         <SettingsGroup title="Conta e sessão">
-          <SettingsRow icon={Mail} label="E-mail Google" value={user?.email} />
-          <SettingsRow icon={ShieldCheck} label="Provedor" value="Google" />
+          <SettingsRow icon={Mail} label={isDemoMode ? 'E-mail fictício' : 'E-mail Google'} value={user?.email} />
+          <SettingsRow icon={ShieldCheck} label="Provedor" value={isDemoMode ? 'Sessão local de demonstração' : 'Google'} />
           <SettingsRow icon={CalendarClock} label="Conta criada" value={dateTime(user?.createdAt)} />
           <SettingsRow icon={CalendarClock} label="Sessão iniciada" value={dateTime(user?.session?.createdAt)} />
           <SettingsRow icon={CalendarClock} label="Sessão expira" value={dateTime(user?.session?.expiresAt)} />
-          <SettingsRow icon={LogOut} label="Sair da conta" onClick={async () => {
-            try { await logout() } catch (requestError) { showToast(requestError.message || 'Não foi possível sair.', 'error') }
-          }} />
+          {isDemoMode ? (
+            <SettingsRow icon={ShieldCheck} label="Estado da sessão" value="Ativa apenas neste navegador" />
+          ) : (
+            <SettingsRow icon={LogOut} label="Sair da conta" onClick={async () => {
+              try { await logout() } catch (requestError) { showToast(requestError.message || 'Não foi possível sair.', 'error') }
+            }} />
+          )}
         </SettingsGroup>
 
         <SettingsGroup title="Google Sheets">
@@ -129,7 +135,7 @@ export default function Settings() {
         </SettingsGroup>
 
         <SettingsGroup title="Gerenciamento de dados">
-          <DataManagementSettings />
+          {isDemoMode ? <DemoDataSettings /> : <DataManagementSettings />}
         </SettingsGroup>
       </div>
     </div>

@@ -1,6 +1,6 @@
 // Camada de acesso a dados de cartões. Mesma regra dos demais services:
 // ninguém fora daqui fala com o backend diretamente.
-import { apiClient } from '@/api/client'
+import { apiClient } from '@cofre-api-client'
 import { ENDPOINTS } from '@/api/endpoints'
 
 function buildQuery(params) {

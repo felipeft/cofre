@@ -7,6 +7,7 @@ import Dialog from '@/components/ui/Dialog'
 import { useToast } from '@/contexts/ToastContext'
 import { useGoogleSheetsIntegration } from '@/hooks/useGoogleSheetsIntegration'
 import { ROUTES } from '@/constants/routes'
+import { isDemoMode } from '@/config/appMode'
 
 const labels = {
   not_connected: 'Não conectado', authorized: 'Autorizado — crie sua planilha', ready: 'Pronto',
@@ -15,6 +16,22 @@ const labels = {
 const dateTime = (value) => value ? new Date(`${value.replace(' ', 'T')}Z`).toLocaleString('pt-BR') : 'Nunca'
 
 export default function GoogleSheetsSettings() {
+  return isDemoMode ? <DemoGoogleSheetsSettings /> : <ProductionGoogleSheetsSettings />
+}
+
+function DemoGoogleSheetsSettings() {
+  return (
+    <div className="flex items-start gap-3 p-4">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-info/10 text-info"><FileSpreadsheet size={20} /></div>
+      <div>
+        <p className="text-[14px] font-medium text-text">Integração externa desativada</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-text-muted">O Cofre real oferece sincronização com Google Sheets. No ambiente público de demonstração, nenhuma autorização Google ou chamada externa é realizada.</p>
+      </div>
+    </div>
+  )
+}
+
+function ProductionGoogleSheetsSettings() {
   const { showToast } = useToast()
   const sheets = useGoogleSheetsIntegration()
   const [startYear, setStartYear] = useState(new Date().getFullYear())

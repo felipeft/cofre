@@ -26,6 +26,9 @@ export const ENDPOINTS = {
     clearRecords: '/data-management/clear-records',
     reset: '/data-management/reset',
   },
+  demo: {
+    reset: '/demo/reset',
+  },
   settings: '/settings',
   profile: '/profile',
   auth: {

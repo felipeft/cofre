@@ -234,7 +234,7 @@ export default function TransactionForm({ initial, onSubmit, onCancel, submitLab
 
       <Input
         label="Descrição"
-        placeholder="Ex: Garrafão de água Tony"
+        placeholder="Ex: Compra do mercado"
         value={form.description}
         onChange={(e) => set({ description: e.target.value })}
       />

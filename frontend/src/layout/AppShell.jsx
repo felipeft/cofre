@@ -6,6 +6,8 @@ import Modal from '@/components/ui/Modal'
 import TransactionForm from '@/components/forms/TransactionForm'
 import { useTransactions } from '@/hooks/useTransactions'
 import { useToast } from '@/contexts/ToastContext'
+import { isDemoMode } from '@/config/appMode'
+import DemoNotice from '@/components/demo/DemoNotice'
 
 export default function AppShell() {
   const [collapsed, setCollapsed] = useState(false)
@@ -28,6 +30,7 @@ export default function AppShell() {
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} onRegister={() => setQuickAddOpen(true)} />
 
       <div className="min-w-0 flex-1 pb-8 max-md:h-[calc(100dvh-4rem-env(safe-area-inset-bottom))] max-md:overflow-y-auto max-md:overscroll-contain md:pb-0">
+        {isDemoMode && <DemoNotice />}
         <Outlet />
       </div>
 

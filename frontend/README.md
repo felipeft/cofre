@@ -1,9 +1,10 @@
 # Cofre — Frontend de controle financeiro pessoal
 
-Frontend em React 19 + Vite + Tailwind v4, integrado à API real do Cofre.
-Possui login Google, sessão consultada no backend, perfil, tema e preferências
-financeiras individuais, sem armazenar tokens no navegador. Nenhum dado é
-mockado — tudo vem do backend.
+Frontend em React 19 + Vite + Tailwind v4. O mesmo código gera dois produtos:
+
+- `production`: integrado à API real, com Google OAuth e Turso;
+- `demo`: usuário fictício e dados sintéticos persistidos exclusivamente no
+  navegador, sem cliente HTTP ou integração externa no bundle.
 
 ## Como rodar
 
@@ -16,6 +17,15 @@ npm run dev
 Requer o backend rodando (ver `backend/README.md`). Com os dois no padrão
 (`localhost:5173` e `localhost:3000`), não é preciso ajustar nada — o
 `.env.example` já vem pronto para desenvolvimento local.
+
+Para executar a demonstração local:
+
+```bash
+VITE_APP_MODE=demo npm run dev
+```
+
+Não defina `VITE_API_URL` nesse comando ou deployment. A configuração do
+Vite falha de propósito se o modo Demo receber uma URL de API.
 
 ## Árvore de `src/`
 
@@ -94,12 +104,19 @@ src/
 
 ```
 pages → hooks → services → api/client.js → Backend
+
+pages → hooks → services → demo/apiClient.js → localStorage (build Demo)
 ```
 
 Nenhuma página faz `fetch()`. Nenhum componente conhece uma URL. As mutações
 passam pelos Contexts de transações, categorias, cartões e recorrências. O
 estado local só é alterado depois de a API confirmar a operação — assim uma
 exclusão recusada pelo backend não faz o item desaparecer da interface.
+
+O alias `@cofre-api-client` é resolvido durante o build. Isso evita condicionais
+espalhadas pelos componentes e impede que o cliente HTTP de produção seja
+incluído no bundle Demo. O storage usa somente a chave `cofre:demo:v1`;
+“Resetar demonstração” não chama `localStorage.clear()`.
 
 ## Decisões e por quê
 

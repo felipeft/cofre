@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:demo": "VITE_APP_MODE=demo vite build && node scripts/audit-demo-build.mjs",
     "lint": "oxlint",
+    "test:demo": "node --test tests/demo/*.test.js",
     "preview": "vite preview"
   },
   "dependencies": {
