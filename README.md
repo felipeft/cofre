@@ -1,354 +1,225 @@
 # Cofre
 
-Aplicação pessoal e familiar de controle financeiro, criada para substituir
-gradualmente uma planilha de uso cotidiano por um sistema estruturado,
-confiável e preparado para evoluir com autenticação, integração ao Google
-Sheets, inteligência financeira, Engenharia de Dados e IA.
+**Controle financeiro pessoal com histórico, cartões, recorrências, análises e sincronização opcional com Google Sheets.**
 
-> **Status atual:** Fase 5 concluída e ambiente público de demonstração
-> implementado, antes do início da Fase 6 de documentação.
+[Live Demo](https://cofre-demo.vercel.app/) · [Documentação](#documentação) · [Executar localmente](#quickstart) · [API](#visão-geral-da-api)
 
-## Acesso
+> **Status:** aplicação em uso real, Fases 1–5 concluídas e ambiente público de demonstração disponível. A Fase 6 — Documentação e Engenharia de Software foi iniciada, com a Etapa 14 concluída.
 
-- Frontend: [cofre-orcin.vercel.app](https://cofre-orcin.vercel.app)
-- API: [cofre-api-mgdl.onrender.com](https://cofre-api-mgdl.onrender.com)
+## Por que o Cofre existe
 
-O frontend está hospedado na Vercel e o backend no Render. A interface é
-responsiva e destinada também ao uso diário pelo Safari no iPhone. Como o
-backend utiliza o plano gratuito do Render, a primeira requisição após um
-período sem uso pode levar alguns segundos enquanto o serviço é reativado.
+O Cofre nasceu da necessidade de substituir uma planilha financeira pessoal por uma aplicação estruturada, acessível no computador e no Safari do iPhone, sem perder a visão histórica nem a possibilidade de trabalhar com planilhas.
 
-O mesmo repositório também pode gerar um deployment **Demo** totalmente
-local ao navegador. Nesse build não há login, API, Turso ou Google Sheets:
-um adaptador de infraestrutura usa dados sintéticos em um único namespace
-do `localStorage`, com restauração explícita do seed.
+A solução combina uma aplicação web responsiva, uma API que concentra regras e segurança, persistência multiusuário e uma integração opcional com Google Sheets. Para apresentar o produto sem expor dados ou infraestrutura pessoais, o mesmo frontend também gera uma Demo totalmente isolada no navegador.
 
-## Funcionalidades atuais
+## Principais funcionalidades
 
-- Cadastro, edição, consulta e exclusão de receitas e despesas.
-- Categorias de receita e despesa com cores e ícones personalizáveis.
-- Pesquisa, filtros, paginação e ordenação do histórico.
-- Competência financeira separada da data do lançamento.
-- Dashboard e análises por período e categoria.
-- Cartões de crédito com limite, fechamento e vencimento.
+- Receitas e despesas com categoria, data, competência, status, observações e filtros.
+- Dashboard mensal, histórico pesquisável e análises por período e categoria.
+- Navegação por meses passados e futuros, incluindo parcelas e recorrências previstas.
+- Categorias personalizáveis com cores e ícones.
+- Cartões de crédito com fechamento, vencimento, limite utilizado e pagamento de fatura.
 - Compras parceladas com geração atômica das parcelas e ajuste de centavos.
-- Gastos recorrentes mensais, com data inicial/final e cartão opcional.
-- Geração automática e idempotente das ocorrências recorrentes.
-- Pagamento manual de fatura para liberar o limite comprometido.
-- Interface responsiva para desktop e dispositivos móveis.
-- Login Google com whitelist de e-mails e sessão persistente HTTP-only.
-- Isolamento dos dados financeiros por usuário autenticado.
-- Perfil com nome preferido no Cofre e identidade Google preservada.
-- Aparência individual com temas Sistema, Claro e Escuro; Sistema acompanha
-  o dispositivo e usa o tema claro como fallback.
-- Área de configurações com dados seguros da conta e da sessão atual.
-- Integração Google Sheets opcional por usuário, com exportação e importação
-  manuais, abas anuais legíveis e refresh token criptografado.
-- Cada ano apresenta resumo anual, visão dos 12 meses, despesas por categoria
-  e uma área de lançamentos compatível com os rótulos do aplicativo.
-- Central de sincronização manual com status, contagens, conflitos, falhas,
-  idempotência e histórico persistente por usuário.
+- Gastos recorrentes com materialização mensal idempotente e preservação opcional do histórico na exclusão.
+- Exclusões definitivas com prévia de impacto e gerenciamento destrutivo user-scoped.
+- Google OAuth, whitelist de e-mails, cookies HTTP-only e sessões persistidas no banco.
+- Perfil e preferência de tema (`system`, `light` ou `dark`) por usuário.
+- Google Sheets opcional, com planilha anual legível, importação de despesas simples e sincronização manual auditável.
+- Interface responsiva com navegação adaptada para desktop e dispositivos móveis.
 
-## Regras importantes do domínio
+## Dois ambientes, uma base de código
 
-### Histórico financeiro
+| Ambiente | Finalidade | Dados e integrações |
+| --- | --- | --- |
+| **Production** | Uso pessoal real | Google OAuth, API no Render, Turso e Google Sheets. A URL pessoal não é divulgada como demonstração. |
+| **Public Demo / Sandbox** | Avaliação pública do produto | Usuário e dados sintéticos, persistência em `localStorage`, sem backend, OAuth, Turso, cookies ou Google APIs. |
 
-Transações representam fatos financeiros. Alterar uma categoria ou
-uma definição recorrente não reescreve silenciosamente ocorrências já
-registradas.
+Na Demo, o visitante pode explorar o dashboard e as análises, além de criar, editar e excluir movimentações, categorias, cartões e gastos recorrentes. Parcelamentos, limite de cartão, pagamento de fatura e geração de recorrências também são simulados localmente. O botão **Resetar demonstração** remove somente o namespace `cofre:demo:v1` e restaura o seed original.
 
-### Parcelamento e recorrência
+O isolamento ocorre no build: o Vite troca o cliente HTTP por um adapter local. O build Demo rejeita `VITE_API_URL`, e seu deployment aplica `connect-src 'none'`, impedindo conexões externas pelo bundle publicado.
 
-Parcelamento representa uma única compra dividida em parcelas finitas. As
-parcelas compartilham um `installment_group_id`.
+## Stack tecnológica
 
-Recorrência representa uma regra que gera novos fatos financeiros a cada
-mês. Cada ocorrência é uma transação independente, vinculada por
-`recurring_expense_id`, sem utilizar os campos de parcelamento.
+| Camada | Tecnologias |
+| --- | --- |
+| Frontend | React 19, Vite 8, React Router 7, Tailwind CSS 4, Recharts e Lucide React |
+| Backend | Node.js 22, Express 5, Zod 4 e Node Test Runner |
+| Dados | libSQL com `@libsql/client`; SQLite local e Turso em produção |
+| Autenticação | Google OAuth 2.0 com Authorization Code, PKCE, `state`, nonce e sessão HTTP-only |
+| Integração | Google Sheets API e escopo limitado `drive.file` |
+| Deploy | Vercel (frontend Production e Demo), Render (API) e Turso (banco) |
 
-### Cartões e pagamento de fatura
+## Arquitetura resumida
 
-Compras e ocorrências recorrentes vinculadas a um cartão comprometem seu
-limite. A compra já é contabilizada como despesa; por isso o pagamento da
-fatura é registrado separadamente em `credit_card_payments` e apenas libera
-o limite, sem criar uma segunda despesa.
-
-Cartões e categorias sem vínculos podem ser excluídos fisicamente. A interface
-mostra antes da confirmação quantas transações, recorrências ou pagamentos
-impedem a remoção. Gastos recorrentes também são excluídos fisicamente, com
-escolha explícita entre preservar suas ocorrências como histórico independente
-ou apagar todas as ocorrências associadas.
-
-Em **Ajustes → Gerenciamento de dados**, o usuário pode limpar apenas os
-registros financeiros, preservando categorias, cartões e recorrências, ou
-resetar toda a estrutura financeira da conta. As duas operações exibem uma
-prévia, exigem uma frase de confirmação e são transacionais e isoladas por
-usuário. Quando há Google Sheets conectado, uma exportação obrigatória ocorre
-antes da próxima importação para impedir a restauração de dados apagados.
-
-A geração de recorrências mantém um checkpoint mensal por definição. Assim,
-uma recorrência iniciada há muitos anos é materializada uma única vez; nas
-consultas seguintes somente competências novas são processadas, em lote.
-
-## Stack
-
-### Backend
-
-- Node.js 22.x
-- Express 5
-- libSQL (`@libsql/client`)
-- Turso em produção e arquivo SQLite/libSQL no desenvolvimento
-- Zod
-- dotenv
-- migrations SQL
-- Node Test Runner
-
-### Frontend
-
-- React 19
-- Vite
-- Tailwind CSS 4
-- React Router
-- lucide-react
-- Recharts
-
-### Infraestrutura
-
-- GitHub
-- Vercel para o frontend
-- Render para o backend
-- Turso para persistência do banco
-
-## Arquitetura
-
-O projeto mantém regras de negócio fora das bordas HTTP e da persistência.
+O frontend consome contratos de serviço comuns nos dois modos. Em produção, esses serviços usam o cliente HTTP; na Demo, um alias resolvido durante o build aponta para o repositório no navegador. No backend, rotas e controllers cuidam da borda HTTP, services orquestram os casos de uso, funções de domínio concentram cálculos e repositories encapsulam SQL.
 
 ```text
-Frontend
-Page → Hook/Context → Service → API Client → HTTP
-
-Demo
-Page → Hook/Context → Service → Demo Adapter → localStorage
-
-Backend
-Route → Validation/Auth → Controller → Service → Domain/Repository → libSQL/Turso
-                                             ↓
-                                           Mapper
+Frontend: página → hook/context → service → API client ou Demo adapter
+Backend:  rota → autenticação/validação → controller → service → domínio/repository → libSQL
 ```
 
-Estrutura principal:
+```mermaid
+flowchart LR
+    Visitor[Visitante] --> DemoUI[Frontend Demo<br/>Vercel]
+    DemoUI --> DemoAdapter[Demo adapter]
+    DemoAdapter --> Browser[(localStorage<br/>dados sintéticos)]
 
-```text
-.
-├── backend/
-│   ├── src/
-│   │   ├── controllers/
-│   │   ├── database/
-│   │   │   └── migrations/
-│   │   ├── domain/
-│   │   ├── middlewares/
-│   │   ├── repositories/
-│   │   ├── routes/
-│   │   ├── schemas/
-│   │   ├── services/
-│   │   └── utils/
-│   └── tests/
-└── frontend/
-    └── src/
-        ├── api/
-        ├── components/
-        ├── contexts/
-        ├── hooks/
-        ├── layout/
-        ├── pages/
-        ├── services/
-        └── utils/
+    Owner[Usuário autorizado] --> ProdUI[Frontend Production<br/>Vercel]
+    ProdUI -->|/api + cookie HTTP-only| API[API Node.js / Express<br/>Render]
+    API --> DB[(Turso / libSQL)]
+    API --> Google[Google OAuth e Sheets]
 ```
 
-## Banco de dados
+As entidades privadas são associadas ao usuário autenticado. Os repositories combinam o identificador do recurso com `user_id`, e o banco adiciona constraints e triggers para impedir relações entre recursos de usuários diferentes.
 
-O banco libSQL é a fonte oficial dos dados. Em produção ele fica no Turso;
-localmente, o mesmo client usa um arquivo SQLite. Foreign keys são habilitadas
-na conexão e as migrations são executadas automaticamente no bootstrap.
-As migrations são incrementais, executadas automaticamente no bootstrap e
-registradas em `schema_migrations`.
-
-Entidades atuais:
-
-- `categories`
-- `transactions`
-- `credit_cards`
-- `recurring_expenses`
-- `credit_card_payments`
-- `users`
-- `sessions`
-- `oauth_login_attempts`
-
-O banco de desenvolvimento está atualmente vazio, mantendo apenas sua
-estrutura e o histórico das migrations.
-
-## Executando localmente
+## Quickstart
 
 Requisito: **Node.js 22.x**.
 
-### Backend
+### Demo local — sem backend ou credenciais
 
 ```bash
+git clone https://github.com/felipeft/cofre.git
+cd cofre/frontend
+npm ci
+VITE_APP_MODE=demo npm run dev
+```
+
+Acesse `http://localhost:5173`. Não defina `VITE_API_URL` no modo Demo.
+
+### Aplicação completa
+
+Em dois terminais:
+
+```bash
+# Terminal 1 — API
 cd backend
 cp .env.example .env
-npm install
+npm ci
 npm run dev
 ```
 
-A API fica disponível, por padrão, em `http://localhost:3000`. O bootstrap
-abre o banco local e executa todas as migrations pendentes automaticamente.
+```bash
+# Terminal 2 — frontend
+cd frontend
+cp .env.example .env
+npm ci
+npm run dev
+```
+
+Por padrão, o frontend fica em `http://localhost:5173` e encaminha `/api` para a API em `http://localhost:3000`. O bootstrap do backend executa automaticamente as migrations pendentes.
+
+O fluxo completo exige um cliente OAuth Web configurado no Google Cloud, incluindo os callbacks locais de autenticação e Google Sheets.
+
+## Configuração de ambiente
+
+Use [`backend/.env.example`](backend/.env.example) e [`frontend/.env.example`](frontend/.env.example) como referência. Arquivos `.env` reais e secrets não devem ser versionados.
+
+### Backend
+
+| Variável | Responsabilidade |
+| --- | --- |
+| `PORT`, `NODE_ENV`, `LOG_LEVEL` | Processo e logs da API |
+| `FRONTEND_URLS` | Origins permitidas pelo CORS, separadas por vírgula |
+| `DATABASE_PATH` | Arquivo libSQL/SQLite no desenvolvimento |
+| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | Banco remoto; obrigatórias em produção |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL` | Login Google |
+| `AUTH_ALLOWED_EMAILS` | Whitelist normalizada de e-mails |
+| `AUTH_LEGACY_OWNER_EMAIL` | Migração explícita de dados anteriores à autenticação, quando aplicável |
+| `SESSION_SECRET`, `SESSION_TTL_DAYS`, `SESSION_COOKIE_NAME` | Sessões persistentes e cookie |
+| `GOOGLE_SHEETS_CALLBACK_URL` | Callback da autorização incremental do Sheets |
+| `GOOGLE_TOKEN_ENCRYPTION_KEY` | Chave de 32 bytes para criptografar refresh tokens |
 
 ### Frontend
 
-```bash
-cd frontend
-cp .env.example .env
-npm install
-npm run dev
-```
+| Variável | Uso |
+| --- | --- |
+| `VITE_APP_MODE=production` | Ativa o cliente HTTP real |
+| `VITE_API_URL=/api` | Base centralizada da API Production |
+| `VITE_APP_MODE=demo` | Ativa exclusivamente o adapter e storage locais |
 
-O frontend fica disponível, por padrão, em `http://localhost:5173`.
+O deployment Demo configura somente `VITE_APP_MODE=demo`.
 
-## Variáveis de ambiente
-
-Backend:
-
-```env
-NODE_ENV=development
-PORT=3000
-DATABASE_PATH=src/database/cofre.db
-FRONTEND_URLS=http://localhost:5173
-TURSO_DATABASE_URL=
-TURSO_AUTH_TOKEN=
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GOOGLE_CALLBACK_URL=http://localhost:5173/api/auth/google/callback
-AUTH_ALLOWED_EMAILS=felipeflw11@gmail.com
-AUTH_LEGACY_OWNER_EMAIL=felipeflw11@gmail.com
-SESSION_SECRET=
-```
-
-Frontend:
-
-```env
-VITE_APP_MODE=production
-VITE_API_URL=/api
-```
-
-Demo:
-
-```env
-VITE_APP_MODE=demo
-```
-
-O build Demo recusa `VITE_API_URL`. O deployment público usa o
-`vercel.json` da raiz, que não possui rewrite para a API e aplica uma CSP
-com `connect-src 'none'`. A produção continua usando `frontend/vercel.json`.
-
-Em produção, `FRONTEND_URLS` aceita múltiplas origens separadas por vírgula.
-
-## Testes e build
+## Testes e validações
 
 ```bash
+# Backend: testes unitários e de integração
 cd backend
 npm test
 ```
 
-A suíte contém testes unitários para o domínio e testes de integração com
-SQLite temporário, incluindo cartões, parcelamentos, recorrências históricas,
-idempotência, pagamentos de fatura, exclusões, reset e proteção contra
-ressurreição de registros pelo Google Sheets.
-
 ```bash
+# Frontend: análise estática, testes da infraestrutura Demo e build Production
 cd frontend
 npm run lint
 npm run test:demo
 npm run build
-VITE_APP_MODE=demo npm run build
 ```
 
-## API atual
+```bash
+# Build Demo + auditoria de isolamento
+# Execute sem VITE_API_URL no ambiente ou em arquivos .env carregados pelo Vite.
+cd frontend
+npm run build:demo
+```
 
-Principais grupos de endpoints:
+Os testes do backend usam bancos temporários e cobrem domínio, migrations, autenticação, isolamento entre usuários, CRUD, exclusões, cartões, parcelamentos, recorrências e Google Sheets. A suíte Demo valida seed, persistência, CRUD, regras principais e reset do armazenamento local. O build Demo também procura endpoints, hosts privados e padrões de secrets no artefato final.
 
-- `/`, `/health`, `/version`, `/status`
-- `/auth/google`, `/auth/google/callback`, `/auth/me`, `/auth/logout`
-- `/categories`
-- `/transactions`
-- `/transactions/summary`
-- `/cards`
-- `/cards/:id/summary`
-- `/cards/:id/payments`
-- `/recurring-expenses`
+## Visão geral da API
 
-Respostas de sucesso seguem `{ success, data, message, meta? }`. Erros seguem
-`{ success: false, message, code, details }`.
+As respostas seguem um envelope consistente de sucesso ou erro. Salvo health check e fluxo de autenticação, as rotas exigem sessão válida e utilizam o usuário obtido no backend — não um `userId` fornecido pelo cliente.
 
-## Deploy
+| Grupo | Operações principais |
+| --- | --- |
+| `/health`, `/version`, `/status` | Saúde e metadados da API |
+| `/auth/*` | Login Google, callback, sessão atual e logout |
+| `/profile`, `/settings` | Perfil e preferência visual do usuário atual |
+| `/categories` | CRUD e prévia de exclusão de categorias |
+| `/transactions` | CRUD, filtros, paginação, resumo e prévia de exclusão |
+| `/cards` | CRUD, resumo de limite, prévia de exclusão e pagamento de fatura |
+| `/recurring-expenses` | CRUD, geração idempotente e políticas de exclusão |
+| `/data-management` | Prévia, limpeza de registros e reset financeiro |
+| `/integrations/google-sheets` | Autorização, planilha, importação, exportação, sincronização e histórico |
 
-O fluxo atual é baseado nos commits enviados ao GitHub:
+Dashboard e análises são calculados no frontend a partir das transações retornadas pela API; não existem endpoints dedicados para essas duas telas no estado atual.
+
+## Deploy e ambientes
 
 ```text
 GitHub
-├── Vercel → frontend
-├── Render → backend
-└── Turso → banco libSQL persistente
+├── Vercel Production → frontend/ → proxy /api → Render → Turso
+└── Vercel Demo       → raiz      → build:demo → localStorage
 ```
 
-Antes de publicar uma etapa:
+- **Production:** o `frontend/vercel.json` encaminha `/api` ao Render para manter o cookie first-party no Safari. Dados e sessões persistem no Turso.
+- **Demo:** o `vercel.json` da raiz gera apenas o frontend local e aplica uma Content Security Policy sem conexões externas.
+- **Migrations:** são sequenciais, forward-only, registradas em `schema_migrations` e executadas no bootstrap da API.
 
-1. executar a suíte completa do backend com Node 22;
-2. executar lint e build do frontend;
-3. confirmar migrations em banco novo e banco existente;
-4. validar CORS entre Vercel e Render;
-5. validar o fluxo principal no Safari do iPhone.
+## Documentação
 
-O banco não depende do filesystem efêmero do Render: schema, dados e sessões
-persistentes ficam no Turso.
+A documentação técnica completa será construída nas próximas etapas da Fase 6 em `docs/`, cobrindo arquitetura, domínio, ADRs, OpenAPI, banco de dados, estratégia de testes, operação e publicação com MkDocs Material.
 
-## Roadmap
+Enquanto essa documentação é preparada, existem guias específicos para o [`backend`](backend/README.md) e o [`frontend`](frontend/README.md).
 
-Concluído:
+## Roadmap resumido
 
-- Fase 1 — Fundação da Aplicação.
-- Fase 2 — Núcleo Financeiro.
-- Fase 3 — Regras Financeiras, incluindo cartões, parcelamentos e gastos
-  recorrentes.
-- Fase 4 — Google OAuth, sessões persistentes e configurações individuais.
+- [x] Fases 1–2 — fundação, domínio financeiro, CRUD e integração frontend/backend.
+- [x] Fase 3 — cartões, parcelamentos e gastos recorrentes.
+- [x] Fase 4 — autenticação Google, sessões, perfil e configurações por usuário.
+- [x] Fase 5 — Google Sheets e sincronização manual auditável.
+- [x] Ambiente público Demo/Sandbox isolado.
+- [ ] **Fase 6 — documentação e engenharia de software.**
+  - [x] Etapa 14 — README Profissional.
+  - [ ] Etapas 15–22 — documentação técnica, ADRs, OpenAPI, banco, testes, operação e MkDocs.
+- [ ] Fase 7 — inteligência financeira, relatórios e metas.
+- [ ] Fase 8 — engenharia, qualidade, governança e observabilidade de dados.
+- [ ] Fase 9 — inteligência artificial, machine learning e MLOps.
+- [ ] Fase 10 — revisão final, containerização, CI/CD e refinamentos.
 
-Concluído e validado em produção:
+Sincronização automática, documentação técnica completa, OpenAPI, observabilidade, Docker e CI/CD permanecem no roadmap e não são apresentados como funcionalidades atuais.
 
-- Fase 4, Etapa 10 — Google OAuth, whitelist, sessões persistentes, Turso e
-  isolamento por usuário, incluindo uso no Chrome e Safari do iPhone.
-- Fase 4, Etapa 11 — perfil, settings, aparência e sessão por usuário.
-- Fase 5, Etapa 12 — autorização incremental, planilha estruturada, exportação
-  e importação idempotentes, validadas com as APIs reais em produção.
-- Fase 5, Etapa 13 — sincronização manual, conflitos, falhas, idempotência e
-  histórico persistente, validados em produção.
-- Fase 5 — concluída integralmente após o polimento da planilha e a
-  simplificação final do modelo financeiro.
+## Estado atual
 
-Próximas fases planejadas, ainda não iniciadas:
-
-1. Fase 6 — Documentação e Engenharia de Software.
-2. Fase 7 — Inteligência Financeira.
-3. Fase 8 — Engenharia de Dados.
-4. Fase 9 — Inteligência Artificial e Machine Learning.
-5. Fase 10 — Polimento, containerização e CI/CD.
-
-O marco definido para o início do uso real completo é a conclusão da Etapa
-13, após autenticação e sincronização com Google Sheets. Nenhuma etapa futura
-foi antecipada nesta atualização.
-
-## Documentação complementar
-
-- [Contexto técnico](PROJECT_CONTEXT.md)
-- [Regras de domínio](DOMAIN_RULES.md)
-- [Mapa de arquitetura](ARCHITECTURE_MAP.md)
-- [Backend](backend/README.md)
-- [Frontend](frontend/README.md)
+- Aplicação Production funcional e utilizada no dia a dia em desktop e Safari no iPhone.
+- Demo pública funcional em [cofre-demo.vercel.app](https://cofre-demo.vercel.app/), sem acesso à infraestrutura pessoal.
+- Fases 1–5 concluídas; Etapa 14 da Fase 6 concluída, sem antecipar a Etapa 15.
