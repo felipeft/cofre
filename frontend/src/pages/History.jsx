@@ -33,7 +33,7 @@ export default function History() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [sort, setSort] = useState('date-desc')
-  const [periodFilter, setPeriodFilter] = useState('all')
+  const [periodFilter, setPeriodFilter] = useState('month')
   const [monthFilter, setMonthFilter] = useState(monthKey())
   const [exactDate, setExactDate] = useState(localDateInput())
   const [dateFrom, setDateFrom] = useState(`${monthKey()}-01`)
