@@ -1,0 +1,1109 @@
+{
+  "configuration" : {
+    "scope" : "SoftwareSystem"
+  },
+  "description" : "Modelo C4 da arquitetura implementada do Cofre",
+  "documentation" : { },
+  "id" : 1,
+  "lastModifiedDate" : "2026-09-12T23:57:37Z",
+  "model" : {
+    "deploymentNodes" : [ {
+      "containerInstances" : [ {
+        "containerId" : "6",
+        "environment" : "Production",
+        "id" : "67",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "05adf1f3-d5a7-45cf-a466-dd877425c2ef"
+        },
+        "relationships" : [ {
+          "description" : "Consome a API pelo proxy /api e envia o cookie HTTP-only",
+          "destinationId" : "69",
+          "id" : "70",
+          "linkedRelationshipId" : "33",
+          "sourceId" : "67",
+          "technology" : "HTTPS/JSON"
+        } ],
+        "tags" : "Container Instance"
+      } ],
+      "description" : "Hospedagem e CDN do frontend privado, com rewrite de /api.",
+      "environment" : "Production",
+      "id" : "66",
+      "instances" : "1",
+      "name" : "Vercel Production",
+      "properties" : {
+        "structurizr.dsl.identifier" : "a9a78584-d7a4-4787-9a95-fb6a78eb6d87"
+      },
+      "tags" : "Element,Deployment Node",
+      "technology" : "Vercel"
+    }, {
+      "containerInstances" : [ {
+        "containerId" : "11",
+        "environment" : "Production",
+        "id" : "69",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "dc89e019-fb3f-475e-9b97-129da0706449"
+        },
+        "relationships" : [ {
+          "description" : "Lê e grava dados user-scoped",
+          "destinationId" : "72",
+          "id" : "73",
+          "linkedRelationshipId" : "34",
+          "sourceId" : "69",
+          "technology" : "libSQL protocol"
+        } ],
+        "tags" : "Container Instance"
+      } ],
+      "description" : "Executa o processo da API Node.js.",
+      "environment" : "Production",
+      "id" : "68",
+      "instances" : "1",
+      "name" : "Render",
+      "properties" : {
+        "structurizr.dsl.identifier" : "fdeb4143-0710-401d-8556-8a5f6ebdec77"
+      },
+      "tags" : "Element,Deployment Node",
+      "technology" : "Render Web Service"
+    }, {
+      "containerInstances" : [ {
+        "containerId" : "21",
+        "environment" : "Production",
+        "id" : "72",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "06aa3e94-7c68-4def-96cf-2c6d6d2ab80b"
+        },
+        "tags" : "Container Instance"
+      } ],
+      "description" : "Serviço gerenciado que hospeda o banco libSQL remoto.",
+      "environment" : "Production",
+      "id" : "71",
+      "instances" : "1",
+      "name" : "Turso",
+      "properties" : {
+        "structurizr.dsl.identifier" : "10fbae30-383b-45ec-843c-a4fced41bd86"
+      },
+      "tags" : "Element,Deployment Node",
+      "technology" : "Turso"
+    }, {
+      "containerInstances" : [ {
+        "containerId" : "22",
+        "environment" : "Public Demo",
+        "id" : "75",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "3889502e-68c9-4999-9f75-999ca3dffa9d"
+        },
+        "relationships" : [ {
+          "description" : "Lê e grava somente dados sintéticos",
+          "destinationId" : "77",
+          "id" : "78",
+          "linkedRelationshipId" : "37",
+          "sourceId" : "75",
+          "technology" : "Web Storage API"
+        } ],
+        "tags" : "Container Instance"
+      } ],
+      "description" : "Deployment separado, gerado pelo build Demo e protegido por CSP sem conexões externas.",
+      "environment" : "Public Demo",
+      "id" : "74",
+      "instances" : "1",
+      "name" : "Vercel Demo",
+      "properties" : {
+        "structurizr.dsl.identifier" : "972a3fcd-5917-4b75-aa75-f37c954861f1"
+      },
+      "tags" : "Element,Deployment Node",
+      "technology" : "Vercel"
+    }, {
+      "containerInstances" : [ {
+        "containerId" : "26",
+        "environment" : "Public Demo",
+        "id" : "77",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "e378711c-7f69-4652-b607-40fa0b618106"
+        },
+        "tags" : "Container Instance"
+      } ],
+      "description" : "Origem do armazenamento persistente e isolado da demonstração.",
+      "environment" : "Public Demo",
+      "id" : "76",
+      "instances" : "1",
+      "name" : "Navegador do visitante",
+      "properties" : {
+        "structurizr.dsl.identifier" : "42200e46-2924-4682-882a-e95313fe5b2e"
+      },
+      "tags" : "Element,Deployment Node",
+      "technology" : "Web browser"
+    } ],
+    "people" : [ {
+      "description" : "Pessoa incluída na whitelist que utiliza sua conta financeira privada.",
+      "id" : "1",
+      "name" : "Usuário autorizado",
+      "properties" : {
+        "structurizr.dsl.identifier" : "authorizedUser"
+      },
+      "relationships" : [ {
+        "description" : "Gerencia suas finanças pessoais",
+        "destinationId" : "5",
+        "id" : "27",
+        "sourceId" : "1",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Usa em desktop ou navegador móvel",
+        "destinationId" : "6",
+        "id" : "31",
+        "sourceId" : "1",
+        "tags" : "Relationship",
+        "technology" : "HTTPS"
+      }, {
+        "description" : "Interage com",
+        "destinationId" : "7",
+        "id" : "38",
+        "sourceId" : "1",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Person"
+    }, {
+      "description" : "Recrutador ou desenvolvedor que explora somente dados sintéticos no próprio navegador.",
+      "id" : "2",
+      "name" : "Visitante da Demo",
+      "properties" : {
+        "structurizr.dsl.identifier" : "publicVisitor"
+      },
+      "relationships" : [ {
+        "description" : "Explora a demonstração pública",
+        "destinationId" : "5",
+        "id" : "28",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Explora dados fictícios",
+        "destinationId" : "22",
+        "id" : "32",
+        "sourceId" : "2",
+        "tags" : "Relationship",
+        "technology" : "HTTPS"
+      }, {
+        "description" : "Interage com",
+        "destinationId" : "23",
+        "id" : "44",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Person"
+    } ],
+    "softwareSystems" : [ {
+      "description" : "Autentica o usuário e fornece uma identidade OIDC verificável.",
+      "documentation" : { },
+      "id" : "3",
+      "name" : "Google Identity",
+      "properties" : {
+        "structurizr.dsl.identifier" : "googleIdentity"
+      },
+      "tags" : "Element,Software System,External"
+    }, {
+      "description" : "Mantém a planilha opcional criada e sincronizada pelo usuário.",
+      "documentation" : { },
+      "id" : "4",
+      "name" : "Google Drive e Sheets",
+      "properties" : {
+        "structurizr.dsl.identifier" : "googleWorkspace"
+      },
+      "tags" : "Element,Software System,External"
+    }, {
+      "containers" : [ {
+        "components" : [ {
+          "description" : "Páginas, layout responsivo, formulários e componentes visuais.",
+          "documentation" : { },
+          "id" : "7",
+          "name" : "UI e roteamento",
+          "properties" : {
+            "structurizr.dsl.identifier" : "prodUi"
+          },
+          "relationships" : [ {
+            "description" : "Aciona hooks e Contexts",
+            "destinationId" : "8",
+            "id" : "39",
+            "sourceId" : "7",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "React"
+        }, {
+          "description" : "Hooks e Contexts de autenticação, configurações e entidades financeiras.",
+          "documentation" : { },
+          "id" : "8",
+          "name" : "Estado e coordenação",
+          "properties" : {
+            "structurizr.dsl.identifier" : "prodState"
+          },
+          "relationships" : [ {
+            "description" : "Consulta e executa mutações",
+            "destinationId" : "9",
+            "id" : "40",
+            "sourceId" : "8",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "React Context e hooks"
+        }, {
+          "description" : "Contratos de acesso a autenticação, finanças, perfil e Google Sheets.",
+          "documentation" : { },
+          "id" : "9",
+          "name" : "Serviços de frontend",
+          "properties" : {
+            "structurizr.dsl.identifier" : "prodServices"
+          },
+          "relationships" : [ {
+            "description" : "Usa",
+            "destinationId" : "10",
+            "id" : "41",
+            "sourceId" : "9",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "JavaScript modules"
+        }, {
+          "description" : "Centraliza base URL, envelopes, erros e envio de cookies com credentials include.",
+          "documentation" : { },
+          "id" : "10",
+          "name" : "Cliente HTTP",
+          "properties" : {
+            "structurizr.dsl.identifier" : "prodApiClient"
+          },
+          "relationships" : [ {
+            "description" : "Envia requisições",
+            "destinationId" : "11",
+            "id" : "42",
+            "sourceId" : "10",
+            "tags" : "Relationship",
+            "technology" : "HTTPS/JSON"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "Fetch API"
+        } ],
+        "description" : "SPA responsiva para operação dos dados reais do usuário.",
+        "documentation" : { },
+        "id" : "6",
+        "name" : "Frontend Production",
+        "properties" : {
+          "structurizr.dsl.identifier" : "prodWeb"
+        },
+        "relationships" : [ {
+          "description" : "Consome a API pelo proxy /api e envia o cookie HTTP-only",
+          "destinationId" : "11",
+          "id" : "33",
+          "sourceId" : "6",
+          "tags" : "Relationship",
+          "technology" : "HTTPS/JSON"
+        }, {
+          "description" : "Entrega chamadas à borda HTTP",
+          "destinationId" : "12",
+          "id" : "43",
+          "sourceId" : "6",
+          "tags" : "Relationship",
+          "technology" : "HTTPS/JSON"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "React 19, Vite 8, React Router 7, Tailwind CSS 4"
+      }, {
+        "components" : [ {
+          "description" : "Middlewares, rotas, schemas Zod e controllers da API.",
+          "documentation" : { },
+          "id" : "12",
+          "name" : "Borda HTTP",
+          "properties" : {
+            "structurizr.dsl.identifier" : "apiHttp"
+          },
+          "relationships" : [ {
+            "description" : "Autentica requisições e protege mutações",
+            "destinationId" : "13",
+            "id" : "48",
+            "sourceId" : "12",
+            "tags" : "Relationship"
+          }, {
+            "description" : "Encaminha operações de perfil e settings",
+            "destinationId" : "14",
+            "id" : "49",
+            "sourceId" : "12",
+            "tags" : "Relationship"
+          }, {
+            "description" : "Encaminha operações financeiras",
+            "destinationId" : "15",
+            "id" : "50",
+            "sourceId" : "12",
+            "tags" : "Relationship"
+          }, {
+            "description" : "Encaminha operações destrutivas confirmadas",
+            "destinationId" : "17",
+            "id" : "51",
+            "sourceId" : "12",
+            "tags" : "Relationship"
+          }, {
+            "description" : "Encaminha autorização e operações diretas",
+            "destinationId" : "18",
+            "id" : "52",
+            "sourceId" : "12",
+            "tags" : "Relationship"
+          }, {
+            "description" : "Encaminha sincronização manual e consultas de histórico",
+            "destinationId" : "19",
+            "id" : "53",
+            "sourceId" : "12",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "Express e Zod"
+        }, {
+          "description" : "Executa OAuth, whitelist, cookies, renovação e invalidação de sessões.",
+          "documentation" : { },
+          "id" : "13",
+          "name" : "Autenticação e sessões",
+          "properties" : {
+            "structurizr.dsl.identifier" : "authComponent"
+          },
+          "relationships" : [ {
+            "description" : "Persiste usuários, tentativas e sessões",
+            "destinationId" : "20",
+            "id" : "54",
+            "sourceId" : "13",
+            "tags" : "Relationship"
+          }, {
+            "description" : "Troca código e verifica identidade",
+            "destinationId" : "3",
+            "id" : "55",
+            "sourceId" : "13",
+            "tags" : "Relationship",
+            "technology" : "HTTPS"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "Node.js crypto e OAuth/OIDC"
+        }, {
+          "description" : "Orquestra perfil e preferência visual do usuário atual.",
+          "documentation" : { },
+          "id" : "14",
+          "name" : "Serviços de conta",
+          "properties" : {
+            "structurizr.dsl.identifier" : "accountServices"
+          },
+          "relationships" : [ {
+            "description" : "Lê e grava dados da conta atual",
+            "destinationId" : "20",
+            "id" : "56",
+            "sourceId" : "14",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "Application services"
+        }, {
+          "description" : "Orquestra categorias, transações, cartões, faturas, parcelas e recorrências.",
+          "documentation" : { },
+          "id" : "15",
+          "name" : "Serviços financeiros",
+          "properties" : {
+            "structurizr.dsl.identifier" : "financeServices"
+          },
+          "relationships" : [ {
+            "description" : "Executa cálculos e geração determinística",
+            "destinationId" : "16",
+            "id" : "57",
+            "sourceId" : "15",
+            "tags" : "Relationship"
+          }, {
+            "description" : "Lê e grava dados financeiros",
+            "destinationId" : "20",
+            "id" : "58",
+            "sourceId" : "15",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "Application services"
+        }, {
+          "description" : "Funções puras para limite, resumo, parcelamento e ocorrências recorrentes.",
+          "documentation" : { },
+          "id" : "16",
+          "name" : "Domínio financeiro",
+          "properties" : {
+            "structurizr.dsl.identifier" : "financeDomain"
+          },
+          "tags" : "Element,Component",
+          "technology" : "JavaScript"
+        }, {
+          "description" : "Executa preview, limpeza e reset transacionais por usuário.",
+          "documentation" : { },
+          "id" : "17",
+          "name" : "Gerenciamento de dados",
+          "properties" : {
+            "structurizr.dsl.identifier" : "dataManagement"
+          },
+          "relationships" : [ {
+            "description" : "Executa exclusões transacionais",
+            "destinationId" : "20",
+            "id" : "59",
+            "sourceId" : "17",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "Application service"
+        }, {
+          "description" : "Autoriza acesso incremental, cria layout anual, importa e exporta dados.",
+          "documentation" : { },
+          "id" : "18",
+          "name" : "Integração Google Sheets",
+          "properties" : {
+            "structurizr.dsl.identifier" : "sheetsIntegration"
+          },
+          "relationships" : [ {
+            "description" : "Persiste integração e importa/exporta dados",
+            "destinationId" : "20",
+            "id" : "60",
+            "sourceId" : "18",
+            "tags" : "Relationship"
+          }, {
+            "description" : "Usa Drive e Sheets",
+            "destinationId" : "4",
+            "id" : "61",
+            "sourceId" : "18",
+            "tags" : "Relationship",
+            "technology" : "HTTPS"
+          }, {
+            "description" : "Confirma a identidade vinculada",
+            "destinationId" : "3",
+            "id" : "62",
+            "sourceId" : "18",
+            "tags" : "Relationship",
+            "technology" : "OIDC"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "Google APIs e AES-GCM"
+        }, {
+          "description" : "Controla idempotência, conflitos, falhas, contagens e histórico de execuções manuais.",
+          "documentation" : { },
+          "id" : "19",
+          "name" : "Orquestrador de sincronização",
+          "properties" : {
+            "structurizr.dsl.identifier" : "syncOrchestrator"
+          },
+          "relationships" : [ {
+            "description" : "Coordena preview, importação e exportação",
+            "destinationId" : "18",
+            "id" : "63",
+            "sourceId" : "19",
+            "tags" : "Relationship"
+          }, {
+            "description" : "Registra idempotência, status e histórico",
+            "destinationId" : "20",
+            "id" : "64",
+            "sourceId" : "19",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "Application service"
+        }, {
+          "description" : "Encapsula SQL parametrizado, ownership e transações de persistência.",
+          "documentation" : { },
+          "id" : "20",
+          "name" : "Repositories",
+          "properties" : {
+            "structurizr.dsl.identifier" : "repositories"
+          },
+          "relationships" : [ {
+            "description" : "Executa SQL parametrizado",
+            "destinationId" : "21",
+            "id" : "65",
+            "sourceId" : "20",
+            "tags" : "Relationship",
+            "technology" : "libSQL protocol"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "@libsql/client"
+        } ],
+        "description" : "Fonte de verdade para autenticação, autorização, validação, regras financeiras e sincronização.",
+        "documentation" : { },
+        "id" : "11",
+        "name" : "Backend API",
+        "properties" : {
+          "structurizr.dsl.identifier" : "api"
+        },
+        "relationships" : [ {
+          "description" : "Lê e grava dados user-scoped",
+          "destinationId" : "21",
+          "id" : "34",
+          "sourceId" : "11",
+          "tags" : "Relationship",
+          "technology" : "libSQL protocol"
+        }, {
+          "description" : "Executa OAuth/OIDC e valida ID Tokens",
+          "destinationId" : "3",
+          "id" : "35",
+          "sourceId" : "11",
+          "tags" : "Relationship",
+          "technology" : "HTTPS"
+        }, {
+          "description" : "Cria, lê, formata e atualiza planilhas autorizadas",
+          "destinationId" : "4",
+          "id" : "36",
+          "sourceId" : "11",
+          "tags" : "Relationship",
+          "technology" : "HTTPS"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "Node.js 22, Express 5, Zod 4"
+      }, {
+        "description" : "Persiste usuários, sessões, dados financeiros, integrações e histórico de sincronização.",
+        "documentation" : { },
+        "id" : "21",
+        "name" : "Banco de dados principal",
+        "properties" : {
+          "structurizr.dsl.identifier" : "primaryData"
+        },
+        "tags" : "Element,Container,Database",
+        "technology" : "libSQL / SQLite"
+      }, {
+        "components" : [ {
+          "description" : "Executa as mesmas páginas, hooks, Contexts e contratos usados pelo frontend Production.",
+          "documentation" : { },
+          "id" : "23",
+          "name" : "UI e serviços compartilhados",
+          "properties" : {
+            "structurizr.dsl.identifier" : "demoUi"
+          },
+          "relationships" : [ {
+            "description" : "Usa os contratos de dados",
+            "destinationId" : "24",
+            "id" : "45",
+            "sourceId" : "23",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "React"
+        }, {
+          "description" : "Implementa localmente o contrato do cliente de dados, sem fetch ou cookies.",
+          "documentation" : { },
+          "id" : "24",
+          "name" : "Demo API adapter",
+          "properties" : {
+            "structurizr.dsl.identifier" : "demoAdapter"
+          },
+          "relationships" : [ {
+            "description" : "Executa regras locais",
+            "destinationId" : "25",
+            "id" : "46",
+            "sourceId" : "24",
+            "tags" : "Relationship"
+          }, {
+            "description" : "Persiste estado sintético",
+            "destinationId" : "26",
+            "id" : "47",
+            "sourceId" : "24",
+            "tags" : "Relationship",
+            "technology" : "Web Storage API"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "JavaScript modules"
+        }, {
+          "description" : "Simula CRUD, parcelas, recorrências, limite e restauração de dados sintéticos.",
+          "documentation" : { },
+          "id" : "25",
+          "name" : "Domínio e seed da Demo",
+          "properties" : {
+            "structurizr.dsl.identifier" : "demoDomain"
+          },
+          "tags" : "Element,Component",
+          "technology" : "JavaScript modules"
+        } ],
+        "description" : "Build separado da SPA, com identidade fictícia e integrações externas desativadas.",
+        "documentation" : { },
+        "id" : "22",
+        "name" : "Frontend Public Demo",
+        "properties" : {
+          "structurizr.dsl.identifier" : "demoWeb"
+        },
+        "relationships" : [ {
+          "description" : "Lê e grava somente dados sintéticos",
+          "destinationId" : "26",
+          "id" : "37",
+          "sourceId" : "22",
+          "tags" : "Relationship",
+          "technology" : "Web Storage API"
+        } ],
+        "tags" : "Element,Container,Demo",
+        "technology" : "React 19 e Vite 8"
+      }, {
+        "description" : "Guarda exclusivamente o estado sintético no namespace cofre:demo:v1 do navegador.",
+        "documentation" : { },
+        "id" : "26",
+        "name" : "Armazenamento da Demo",
+        "properties" : {
+          "structurizr.dsl.identifier" : "demoStorage"
+        },
+        "tags" : "Element,Container,Database,Demo",
+        "technology" : "Browser localStorage"
+      } ],
+      "description" : "Sistema de controle financeiro pessoal com um ambiente privado e uma demonstração pública isolada.",
+      "documentation" : { },
+      "id" : "5",
+      "name" : "Cofre",
+      "properties" : {
+        "structurizr.dsl.identifier" : "cofre"
+      },
+      "relationships" : [ {
+        "description" : "Delega autenticação e valida identidade",
+        "destinationId" : "3",
+        "id" : "29",
+        "sourceId" : "5",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Cria e sincroniza a planilha opcional",
+        "destinationId" : "4",
+        "id" : "30",
+        "sourceId" : "5",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Software System"
+    } ]
+  },
+  "name" : "Cofre",
+  "properties" : {
+    "structurizr.inspection.error" : "27",
+    "structurizr.dsl" : "d29ya3NwYWNlICJDb2ZyZSIgIk1vZGVsbyBDNCBkYSBhcnF1aXRldHVyYSBpbXBsZW1lbnRhZGEgZG8gQ29mcmUiIHsKICAgICFpZGVudGlmaWVycyBmbGF0CgogICAgbW9kZWwgewogICAgICAgIGF1dGhvcml6ZWRVc2VyID0gcGVyc29uICJVc3XDoXJpbyBhdXRvcml6YWRvIiAiUGVzc29hIGluY2x1w61kYSBuYSB3aGl0ZWxpc3QgcXVlIHV0aWxpemEgc3VhIGNvbnRhIGZpbmFuY2VpcmEgcHJpdmFkYS4iCiAgICAgICAgcHVibGljVmlzaXRvciA9IHBlcnNvbiAiVmlzaXRhbnRlIGRhIERlbW8iICJSZWNydXRhZG9yIG91IGRlc2Vudm9sdmVkb3IgcXVlIGV4cGxvcmEgc29tZW50ZSBkYWRvcyBzaW50w6l0aWNvcyBubyBwcsOzcHJpbyBuYXZlZ2Fkb3IuIgoKICAgICAgICBnb29nbGVJZGVudGl0eSA9IHNvZnR3YXJlU3lzdGVtICJHb29nbGUgSWRlbnRpdHkiICJBdXRlbnRpY2EgbyB1c3XDoXJpbyBlIGZvcm5lY2UgdW1hIGlkZW50aWRhZGUgT0lEQyB2ZXJpZmljw6F2ZWwuIiB7CiAgICAgICAgICAgIHRhZ3MgIkV4dGVybmFsIgogICAgICAgIH0KCiAgICAgICAgZ29vZ2xlV29ya3NwYWNlID0gc29mdHdhcmVTeXN0ZW0gIkdvb2dsZSBEcml2ZSBlIFNoZWV0cyIgIk1hbnTDqW0gYSBwbGFuaWxoYSBvcGNpb25hbCBjcmlhZGEgZSBzaW5jcm9uaXphZGEgcGVsbyB1c3XDoXJpby4iIHsKICAgICAgICAgICAgdGFncyAiRXh0ZXJuYWwiCiAgICAgICAgfQoKICAgICAgICBjb2ZyZSA9IHNvZnR3YXJlU3lzdGVtICJDb2ZyZSIgIlNpc3RlbWEgZGUgY29udHJvbGUgZmluYW5jZWlybyBwZXNzb2FsIGNvbSB1bSBhbWJpZW50ZSBwcml2YWRvIGUgdW1hIGRlbW9uc3RyYcOnw6NvIHDDumJsaWNhIGlzb2xhZGEuIiB7CiAgICAgICAgICAgIHByb2RXZWIgPSBjb250YWluZXIgIkZyb250ZW5kIFByb2R1Y3Rpb24iICJTUEEgcmVzcG9uc2l2YSBwYXJhIG9wZXJhw6fDo28gZG9zIGRhZG9zIHJlYWlzIGRvIHVzdcOhcmlvLiIgIlJlYWN0IDE5LCBWaXRlIDgsIFJlYWN0IFJvdXRlciA3LCBUYWlsd2luZCBDU1MgNCIgewogICAgICAgICAgICAgICAgcHJvZFVpID0gY29tcG9uZW50ICJVSSBlIHJvdGVhbWVudG8iICJQw6FnaW5hcywgbGF5b3V0IHJlc3BvbnNpdm8sIGZvcm11bMOhcmlvcyBlIGNvbXBvbmVudGVzIHZpc3VhaXMuIiAiUmVhY3QiCiAgICAgICAgICAgICAgICBwcm9kU3RhdGUgPSBjb21wb25lbnQgIkVzdGFkbyBlIGNvb3JkZW5hw6fDo28iICJIb29rcyBlIENvbnRleHRzIGRlIGF1dGVudGljYcOnw6NvLCBjb25maWd1cmHDp8O1ZXMgZSBlbnRpZGFkZXMgZmluYW5jZWlyYXMuIiAiUmVhY3QgQ29udGV4dCBlIGhvb2tzIgogICAgICAgICAgICAgICAgcHJvZFNlcnZpY2VzID0gY29tcG9uZW50ICJTZXJ2acOnb3MgZGUgZnJvbnRlbmQiICJDb250cmF0b3MgZGUgYWNlc3NvIGEgYXV0ZW50aWNhw6fDo28sIGZpbmFuw6dhcywgcGVyZmlsIGUgR29vZ2xlIFNoZWV0cy4iICJKYXZhU2NyaXB0IG1vZHVsZXMiCiAgICAgICAgICAgICAgICBwcm9kQXBpQ2xpZW50ID0gY29tcG9uZW50ICJDbGllbnRlIEhUVFAiICJDZW50cmFsaXphIGJhc2UgVVJMLCBlbnZlbG9wZXMsIGVycm9zIGUgZW52aW8gZGUgY29va2llcyBjb20gY3JlZGVudGlhbHMgaW5jbHVkZS4iICJGZXRjaCBBUEkiCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGFwaSA9IGNvbnRhaW5lciAiQmFja2VuZCBBUEkiICJGb250ZSBkZSB2ZXJkYWRlIHBhcmEgYXV0ZW50aWNhw6fDo28sIGF1dG9yaXphw6fDo28sIHZhbGlkYcOnw6NvLCByZWdyYXMgZmluYW5jZWlyYXMgZSBzaW5jcm9uaXphw6fDo28uIiAiTm9kZS5qcyAyMiwgRXhwcmVzcyA1LCBab2QgNCIgewogICAgICAgICAgICAgICAgYXBpSHR0cCA9IGNvbXBvbmVudCAiQm9yZGEgSFRUUCIgIk1pZGRsZXdhcmVzLCByb3Rhcywgc2NoZW1hcyBab2QgZSBjb250cm9sbGVycyBkYSBBUEkuIiAiRXhwcmVzcyBlIFpvZCIKICAgICAgICAgICAgICAgIGF1dGhDb21wb25lbnQgPSBjb21wb25lbnQgIkF1dGVudGljYcOnw6NvIGUgc2Vzc8O1ZXMiICJFeGVjdXRhIE9BdXRoLCB3aGl0ZWxpc3QsIGNvb2tpZXMsIHJlbm92YcOnw6NvIGUgaW52YWxpZGHDp8OjbyBkZSBzZXNzw7Vlcy4iICJOb2RlLmpzIGNyeXB0byBlIE9BdXRoL09JREMiCiAgICAgICAgICAgICAgICBhY2NvdW50U2VydmljZXMgPSBjb21wb25lbnQgIlNlcnZpw6dvcyBkZSBjb250YSIgIk9ycXVlc3RyYSBwZXJmaWwgZSBwcmVmZXLDqm5jaWEgdmlzdWFsIGRvIHVzdcOhcmlvIGF0dWFsLiIgIkFwcGxpY2F0aW9uIHNlcnZpY2VzIgogICAgICAgICAgICAgICAgZmluYW5jZVNlcnZpY2VzID0gY29tcG9uZW50ICJTZXJ2acOnb3MgZmluYW5jZWlyb3MiICJPcnF1ZXN0cmEgY2F0ZWdvcmlhcywgdHJhbnNhw6fDtWVzLCBjYXJ0w7VlcywgZmF0dXJhcywgcGFyY2VsYXMgZSByZWNvcnLDqm5jaWFzLiIgIkFwcGxpY2F0aW9uIHNlcnZpY2VzIgogICAgICAgICAgICAgICAgZmluYW5jZURvbWFpbiA9IGNvbXBvbmVudCAiRG9tw61uaW8gZmluYW5jZWlybyIgIkZ1bsOnw7VlcyBwdXJhcyBwYXJhIGxpbWl0ZSwgcmVzdW1vLCBwYXJjZWxhbWVudG8gZSBvY29ycsOqbmNpYXMgcmVjb3JyZW50ZXMuIiAiSmF2YVNjcmlwdCIKICAgICAgICAgICAgICAgIGRhdGFNYW5hZ2VtZW50ID0gY29tcG9uZW50ICJHZXJlbmNpYW1lbnRvIGRlIGRhZG9zIiAiRXhlY3V0YSBwcmV2aWV3LCBsaW1wZXphIGUgcmVzZXQgdHJhbnNhY2lvbmFpcyBwb3IgdXN1w6FyaW8uIiAiQXBwbGljYXRpb24gc2VydmljZSIKICAgICAgICAgICAgICAgIHNoZWV0c0ludGVncmF0aW9uID0gY29tcG9uZW50ICJJbnRlZ3Jhw6fDo28gR29vZ2xlIFNoZWV0cyIgIkF1dG9yaXphIGFjZXNzbyBpbmNyZW1lbnRhbCwgY3JpYSBsYXlvdXQgYW51YWwsIGltcG9ydGEgZSBleHBvcnRhIGRhZG9zLiIgIkdvb2dsZSBBUElzIGUgQUVTLUdDTSIKICAgICAgICAgICAgICAgIHN5bmNPcmNoZXN0cmF0b3IgPSBjb21wb25lbnQgIk9ycXVlc3RyYWRvciBkZSBzaW5jcm9uaXphw6fDo28iICJDb250cm9sYSBpZGVtcG90w6puY2lhLCBjb25mbGl0b3MsIGZhbGhhcywgY29udGFnZW5zIGUgaGlzdMOzcmljbyBkZSBleGVjdcOnw7VlcyBtYW51YWlzLiIgIkFwcGxpY2F0aW9uIHNlcnZpY2UiCiAgICAgICAgICAgICAgICByZXBvc2l0b3JpZXMgPSBjb21wb25lbnQgIlJlcG9zaXRvcmllcyIgIkVuY2Fwc3VsYSBTUUwgcGFyYW1ldHJpemFkbywgb3duZXJzaGlwIGUgdHJhbnNhw6fDtWVzIGRlIHBlcnNpc3TDqm5jaWEuIiAiQGxpYnNxbC9jbGllbnQiCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIHByaW1hcnlEYXRhID0gY29udGFpbmVyICJCYW5jbyBkZSBkYWRvcyBwcmluY2lwYWwiICJQZXJzaXN0ZSB1c3XDoXJpb3MsIHNlc3PDtWVzLCBkYWRvcyBmaW5hbmNlaXJvcywgaW50ZWdyYcOnw7VlcyBlIGhpc3TDs3JpY28gZGUgc2luY3Jvbml6YcOnw6NvLiIgImxpYlNRTCAvIFNRTGl0ZSIgewogICAgICAgICAgICAgICAgdGFncyAiRGF0YWJhc2UiCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGRlbW9XZWIgPSBjb250YWluZXIgIkZyb250ZW5kIFB1YmxpYyBEZW1vIiAiQnVpbGQgc2VwYXJhZG8gZGEgU1BBLCBjb20gaWRlbnRpZGFkZSBmaWN0w61jaWEgZSBpbnRlZ3Jhw6fDtWVzIGV4dGVybmFzIGRlc2F0aXZhZGFzLiIgIlJlYWN0IDE5IGUgVml0ZSA4IiB7CiAgICAgICAgICAgICAgICB0YWdzICJEZW1vIgogICAgICAgICAgICAgICAgZGVtb1VpID0gY29tcG9uZW50ICJVSSBlIHNlcnZpw6dvcyBjb21wYXJ0aWxoYWRvcyIgIkV4ZWN1dGEgYXMgbWVzbWFzIHDDoWdpbmFzLCBob29rcywgQ29udGV4dHMgZSBjb250cmF0b3MgdXNhZG9zIHBlbG8gZnJvbnRlbmQgUHJvZHVjdGlvbi4iICJSZWFjdCIKICAgICAgICAgICAgICAgIGRlbW9BZGFwdGVyID0gY29tcG9uZW50ICJEZW1vIEFQSSBhZGFwdGVyIiAiSW1wbGVtZW50YSBsb2NhbG1lbnRlIG8gY29udHJhdG8gZG8gY2xpZW50ZSBkZSBkYWRvcywgc2VtIGZldGNoIG91IGNvb2tpZXMuIiAiSmF2YVNjcmlwdCBtb2R1bGVzIgogICAgICAgICAgICAgICAgZGVtb0RvbWFpbiA9IGNvbXBvbmVudCAiRG9tw61uaW8gZSBzZWVkIGRhIERlbW8iICJTaW11bGEgQ1JVRCwgcGFyY2VsYXMsIHJlY29ycsOqbmNpYXMsIGxpbWl0ZSBlIHJlc3RhdXJhw6fDo28gZGUgZGFkb3Mgc2ludMOpdGljb3MuIiAiSmF2YVNjcmlwdCBtb2R1bGVzIgogICAgICAgICAgICB9CgogICAgICAgICAgICBkZW1vU3RvcmFnZSA9IGNvbnRhaW5lciAiQXJtYXplbmFtZW50byBkYSBEZW1vIiAiR3VhcmRhIGV4Y2x1c2l2YW1lbnRlIG8gZXN0YWRvIHNpbnTDqXRpY28gbm8gbmFtZXNwYWNlIGNvZnJlOmRlbW86djEgZG8gbmF2ZWdhZG9yLiIgIkJyb3dzZXIgbG9jYWxTdG9yYWdlIiB7CiAgICAgICAgICAgICAgICB0YWdzICJEYXRhYmFzZSxEZW1vIgogICAgICAgICAgICB9CiAgICAgICAgfQoKICAgICAgICBhdXRob3JpemVkVXNlciAtPiBjb2ZyZSAiR2VyZW5jaWEgc3VhcyBmaW5hbsOnYXMgcGVzc29haXMiCiAgICAgICAgcHVibGljVmlzaXRvciAtPiBjb2ZyZSAiRXhwbG9yYSBhIGRlbW9uc3RyYcOnw6NvIHDDumJsaWNhIgogICAgICAgIGNvZnJlIC0+IGdvb2dsZUlkZW50aXR5ICJEZWxlZ2EgYXV0ZW50aWNhw6fDo28gZSB2YWxpZGEgaWRlbnRpZGFkZSIKICAgICAgICBjb2ZyZSAtPiBnb29nbGVXb3Jrc3BhY2UgIkNyaWEgZSBzaW5jcm9uaXphIGEgcGxhbmlsaGEgb3BjaW9uYWwiCgogICAgICAgIGF1dGhvcml6ZWRVc2VyIC0+IHByb2RXZWIgIlVzYSBlbSBkZXNrdG9wIG91IG5hdmVnYWRvciBtw7N2ZWwiICJIVFRQUyIKICAgICAgICBwdWJsaWNWaXNpdG9yIC0+IGRlbW9XZWIgIkV4cGxvcmEgZGFkb3MgZmljdMOtY2lvcyIgIkhUVFBTIgogICAgICAgIHByb2RXZWIgLT4gYXBpICJDb25zb21lIGEgQVBJIHBlbG8gcHJveHkgL2FwaSBlIGVudmlhIG8gY29va2llIEhUVFAtb25seSIgIkhUVFBTL0pTT04iCiAgICAgICAgYXBpIC0+IHByaW1hcnlEYXRhICJMw6ogZSBncmF2YSBkYWRvcyB1c2VyLXNjb3BlZCIgImxpYlNRTCBwcm90b2NvbCIKICAgICAgICBhcGkgLT4gZ29vZ2xlSWRlbnRpdHkgIkV4ZWN1dGEgT0F1dGgvT0lEQyBlIHZhbGlkYSBJRCBUb2tlbnMiICJIVFRQUyIKICAgICAgICBhcGkgLT4gZ29vZ2xlV29ya3NwYWNlICJDcmlhLCBsw6osIGZvcm1hdGEgZSBhdHVhbGl6YSBwbGFuaWxoYXMgYXV0b3JpemFkYXMiICJIVFRQUyIKICAgICAgICBkZW1vV2ViIC0+IGRlbW9TdG9yYWdlICJMw6ogZSBncmF2YSBzb21lbnRlIGRhZG9zIHNpbnTDqXRpY29zIiAiV2ViIFN0b3JhZ2UgQVBJIgoKICAgICAgICBhdXRob3JpemVkVXNlciAtPiBwcm9kVWkgIkludGVyYWdlIGNvbSIKICAgICAgICBwcm9kVWkgLT4gcHJvZFN0YXRlICJBY2lvbmEgaG9va3MgZSBDb250ZXh0cyIKICAgICAgICBwcm9kU3RhdGUgLT4gcHJvZFNlcnZpY2VzICJDb25zdWx0YSBlIGV4ZWN1dGEgbXV0YcOnw7VlcyIKICAgICAgICBwcm9kU2VydmljZXMgLT4gcHJvZEFwaUNsaWVudCAiVXNhIgogICAgICAgIHByb2RBcGlDbGllbnQgLT4gYXBpICJFbnZpYSByZXF1aXNpw6fDtWVzIiAiSFRUUFMvSlNPTiIKICAgICAgICBwcm9kV2ViIC0+IGFwaUh0dHAgIkVudHJlZ2EgY2hhbWFkYXMgw6AgYm9yZGEgSFRUUCIgIkhUVFBTL0pTT04iCgogICAgICAgIHB1YmxpY1Zpc2l0b3IgLT4gZGVtb1VpICJJbnRlcmFnZSBjb20iCiAgICAgICAgZGVtb1VpIC0+IGRlbW9BZGFwdGVyICJVc2Egb3MgY29udHJhdG9zIGRlIGRhZG9zIgogICAgICAgIGRlbW9BZGFwdGVyIC0+IGRlbW9Eb21haW4gIkV4ZWN1dGEgcmVncmFzIGxvY2FpcyIKICAgICAgICBkZW1vQWRhcHRlciAtPiBkZW1vU3RvcmFnZSAiUGVyc2lzdGUgZXN0YWRvIHNpbnTDqXRpY28iICJXZWIgU3RvcmFnZSBBUEkiCgogICAgICAgIGFwaUh0dHAgLT4gYXV0aENvbXBvbmVudCAiQXV0ZW50aWNhIHJlcXVpc2nDp8O1ZXMgZSBwcm90ZWdlIG11dGHDp8O1ZXMiCiAgICAgICAgYXBpSHR0cCAtPiBhY2NvdW50U2VydmljZXMgIkVuY2FtaW5oYSBvcGVyYcOnw7VlcyBkZSBwZXJmaWwgZSBzZXR0aW5ncyIKICAgICAgICBhcGlIdHRwIC0+IGZpbmFuY2VTZXJ2aWNlcyAiRW5jYW1pbmhhIG9wZXJhw6fDtWVzIGZpbmFuY2VpcmFzIgogICAgICAgIGFwaUh0dHAgLT4gZGF0YU1hbmFnZW1lbnQgIkVuY2FtaW5oYSBvcGVyYcOnw7VlcyBkZXN0cnV0aXZhcyBjb25maXJtYWRhcyIKICAgICAgICBhcGlIdHRwIC0+IHNoZWV0c0ludGVncmF0aW9uICJFbmNhbWluaGEgYXV0b3JpemHDp8OjbyBlIG9wZXJhw6fDtWVzIGRpcmV0YXMiCiAgICAgICAgYXBpSHR0cCAtPiBzeW5jT3JjaGVzdHJhdG9yICJFbmNhbWluaGEgc2luY3Jvbml6YcOnw6NvIG1hbnVhbCBlIGNvbnN1bHRhcyBkZSBoaXN0w7NyaWNvIgogICAgICAgIGF1dGhDb21wb25lbnQgLT4gcmVwb3NpdG9yaWVzICJQZXJzaXN0ZSB1c3XDoXJpb3MsIHRlbnRhdGl2YXMgZSBzZXNzw7VlcyIKICAgICAgICBhdXRoQ29tcG9uZW50IC0+IGdvb2dsZUlkZW50aXR5ICJUcm9jYSBjw7NkaWdvIGUgdmVyaWZpY2EgaWRlbnRpZGFkZSIgIkhUVFBTIgogICAgICAgIGFjY291bnRTZXJ2aWNlcyAtPiByZXBvc2l0b3JpZXMgIkzDqiBlIGdyYXZhIGRhZG9zIGRhIGNvbnRhIGF0dWFsIgogICAgICAgIGZpbmFuY2VTZXJ2aWNlcyAtPiBmaW5hbmNlRG9tYWluICJFeGVjdXRhIGPDoWxjdWxvcyBlIGdlcmHDp8OjbyBkZXRlcm1pbsOtc3RpY2EiCiAgICAgICAgZmluYW5jZVNlcnZpY2VzIC0+IHJlcG9zaXRvcmllcyAiTMOqIGUgZ3JhdmEgZGFkb3MgZmluYW5jZWlyb3MiCiAgICAgICAgZGF0YU1hbmFnZW1lbnQgLT4gcmVwb3NpdG9yaWVzICJFeGVjdXRhIGV4Y2x1c8O1ZXMgdHJhbnNhY2lvbmFpcyIKICAgICAgICBzaGVldHNJbnRlZ3JhdGlvbiAtPiByZXBvc2l0b3JpZXMgIlBlcnNpc3RlIGludGVncmHDp8OjbyBlIGltcG9ydGEvZXhwb3J0YSBkYWRvcyIKICAgICAgICBzaGVldHNJbnRlZ3JhdGlvbiAtPiBnb29nbGVXb3Jrc3BhY2UgIlVzYSBEcml2ZSBlIFNoZWV0cyIgIkhUVFBTIgogICAgICAgIHNoZWV0c0ludGVncmF0aW9uIC0+IGdvb2dsZUlkZW50aXR5ICJDb25maXJtYSBhIGlkZW50aWRhZGUgdmluY3VsYWRhIiAiT0lEQyIKICAgICAgICBzeW5jT3JjaGVzdHJhdG9yIC0+IHNoZWV0c0ludGVncmF0aW9uICJDb29yZGVuYSBwcmV2aWV3LCBpbXBvcnRhw6fDo28gZSBleHBvcnRhw6fDo28iCiAgICAgICAgc3luY09yY2hlc3RyYXRvciAtPiByZXBvc2l0b3JpZXMgIlJlZ2lzdHJhIGlkZW1wb3TDqm5jaWEsIHN0YXR1cyBlIGhpc3TDs3JpY28iCiAgICAgICAgcmVwb3NpdG9yaWVzIC0+IHByaW1hcnlEYXRhICJFeGVjdXRhIFNRTCBwYXJhbWV0cml6YWRvIiAibGliU1FMIHByb3RvY29sIgoKICAgICAgICBwcm9kdWN0aW9uID0gZGVwbG95bWVudEVudmlyb25tZW50ICJQcm9kdWN0aW9uIiB7CiAgICAgICAgICAgIGRlcGxveW1lbnROb2RlICJWZXJjZWwgUHJvZHVjdGlvbiIgIkhvc3BlZGFnZW0gZSBDRE4gZG8gZnJvbnRlbmQgcHJpdmFkbywgY29tIHJld3JpdGUgZGUgL2FwaS4iICJWZXJjZWwiIHsKICAgICAgICAgICAgICAgIGNvbnRhaW5lckluc3RhbmNlIHByb2RXZWIKICAgICAgICAgICAgfQogICAgICAgICAgICBkZXBsb3ltZW50Tm9kZSAiUmVuZGVyIiAiRXhlY3V0YSBvIHByb2Nlc3NvIGRhIEFQSSBOb2RlLmpzLiIgIlJlbmRlciBXZWIgU2VydmljZSIgewogICAgICAgICAgICAgICAgY29udGFpbmVySW5zdGFuY2UgYXBpCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZGVwbG95bWVudE5vZGUgIlR1cnNvIiAiU2VydmnDp28gZ2VyZW5jaWFkbyBxdWUgaG9zcGVkYSBvIGJhbmNvIGxpYlNRTCByZW1vdG8uIiAiVHVyc28iIHsKICAgICAgICAgICAgICAgIGNvbnRhaW5lckluc3RhbmNlIHByaW1hcnlEYXRhCiAgICAgICAgICAgIH0KICAgICAgICB9CgogICAgICAgIHB1YmxpY0RlbW8gPSBkZXBsb3ltZW50RW52aXJvbm1lbnQgIlB1YmxpYyBEZW1vIiB7CiAgICAgICAgICAgIGRlcGxveW1lbnROb2RlICJWZXJjZWwgRGVtbyIgIkRlcGxveW1lbnQgc2VwYXJhZG8sIGdlcmFkbyBwZWxvIGJ1aWxkIERlbW8gZSBwcm90ZWdpZG8gcG9yIENTUCBzZW0gY29uZXjDtWVzIGV4dGVybmFzLiIgIlZlcmNlbCIgewogICAgICAgICAgICAgICAgY29udGFpbmVySW5zdGFuY2UgZGVtb1dlYgogICAgICAgICAgICB9CiAgICAgICAgICAgIGRlcGxveW1lbnROb2RlICJOYXZlZ2Fkb3IgZG8gdmlzaXRhbnRlIiAiT3JpZ2VtIGRvIGFybWF6ZW5hbWVudG8gcGVyc2lzdGVudGUgZSBpc29sYWRvIGRhIGRlbW9uc3RyYcOnw6NvLiIgIldlYiBicm93c2VyIiB7CiAgICAgICAgICAgICAgICBjb250YWluZXJJbnN0YW5jZSBkZW1vU3RvcmFnZQogICAgICAgICAgICB9CiAgICAgICAgfQogICAgfQoKICAgIHZpZXdzIHsKICAgICAgICBzeXN0ZW1Db250ZXh0IGNvZnJlICJTeXN0ZW1Db250ZXh0IiAiUGVzc29hcyBlIHNpc3RlbWFzIGV4dGVybm9zIHF1ZSBzZSByZWxhY2lvbmFtIGNvbSBvIENvZnJlLiIgewogICAgICAgICAgICBpbmNsdWRlICoKICAgICAgICAgICAgYXV0b0xheW91dCBscgogICAgICAgIH0KCiAgICAgICAgY29udGFpbmVyIGNvZnJlICJDb250YWluZXJzIiAiQ29udGFpbmVycyBsw7NnaWNvcyBkb3MgYW1iaWVudGVzIFByb2R1Y3Rpb24gZSBQdWJsaWMgRGVtby4iIHsKICAgICAgICAgICAgaW5jbHVkZSAqCiAgICAgICAgICAgIGF1dG9MYXlvdXQgbHIKICAgICAgICB9CgogICAgICAgIGNvbXBvbmVudCBwcm9kV2ViICJGcm9udGVuZENvbXBvbmVudHMiICJDb21wb25lbnRlcyByZWxldmFudGVzIGRvIGZyb250ZW5kIFByb2R1Y3Rpb24uIiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0IGxyCiAgICAgICAgfQoKICAgICAgICBjb21wb25lbnQgYXBpICJCYWNrZW5kQ29tcG9uZW50cyIgIkNvbXBvbmVudGVzIHJlbGV2YW50ZXMgZGEgQVBJIGUgc3VhcyBkZXBlbmTDqm5jaWFzLiIgewogICAgICAgICAgICBpbmNsdWRlICoKICAgICAgICAgICAgYXV0b0xheW91dCBscgogICAgICAgIH0KCiAgICAgICAgY29tcG9uZW50IGRlbW9XZWIgIkRlbW9Db21wb25lbnRzIiAiQ29tcG9uZW50ZXMgcmVsZXZhbnRlcyBkbyBmcm9udGVuZCBQdWJsaWMgRGVtby4iIHsKICAgICAgICAgICAgaW5jbHVkZSAqCiAgICAgICAgICAgIGF1dG9MYXlvdXQgbHIKICAgICAgICB9CgogICAgICAgIGRlcGxveW1lbnQgY29mcmUgcHJvZHVjdGlvbiAiUHJvZHVjdGlvbkRlcGxveW1lbnQiICJNYXBlYW1lbnRvIGRvcyBjb250YWluZXJzIGzDs2dpY29zIHBhcmEgYSBpbmZyYWVzdHJ1dHVyYSBQcm9kdWN0aW9uLiIgewogICAgICAgICAgICBpbmNsdWRlICoKICAgICAgICAgICAgYXV0b0xheW91dCBscgogICAgICAgIH0KCiAgICAgICAgZGVwbG95bWVudCBjb2ZyZSBwdWJsaWNEZW1vICJEZW1vRGVwbG95bWVudCIgIk1hcGVhbWVudG8gZG9zIGNvbnRhaW5lcnMgaXNvbGFkb3MgZGEgZGVtb25zdHJhw6fDo28gcMO6YmxpY2EuIiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0IGxyCiAgICAgICAgfQoKICAgICAgICBzdHlsZXMgewogICAgICAgICAgICBlbGVtZW50ICJQZXJzb24iIHsKICAgICAgICAgICAgICAgIHNoYXBlIFBlcnNvbgogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjMzM0MTU1CiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiU29mdHdhcmUgU3lzdGVtIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICMwNDc4NTcKICAgICAgICAgICAgICAgIGNvbG9yICNmZmZmZmYKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJFeHRlcm5hbCIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjNDc1NTY5CiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiQ29udGFpbmVyIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICMwNTk2NjkKICAgICAgICAgICAgICAgIGNvbG9yICNmZmZmZmYKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJDb21wb25lbnQiIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzEwYjk4MQogICAgICAgICAgICAgICAgY29sb3IgIzA1MmUyNAogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkRhdGFiYXNlIiB7CiAgICAgICAgICAgICAgICBzaGFwZSBDeWxpbmRlcgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkRlbW8iIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzBmNzY2ZQogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICB9CiAgICAgICAgICAgIHJlbGF0aW9uc2hpcCAiUmVsYXRpb25zaGlwIiB7CiAgICAgICAgICAgICAgICBjb2xvciAjNjQ3NDhiCiAgICAgICAgICAgICAgICByb3V0aW5nIE9ydGhvZ29uYWwKICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH0KCiAgICBjb25maWd1cmF0aW9uIHsKICAgICAgICBzY29wZSBzb2Z0d2FyZXN5c3RlbQogICAgfQp9",
+    "structurizr.inspection.info" : "0",
+    "structurizr.inspection.ignore" : "0",
+    "structurizr.inspection.warning" : "0"
+  },
+  "views" : {
+    "componentViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "containerId" : "6",
+      "description" : "Componentes relevantes do frontend Production.",
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "7",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "8",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "9",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "10",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "11",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalContainerBoundariesVisible" : false,
+      "key" : "FrontendComponents",
+      "name" : "Component View: Cofre - Frontend Production",
+      "order" : 3,
+      "relationships" : [ {
+        "id" : "38"
+      }, {
+        "id" : "39"
+      }, {
+        "id" : "40"
+      }, {
+        "id" : "41"
+      }, {
+        "id" : "42"
+      } ]
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "containerId" : "11",
+      "description" : "Componentes relevantes da API e suas dependências.",
+      "elements" : [ {
+        "id" : "3",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "12",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "13",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "14",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "15",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "16",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "17",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "18",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "19",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "20",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "21",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalContainerBoundariesVisible" : false,
+      "key" : "BackendComponents",
+      "name" : "Component View: Cofre - Backend API",
+      "order" : 4,
+      "relationships" : [ {
+        "id" : "43"
+      }, {
+        "id" : "48"
+      }, {
+        "id" : "49"
+      }, {
+        "id" : "50"
+      }, {
+        "id" : "51"
+      }, {
+        "id" : "52"
+      }, {
+        "id" : "53"
+      }, {
+        "id" : "54"
+      }, {
+        "id" : "55"
+      }, {
+        "id" : "56"
+      }, {
+        "id" : "57"
+      }, {
+        "id" : "58"
+      }, {
+        "id" : "59"
+      }, {
+        "id" : "60"
+      }, {
+        "id" : "61"
+      }, {
+        "id" : "62"
+      }, {
+        "id" : "63"
+      }, {
+        "id" : "64"
+      }, {
+        "id" : "65"
+      } ]
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "containerId" : "22",
+      "description" : "Componentes relevantes do frontend Public Demo.",
+      "elements" : [ {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "23",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "24",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "25",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "26",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalContainerBoundariesVisible" : false,
+      "key" : "DemoComponents",
+      "name" : "Component View: Cofre - Frontend Public Demo",
+      "order" : 5,
+      "relationships" : [ {
+        "id" : "44"
+      }, {
+        "id" : "45"
+      }, {
+        "id" : "46"
+      }, {
+        "id" : "47"
+      } ]
+    } ],
+    "configuration" : {
+      "styles" : {
+        "elements" : [ {
+          "background" : "#10b981",
+          "color" : "#052e24",
+          "tag" : "Component"
+        }, {
+          "background" : "#059669",
+          "color" : "#ffffff",
+          "tag" : "Container"
+        }, {
+          "shape" : "Cylinder",
+          "tag" : "Database"
+        }, {
+          "background" : "#0f766e",
+          "color" : "#ffffff",
+          "tag" : "Demo"
+        }, {
+          "background" : "#475569",
+          "color" : "#ffffff",
+          "tag" : "External"
+        }, {
+          "background" : "#334155",
+          "color" : "#ffffff",
+          "shape" : "Person",
+          "tag" : "Person"
+        }, {
+          "background" : "#047857",
+          "color" : "#ffffff",
+          "tag" : "Software System"
+        } ],
+        "relationships" : [ {
+          "color" : "#64748b",
+          "routing" : "Orthogonal",
+          "tag" : "Relationship"
+        } ]
+      },
+      "terminology" : { }
+    },
+    "containerViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "description" : "Containers lógicos dos ambientes Production e Public Demo.",
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "3",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "11",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "21",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "22",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "26",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalSoftwareSystemBoundariesVisible" : false,
+      "key" : "Containers",
+      "name" : "Container View: Cofre",
+      "order" : 2,
+      "relationships" : [ {
+        "id" : "31"
+      }, {
+        "id" : "32"
+      }, {
+        "id" : "33"
+      }, {
+        "id" : "34"
+      }, {
+        "id" : "35"
+      }, {
+        "id" : "36"
+      }, {
+        "id" : "37"
+      } ],
+      "softwareSystemId" : "5"
+    } ],
+    "deploymentViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "description" : "Mapeamento dos containers lógicos para a infraestrutura Production.",
+      "elements" : [ {
+        "id" : "66",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "67",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "68",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "69",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "71",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "72",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "environment" : "Production",
+      "key" : "ProductionDeployment",
+      "name" : "Deployment View: Cofre - Production",
+      "order" : 6,
+      "relationships" : [ {
+        "id" : "70"
+      }, {
+        "id" : "73"
+      } ],
+      "softwareSystemId" : "5"
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "description" : "Mapeamento dos containers isolados da demonstração pública.",
+      "elements" : [ {
+        "id" : "74",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "75",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "76",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "77",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "environment" : "Public Demo",
+      "key" : "DemoDeployment",
+      "name" : "Deployment View: Cofre - Public Demo",
+      "order" : 7,
+      "relationships" : [ {
+        "id" : "78"
+      } ],
+      "softwareSystemId" : "5"
+    } ],
+    "systemContextViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "description" : "Pessoas e sistemas externos que se relacionam com o Cofre.",
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "3",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "5",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "enterpriseBoundaryVisible" : true,
+      "key" : "SystemContext",
+      "name" : "System Context View: Cofre",
+      "order" : 1,
+      "relationships" : [ {
+        "id" : "27"
+      }, {
+        "id" : "28"
+      }, {
+        "id" : "29"
+      }, {
+        "id" : "30"
+      } ],
+      "softwareSystemId" : "5"
+    } ]
+  }
+}

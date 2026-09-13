@@ -2,9 +2,9 @@
 
 **Controle financeiro pessoal com histórico, cartões, recorrências, análises e sincronização opcional com Google Sheets.**
 
-[Live Demo](https://cofre-demo.vercel.app/) · [Documentação](#documentação) · [Executar localmente](#quickstart) · [API](#visão-geral-da-api)
+[Live Demo](https://cofre-demo.vercel.app/) · [Documentação arquitetural](docs/architecture/index.md) · [Executar localmente](#quickstart) · [API](#visão-geral-da-api)
 
-> **Status:** aplicação em uso real, Fases 1–5 concluídas e ambiente público de demonstração disponível. A Fase 6 — Documentação e Engenharia de Software foi iniciada, com a Etapa 14 concluída.
+> **Status:** aplicação em uso real, Fases 1–5 concluídas e ambiente público de demonstração disponível. A Fase 6 — Documentação e Engenharia de Software está em andamento, com as Etapas 14 e 15 concluídas.
 
 ## Por que o Cofre existe
 
@@ -197,7 +197,7 @@ GitHub
 
 ## Documentação
 
-A documentação técnica completa será construída nas próximas etapas da Fase 6 em `docs/`, cobrindo arquitetura, domínio, ADRs, OpenAPI, banco de dados, estratégia de testes, operação e publicação com MkDocs Material.
+A [documentação arquitetural](docs/architecture/index.md) usa C4 Model, Structurizr DSL e fluxos Mermaid. As próximas etapas ampliarão `docs/` com domínio, ADRs, OpenAPI, banco de dados, estratégia de testes, operação e publicação com MkDocs Material.
 
 Enquanto essa documentação é preparada, existem guias específicos para o [`backend`](backend/README.md) e o [`frontend`](frontend/README.md).
 
@@ -210,7 +210,8 @@ Enquanto essa documentação é preparada, existem guias específicos para o [`b
 - [x] Ambiente público Demo/Sandbox isolado.
 - [ ] **Fase 6 — documentação e engenharia de software.**
   - [x] Etapa 14 — README Profissional.
-  - [ ] Etapas 15–22 — documentação técnica, ADRs, OpenAPI, banco, testes, operação e MkDocs.
+  - [x] Etapa 15 — Documentação Arquitetural com C4 Model e Structurizr DSL.
+  - [ ] Etapas 16–22 — domínio, ADRs, OpenAPI, banco, testes, operação e MkDocs.
 - [ ] Fase 7 — inteligência financeira, relatórios e metas.
 - [ ] Fase 8 — engenharia, qualidade, governança e observabilidade de dados.
 - [ ] Fase 9 — inteligência artificial, machine learning e MLOps.
@@ -222,4 +223,4 @@ Sincronização automática, documentação técnica completa, OpenAPI, observab
 
 - Aplicação Production funcional e utilizada no dia a dia em desktop e Safari no iPhone.
 - Demo pública funcional em [cofre-demo.vercel.app](https://cofre-demo.vercel.app/), sem acesso à infraestrutura pessoal.
-- Fases 1–5 concluídas; Etapa 14 da Fase 6 concluída, sem antecipar a Etapa 15.
+- Fases 1–5 concluídas; Etapas 14 e 15 da Fase 6 concluídas, sem antecipar a Etapa 16.
