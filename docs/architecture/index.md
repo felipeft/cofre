@@ -2,6 +2,8 @@
 
 Esta seção descreve a arquitetura implementada do Cofre usando o C4 Model. O arquivo [`structurizr/workspace.dsl`](structurizr/workspace.dsl) é a fonte de verdade dos elementos, relacionamentos e views C4; os diagramas Mermaid documentam apenas fluxos dinâmicos complementares.
 
+As motivações e trade-offs das escolhas estruturais estão registrados nos [Architecture Decision Records](../decisions/index.md).
+
 ## Navegação
 
 - [C4 Nível 1 — System Context](system-context.md)

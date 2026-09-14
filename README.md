@@ -2,9 +2,9 @@
 
 **Controle financeiro pessoal com histórico, cartões, recorrências, análises e sincronização opcional com Google Sheets.**
 
-[Live Demo](https://cofre-demo.vercel.app/) · [Arquitetura](docs/architecture/index.md) · [Domínio](docs/domain/index.md) · [Executar localmente](#quickstart) · [API](#visão-geral-da-api)
+[Live Demo](https://cofre-demo.vercel.app/) · [Arquitetura](docs/architecture/index.md) · [Domínio](docs/domain/index.md) · [ADRs](docs/decisions/index.md) · [Executar localmente](#quickstart) · [API](#visão-geral-da-api)
 
-> **Status:** aplicação em uso real, Fases 1–5 concluídas e ambiente público de demonstração disponível. A Fase 6 — Documentação e Engenharia de Software está em andamento, com as Etapas 14, 15 e 16 concluídas.
+> **Status:** aplicação em uso real, Fases 1–5 concluídas e ambiente público de demonstração disponível. A Fase 6 — Documentação e Engenharia de Software está em andamento, com as Etapas 14 a 17 concluídas.
 
 ## Por que o Cofre existe
 
@@ -197,7 +197,7 @@ GitHub
 
 ## Documentação
 
-A [documentação arquitetural](docs/architecture/index.md) usa C4 Model, Structurizr DSL e fluxos Mermaid. A [documentação do domínio](docs/domain/index.md) registra as regras financeiras, seus motivos, exemplos e débitos conhecidos. As próximas etapas ampliarão `docs/` com ADRs, OpenAPI, banco de dados, estratégia de testes, operação e publicação com MkDocs Material.
+A [documentação arquitetural](docs/architecture/index.md) usa C4 Model, Structurizr DSL e fluxos Mermaid. A [documentação do domínio](docs/domain/index.md) registra as regras financeiras, seus motivos, exemplos e débitos conhecidos. Os [Architecture Decision Records](docs/decisions/index.md) preservam contexto, alternativas e consequências das escolhas relevantes. As próximas etapas ampliarão `docs/` com OpenAPI, banco de dados, estratégia de testes, operação e publicação com MkDocs Material.
 
 Enquanto essa documentação é preparada, existem guias específicos para o [`backend`](backend/README.md) e o [`frontend`](frontend/README.md).
 
@@ -212,7 +212,8 @@ Enquanto essa documentação é preparada, existem guias específicos para o [`b
   - [x] Etapa 14 — README Profissional.
   - [x] Etapa 15 — Documentação Arquitetural com C4 Model e Structurizr DSL.
   - [x] Etapa 16 — Documentação do Domínio.
-  - [ ] Etapas 17–22 — ADRs, OpenAPI, banco, testes, operação e MkDocs.
+  - [x] Etapa 17 — Architecture Decision Records.
+  - [ ] Etapas 18–22 — OpenAPI, banco, testes, operação e MkDocs.
 - [ ] Fase 7 — inteligência financeira, relatórios e metas.
 - [ ] Fase 8 — engenharia, qualidade, governança e observabilidade de dados.
 - [ ] Fase 9 — inteligência artificial, machine learning e MLOps.
@@ -224,4 +225,4 @@ Sincronização automática, documentação técnica completa, OpenAPI, observab
 
 - Aplicação Production funcional e utilizada no dia a dia em desktop e Safari no iPhone.
 - Demo pública funcional em [cofre-demo.vercel.app](https://cofre-demo.vercel.app/), sem acesso à infraestrutura pessoal.
-- Fases 1–5 concluídas; Etapas 14, 15 e 16 da Fase 6 concluídas, sem antecipar a Etapa 17.
+- Fases 1–5 concluídas; Etapas 14 a 17 da Fase 6 concluídas, sem antecipar a Etapa 18.

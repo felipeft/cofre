@@ -2,6 +2,8 @@
 
 Esta seção descreve o comportamento financeiro implementado no Cofre. O código, as migrations e os testes automatizados são a fonte de verdade; a documentação arquitetural permanece separada em [`docs/architecture/`](../architecture/index.md).
 
+As decisões que explicam por que parcelamentos, recorrências, exclusões e sincronização assumem essas formas estão nos [Architecture Decision Records](../decisions/index.md).
+
 ## Como ler esta documentação
 
 Os documentos distinguem três tipos de afirmação:
