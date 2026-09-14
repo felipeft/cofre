@@ -61,12 +61,12 @@ Ofereceria mais provedores e abstrações, porém adicionaria complexidade desne
 
 ## Evidências
 
-- [`backend/src/services/auth.service.js`](../../backend/src/services/auth.service.js)
-- [`backend/src/services/googleOAuth.service.js`](../../backend/src/services/googleOAuth.service.js)
-- [`backend/src/repositories/auth.repository.js`](../../backend/src/repositories/auth.repository.js)
-- [`backend/src/database/migrations/0009_add_authentication_and_user_ownership.sql`](../../backend/src/database/migrations/0009_add_authentication_and_user_ownership.sql)
-- [`backend/tests/auth.integration.test.js`](../../backend/tests/auth.integration.test.js)
-- [`frontend/vercel.json`](../../frontend/vercel.json)
+- [`backend/src/services/auth.service.js`](https://github.com/felipeft/cofre/blob/main/backend/src/services/auth.service.js)
+- [`backend/src/services/googleOAuth.service.js`](https://github.com/felipeft/cofre/blob/main/backend/src/services/googleOAuth.service.js)
+- [`backend/src/repositories/auth.repository.js`](https://github.com/felipeft/cofre/blob/main/backend/src/repositories/auth.repository.js)
+- [`backend/src/database/migrations/0009_add_authentication_and_user_ownership.sql`](https://github.com/felipeft/cofre/blob/main/backend/src/database/migrations/0009_add_authentication_and_user_ownership.sql)
+- [`backend/tests/auth.integration.test.js`](https://github.com/felipeft/cofre/blob/main/backend/tests/auth.integration.test.js)
+- [`frontend/vercel.json`](https://github.com/felipeft/cofre/blob/main/frontend/vercel.json)
 
 ## Relações com outros ADRs
 

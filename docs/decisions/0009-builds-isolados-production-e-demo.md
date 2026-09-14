@@ -71,13 +71,13 @@ Pareceria rápido no início, mas contaminaria a UI com decisões de infraestrut
 
 ## Evidências
 
-- [`frontend/vite.config.js`](../../frontend/vite.config.js)
-- [`frontend/src/demo/repository.js`](../../frontend/src/demo/repository.js)
-- [`frontend/src/demo/storage.js`](../../frontend/src/demo/storage.js)
-- [`frontend/scripts/audit-demo-build.mjs`](../../frontend/scripts/audit-demo-build.mjs)
-- [`frontend/tests/demo/demoRepository.test.js`](../../frontend/tests/demo/demoRepository.test.js)
-- [`vercel.json`](../../vercel.json)
-- [`frontend/vercel.json`](../../frontend/vercel.json)
+- [`frontend/vite.config.js`](https://github.com/felipeft/cofre/blob/main/frontend/vite.config.js)
+- [`frontend/src/demo/repository.js`](https://github.com/felipeft/cofre/blob/main/frontend/src/demo/repository.js)
+- [`frontend/src/demo/storage.js`](https://github.com/felipeft/cofre/blob/main/frontend/src/demo/storage.js)
+- [`frontend/scripts/audit-demo-build.mjs`](https://github.com/felipeft/cofre/blob/main/frontend/scripts/audit-demo-build.mjs)
+- [`frontend/tests/demo/demoRepository.test.js`](https://github.com/felipeft/cofre/blob/main/frontend/tests/demo/demoRepository.test.js)
+- [`vercel.json`](https://github.com/felipeft/cofre/blob/main/vercel.json)
+- [`frontend/vercel.json`](https://github.com/felipeft/cofre/blob/main/frontend/vercel.json)
 - [Arquitetura do frontend](../architecture/frontend.md)
 
 ## Relações com outros ADRs

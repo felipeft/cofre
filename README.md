@@ -2,9 +2,9 @@
 
 **Controle financeiro pessoal com histórico, cartões, recorrências, análises e sincronização opcional com Google Sheets.**
 
-[Live Demo](https://cofre-demo.vercel.app/) · [Arquitetura](docs/architecture/index.md) · [Domínio](docs/domain/index.md) · [ADRs](docs/decisions/index.md) · [Banco](docs/database/index.md) · [Testes](docs/testing/index.md) · [Operação](docs/operations/index.md) · [Swagger / API](#visão-geral-da-api) · [Executar localmente](#quickstart)
+[Live Demo](https://cofre-demo.vercel.app/) · [Documentação](docs/index.md) · [Arquitetura](docs/architecture/index.md) · [Domínio](docs/domain/index.md) · [ADRs](docs/decisions/index.md) · [Banco](docs/database/index.md) · [Testes](docs/testing/index.md) · [Operação](docs/operations/index.md) · [Swagger / API](#visão-geral-da-api) · [Executar localmente](#quickstart)
 
-> **Status:** aplicação em uso real, Fases 1–5 concluídas e ambiente público de demonstração disponível. A Fase 6 — Documentação e Engenharia de Software está em andamento, com as Etapas 14 a 21 concluídas.
+> **Status:** aplicação em uso real, Fases 1–5 concluídas e ambiente público de demonstração disponível. A Fase 6 — Documentação e Engenharia de Software está concluída, com as Etapas 14 a 22 finalizadas.
 
 ## Por que o Cofre existe
 
@@ -199,7 +199,16 @@ GitHub
 
 ## Documentação
 
-A [documentação arquitetural](docs/architecture/index.md) usa C4 Model, Structurizr DSL e fluxos Mermaid. A [documentação do domínio](docs/domain/index.md) registra as regras financeiras, seus motivos, exemplos e débitos conhecidos. Os [Architecture Decision Records](docs/decisions/index.md) preservam contexto, alternativas e consequências das escolhas relevantes. A [documentação da API](docs/api/index.md) explica o contrato OpenAPI e o uso da Swagger UI. A [documentação do banco](docs/database/index.md) registra o modelo relacional, migrations e garantias de integridade. A [documentação de testes](docs/testing/index.md) apresenta estratégia, execução, rastreabilidade e lacunas da cobertura atual. A [documentação operacional](docs/operations/index.md) reúne configuração, execução, deploy, diagnóstico e recuperação segura. A próxima etapa publicará o conjunto com MkDocs Material.
+O [índice técnico](docs/index.md) organiza o site MkDocs Material. A [documentação arquitetural](docs/architecture/index.md) usa C4 Model, Structurizr DSL e fluxos Mermaid. A [documentação do domínio](docs/domain/index.md) registra as regras financeiras, seus motivos, exemplos e débitos conhecidos. Os [Architecture Decision Records](docs/decisions/index.md) preservam contexto, alternativas e consequências das escolhas relevantes. A [documentação da API](docs/api/index.md) explica o contrato OpenAPI e o uso da Swagger UI. A [documentação do banco](docs/database/index.md) registra o modelo relacional, migrations e garantias de integridade. A [documentação de testes](docs/testing/index.md) apresenta estratégia, execução, rastreabilidade e lacunas da cobertura atual. A [documentação operacional](docs/operations/index.md) reúne configuração, execução, deploy, diagnóstico e recuperação segura.
+
+Para visualizar a documentação localmente:
+
+```bash
+python3 -m venv .venv-docs
+source .venv-docs/bin/activate
+pip install -r requirements-docs.txt
+mkdocs serve
+```
 
 Enquanto essa documentação é preparada, existem guias específicos para o [`backend`](backend/README.md) e o [`frontend`](frontend/README.md).
 
@@ -219,7 +228,7 @@ Enquanto essa documentação é preparada, existem guias específicos para o [`b
   - [x] Etapa 19 — Documentação de Banco de Dados.
   - [x] Etapa 20 — Documentação de Testes.
   - [x] Etapa 21 — Documentação Operacional.
-  - [ ] Etapa 22 — MkDocs Material.
+  - [x] Etapa 22 — Site técnico com MkDocs Material.
 - [ ] Fase 7 — inteligência financeira, relatórios e metas.
 - [ ] Fase 8 — engenharia, qualidade, governança e observabilidade de dados.
 - [ ] Fase 9 — inteligência artificial, machine learning e MLOps.
@@ -231,4 +240,4 @@ Sincronização automática, documentação técnica completa, observabilidade, 
 
 - Aplicação Production funcional e utilizada no dia a dia em desktop e Safari no iPhone.
 - Demo pública funcional em [cofre-demo.vercel.app](https://cofre-demo.vercel.app/), sem acesso à infraestrutura pessoal.
-- Fases 1–5 concluídas; Etapas 14 a 21 da Fase 6 concluídas, sem antecipar a Etapa 22.
+- Fases 1–6 concluídas; o site MkDocs reúne a documentação técnica das Etapas 14 a 22.

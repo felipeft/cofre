@@ -56,11 +56,11 @@ Não representaria adequadamente competências e vencimentos individuais.
 
 ## Evidências
 
-- [`backend/src/domain/installmentPlan.js`](../../backend/src/domain/installmentPlan.js)
-- [`backend/src/services/transaction.service.js`](../../backend/src/services/transaction.service.js)
-- [`backend/src/repositories/transaction.repository.js`](../../backend/src/repositories/transaction.repository.js)
-- [`backend/tests/installmentPlan.unit.test.js`](../../backend/tests/installmentPlan.unit.test.js)
-- [`backend/tests/cards.integration.test.js`](../../backend/tests/cards.integration.test.js)
+- [`backend/src/domain/installmentPlan.js`](https://github.com/felipeft/cofre/blob/main/backend/src/domain/installmentPlan.js)
+- [`backend/src/services/transaction.service.js`](https://github.com/felipeft/cofre/blob/main/backend/src/services/transaction.service.js)
+- [`backend/src/repositories/transaction.repository.js`](https://github.com/felipeft/cofre/blob/main/backend/src/repositories/transaction.repository.js)
+- [`backend/tests/installmentPlan.unit.test.js`](https://github.com/felipeft/cofre/blob/main/backend/tests/installmentPlan.unit.test.js)
+- [`backend/tests/cards.integration.test.js`](https://github.com/felipeft/cofre/blob/main/backend/tests/cards.integration.test.js)
 - [Domínio de cartões e parcelamentos](../domain/credit-cards-and-installments.md)
 
 ## Relações com outros ADRs

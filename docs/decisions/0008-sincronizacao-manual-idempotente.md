@@ -63,12 +63,12 @@ Não protegeria contra repetição após falha de rede, múltiplas abas ou chama
 
 ## Evidências
 
-- [`backend/src/services/googleSheetsSync.service.js`](../../backend/src/services/googleSheetsSync.service.js)
-- [`backend/src/repositories/googleSheetsSync.repository.js`](../../backend/src/repositories/googleSheetsSync.repository.js)
-- [`backend/src/repositories/googleSheetsData.repository.js`](../../backend/src/repositories/googleSheetsData.repository.js)
-- [`backend/src/database/migrations/0012_create_google_sheets_sync_runs.sql`](../../backend/src/database/migrations/0012_create_google_sheets_sync_runs.sql)
-- [`backend/src/database/migrations/0015_optimize_recurring_and_data_management.sql`](../../backend/src/database/migrations/0015_optimize_recurring_and_data_management.sql)
-- [`backend/tests/googleSheets.integration.test.js`](../../backend/tests/googleSheets.integration.test.js)
+- [`backend/src/services/googleSheetsSync.service.js`](https://github.com/felipeft/cofre/blob/main/backend/src/services/googleSheetsSync.service.js)
+- [`backend/src/repositories/googleSheetsSync.repository.js`](https://github.com/felipeft/cofre/blob/main/backend/src/repositories/googleSheetsSync.repository.js)
+- [`backend/src/repositories/googleSheetsData.repository.js`](https://github.com/felipeft/cofre/blob/main/backend/src/repositories/googleSheetsData.repository.js)
+- [`backend/src/database/migrations/0012_create_google_sheets_sync_runs.sql`](https://github.com/felipeft/cofre/blob/main/backend/src/database/migrations/0012_create_google_sheets_sync_runs.sql)
+- [`backend/src/database/migrations/0015_optimize_recurring_and_data_management.sql`](https://github.com/felipeft/cofre/blob/main/backend/src/database/migrations/0015_optimize_recurring_and_data_management.sql)
+- [`backend/tests/googleSheets.integration.test.js`](https://github.com/felipeft/cofre/blob/main/backend/tests/googleSheets.integration.test.js)
 
 ## Relações com outros ADRs
 

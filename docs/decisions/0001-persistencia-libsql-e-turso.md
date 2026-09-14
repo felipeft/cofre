@@ -57,11 +57,11 @@ Eliminaria parte da API, mas exporia credenciais e deslocaria autorização, val
 
 ## Evidências
 
-- [`backend/src/database/connection.js`](../../backend/src/database/connection.js)
-- [`backend/src/database/migrate.js`](../../backend/src/database/migrate.js)
-- [`backend/src/database/bootstrap.js`](../../backend/src/database/bootstrap.js)
-- [`backend/src/database/migrations/`](../../backend/src/database/migrations/README.md)
-- [`backend/tests/migrationAuth.integration.test.js`](../../backend/tests/migrationAuth.integration.test.js)
+- [`backend/src/database/connection.js`](https://github.com/felipeft/cofre/blob/main/backend/src/database/connection.js)
+- [`backend/src/database/migrate.js`](https://github.com/felipeft/cofre/blob/main/backend/src/database/migrate.js)
+- [`backend/src/database/bootstrap.js`](https://github.com/felipeft/cofre/blob/main/backend/src/database/bootstrap.js)
+- [`backend/src/database/migrations/`](https://github.com/felipeft/cofre/blob/main/backend/src/database/migrations/README.md)
+- [`backend/tests/migrationAuth.integration.test.js`](https://github.com/felipeft/cofre/blob/main/backend/tests/migrationAuth.integration.test.js)
 
 ## Relações com outros ADRs
 

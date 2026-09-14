@@ -55,12 +55,12 @@ Facilitaria chamadas, mas permitiria manipulação trivial do proprietário e ac
 
 ## Evidências
 
-- [`backend/src/routes/index.js`](../../backend/src/routes/index.js)
-- [`backend/src/middlewares/auth.middleware.js`](../../backend/src/middlewares/auth.middleware.js)
-- [`backend/src/database/migrations/0009_add_authentication_and_user_ownership.sql`](../../backend/src/database/migrations/0009_add_authentication_and_user_ownership.sql)
-- [`backend/src/repositories/transaction.repository.js`](../../backend/src/repositories/transaction.repository.js)
-- [`backend/tests/auth.integration.test.js`](../../backend/tests/auth.integration.test.js)
-- [`backend/tests/dataManagement.integration.test.js`](../../backend/tests/dataManagement.integration.test.js)
+- [`backend/src/routes/index.js`](https://github.com/felipeft/cofre/blob/main/backend/src/routes/index.js)
+- [`backend/src/middlewares/auth.middleware.js`](https://github.com/felipeft/cofre/blob/main/backend/src/middlewares/auth.middleware.js)
+- [`backend/src/database/migrations/0009_add_authentication_and_user_ownership.sql`](https://github.com/felipeft/cofre/blob/main/backend/src/database/migrations/0009_add_authentication_and_user_ownership.sql)
+- [`backend/src/repositories/transaction.repository.js`](https://github.com/felipeft/cofre/blob/main/backend/src/repositories/transaction.repository.js)
+- [`backend/tests/auth.integration.test.js`](https://github.com/felipeft/cofre/blob/main/backend/tests/auth.integration.test.js)
+- [`backend/tests/dataManagement.integration.test.js`](https://github.com/felipeft/cofre/blob/main/backend/tests/dataManagement.integration.test.js)
 - [Invariantes de ownership](../domain/ownership-and-invariants.md)
 
 ## Relações com outros ADRs

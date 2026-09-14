@@ -56,10 +56,10 @@ Seria a opção mais simples, mas eliminaria o caso útil de cadastrar despesas 
 
 ## Evidências
 
-- [`backend/src/services/googleSheets.service.js`](../../backend/src/services/googleSheets.service.js)
-- [`backend/src/repositories/googleSheetsData.repository.js`](../../backend/src/repositories/googleSheetsData.repository.js)
-- [`backend/src/utils/mappers/googleSheets.mapper.js`](../../backend/src/utils/mappers/googleSheets.mapper.js)
-- [`backend/tests/googleSheets.integration.test.js`](../../backend/tests/googleSheets.integration.test.js)
+- [`backend/src/services/googleSheets.service.js`](https://github.com/felipeft/cofre/blob/main/backend/src/services/googleSheets.service.js)
+- [`backend/src/repositories/googleSheetsData.repository.js`](https://github.com/felipeft/cofre/blob/main/backend/src/repositories/googleSheetsData.repository.js)
+- [`backend/src/utils/mappers/googleSheets.mapper.js`](https://github.com/felipeft/cofre/blob/main/backend/src/utils/mappers/googleSheets.mapper.js)
+- [`backend/tests/googleSheets.integration.test.js`](https://github.com/felipeft/cofre/blob/main/backend/tests/googleSheets.integration.test.js)
 - [Domínio da sincronização](../domain/google-sheets-sync.md)
 
 ## Relações com outros ADRs

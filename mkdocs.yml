@@ -1,0 +1,123 @@
+site_name: Cofre
+site_description: Documentação técnica do Cofre, uma aplicação de controle financeiro pessoal.
+site_author: Felipe Ferreira
+repo_url: https://github.com/felipeft/cofre
+repo_name: felipeft/cofre
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: pt-BR
+  icon:
+    logo: material/safe-square-outline
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: green
+      toggle:
+        icon: material/weather-night
+        name: Usar tema escuro
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: green
+      toggle:
+        icon: material/weather-sunny
+        name: Usar tema claro
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+nav:
+  - Início: index.md
+  - Primeiros passos:
+      - Desenvolvimento local: operations/local-development.md
+      - Configuração: operations/configuration.md
+  - Arquitetura:
+      - Visão geral: architecture/index.md
+      - System Context: architecture/system-context.md
+      - Containers e deployment: architecture/containers.md
+      - Frontend: architecture/frontend.md
+      - Backend: architecture/backend.md
+      - Banco na arquitetura: architecture/database.md
+      - Integrações: architecture/integrations.md
+  - Domínio:
+      - Visão geral: domain/index.md
+      - Transações e categorias: domain/transactions-and-categories.md
+      - Cartões e parcelamentos: domain/credit-cards-and-installments.md
+      - Gastos recorrentes: domain/recurring-expenses.md
+      - Ciclo de vida dos dados: domain/data-lifecycle.md
+      - Sincronização Google Sheets: domain/google-sheets-sync.md
+      - Ownership e invariantes: domain/ownership-and-invariants.md
+  - ADRs:
+      - Índice: decisions/index.md
+      - ADR-0001 — Persistência libSQL e Turso: decisions/0001-persistencia-libsql-e-turso.md
+      - ADR-0002 — Banco como fonte canônica: decisions/0002-banco-como-fonte-canonica.md
+      - ADR-0003 — Parcelamentos agrupados: decisions/0003-parcelamentos-como-transacoes-agrupadas.md
+      - ADR-0004 — Ocorrências materializadas: decisions/0004-recorrencias-com-ocorrencias-materializadas.md
+      - ADR-0005 — Hard delete e histórico: decisions/0005-hard-delete-e-preservacao-historica.md
+      - ADR-0006 — OAuth e sessões: decisions/0006-google-oauth-e-sessoes-no-backend.md
+      - ADR-0007 — Isolamento por usuário: decisions/0007-isolamento-multiusuario-por-user-id.md
+      - ADR-0008 — Sincronização idempotente: decisions/0008-sincronizacao-manual-idempotente.md
+      - ADR-0009 — Production e Demo: decisions/0009-builds-isolados-production-e-demo.md
+  - API:
+      - OpenAPI e Swagger: api/index.md
+  - Banco de dados:
+      - Visão geral: database/index.md
+      - Modelo de dados: database/data-model.md
+      - Migrations: database/migrations.md
+      - Integridade e índices: database/integrity.md
+  - Testes:
+      - Visão geral: testing/index.md
+      - Estratégia e execução: testing/strategy.md
+      - Rastreabilidade: testing/traceability.md
+  - Operações:
+      - Visão geral: operations/index.md
+      - Deploy e ambientes: operations/deployment.md
+      - Diagnóstico e recuperação: operations/runbook.md
+  - Live Demo: https://cofre-demo.vercel.app/
+
+plugins:
+  - search:
+      lang: pt
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js
+  - javascripts/mermaid.js
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/felipeft/cofre
+      name: Cofre no GitHub
+    - icon: material/play-circle-outline
+      link: https://cofre-demo.vercel.app/
+      name: Experimentar a Demo pública
+
+copyright: Documentação técnica do Cofre

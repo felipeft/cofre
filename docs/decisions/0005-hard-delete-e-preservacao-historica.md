@@ -55,12 +55,12 @@ Maximizaria retenção, porém contrariaria a autonomia solicitada e impediria c
 
 ## Evidências
 
-- [`backend/src/services/category.service.js`](../../backend/src/services/category.service.js)
-- [`backend/src/services/card.service.js`](../../backend/src/services/card.service.js)
-- [`backend/src/repositories/recurringExpense.repository.js`](../../backend/src/repositories/recurringExpense.repository.js)
-- [`backend/src/repositories/dataManagement.repository.js`](../../backend/src/repositories/dataManagement.repository.js)
-- [`backend/tests/deletion.integration.test.js`](../../backend/tests/deletion.integration.test.js)
-- [`backend/tests/dataManagement.integration.test.js`](../../backend/tests/dataManagement.integration.test.js)
+- [`backend/src/services/category.service.js`](https://github.com/felipeft/cofre/blob/main/backend/src/services/category.service.js)
+- [`backend/src/services/card.service.js`](https://github.com/felipeft/cofre/blob/main/backend/src/services/card.service.js)
+- [`backend/src/repositories/recurringExpense.repository.js`](https://github.com/felipeft/cofre/blob/main/backend/src/repositories/recurringExpense.repository.js)
+- [`backend/src/repositories/dataManagement.repository.js`](https://github.com/felipeft/cofre/blob/main/backend/src/repositories/dataManagement.repository.js)
+- [`backend/tests/deletion.integration.test.js`](https://github.com/felipeft/cofre/blob/main/backend/tests/deletion.integration.test.js)
+- [`backend/tests/dataManagement.integration.test.js`](https://github.com/felipeft/cofre/blob/main/backend/tests/dataManagement.integration.test.js)
 - [Domínio do ciclo de vida](../domain/data-lifecycle.md)
 
 ## Relações com outros ADRs

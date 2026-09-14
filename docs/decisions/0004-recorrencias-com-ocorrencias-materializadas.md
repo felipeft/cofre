@@ -56,12 +56,12 @@ Automatizaria a geração, mas acrescentaria scheduler, observabilidade e tratam
 
 ## Evidências
 
-- [`backend/src/domain/recurringExpense.js`](../../backend/src/domain/recurringExpense.js)
-- [`backend/src/services/recurringExpense.service.js`](../../backend/src/services/recurringExpense.service.js)
-- [`backend/src/repositories/recurringExpense.repository.js`](../../backend/src/repositories/recurringExpense.repository.js)
-- [`backend/src/database/migrations/0007_create_recurring_expenses.sql`](../../backend/src/database/migrations/0007_create_recurring_expenses.sql)
-- [`backend/src/database/migrations/0015_optimize_recurring_and_data_management.sql`](../../backend/src/database/migrations/0015_optimize_recurring_and_data_management.sql)
-- [`backend/tests/recurringExpenses.integration.test.js`](../../backend/tests/recurringExpenses.integration.test.js)
+- [`backend/src/domain/recurringExpense.js`](https://github.com/felipeft/cofre/blob/main/backend/src/domain/recurringExpense.js)
+- [`backend/src/services/recurringExpense.service.js`](https://github.com/felipeft/cofre/blob/main/backend/src/services/recurringExpense.service.js)
+- [`backend/src/repositories/recurringExpense.repository.js`](https://github.com/felipeft/cofre/blob/main/backend/src/repositories/recurringExpense.repository.js)
+- [`backend/src/database/migrations/0007_create_recurring_expenses.sql`](https://github.com/felipeft/cofre/blob/main/backend/src/database/migrations/0007_create_recurring_expenses.sql)
+- [`backend/src/database/migrations/0015_optimize_recurring_and_data_management.sql`](https://github.com/felipeft/cofre/blob/main/backend/src/database/migrations/0015_optimize_recurring_and_data_management.sql)
+- [`backend/tests/recurringExpenses.integration.test.js`](https://github.com/felipeft/cofre/blob/main/backend/tests/recurringExpenses.integration.test.js)
 
 ## Relações com outros ADRs
 
