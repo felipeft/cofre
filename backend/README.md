@@ -115,7 +115,20 @@ exigem sessão válida.
 | `POST /data-management/clear-records` | Remove todos os registros financeiros |
 | `POST /data-management/reset` | Reseta toda a estrutura financeira do usuário |
 | `/integrations/google-sheets/*` | Conexão, planilha, importação e exportação |
-| `/sync/google-sheets/*` | Status, execução e histórico da sincronização |
+
+A especificação completa e executável está disponível em:
+
+- `GET /api-docs` — Swagger UI navegável;
+- `GET /openapi.json` — documento OpenAPI 3.1 em JSON.
+
+Os schemas de entrada são gerados dos mesmos schemas Zod executados pelos
+middlewares. Os schemas de saída ficam centralizados no módulo OpenAPI porque
+as respostas atuais são produzidas por mappers e services, sem schemas Zod de
+saída. Para validar sintaxe e cobertura das rotas:
+
+```bash
+npm run openapi:validate
+```
 
 ## Categorias e exclusões
 

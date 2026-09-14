@@ -9,11 +9,13 @@ const settingsRoutes = require('./settings.routes')
 const profileRoutes = require('./profile.routes')
 const googleSheetsRoutes = require('./googleSheets.routes')
 const dataManagementRoutes = require('./dataManagement.routes')
+const openApiRoutes = require('./openapi.routes')
 const { requireAuth, protectAgainstCsrf } = require('../middlewares/auth.middleware')
 
 const router = Router()
 
 router.use(systemRoutes)
+router.use(openApiRoutes)
 router.use('/auth', authRoutes)
 router.use(requireAuth, protectAgainstCsrf)
 router.use('/categories', categoryRoutes)
