@@ -4,7 +4,7 @@
 
 | Garantia | Banco | Aplicação | Convenção apenas |
 | --- | --- | --- | --- |
-| FK existente e política CASCADE/RESTRICT | Sim | Services antecipam conflitos | — |
+| FK existente e política de atualização/exclusão | Sim: `NO ACTION` no UPDATE; `CASCADE`/`RESTRICT` no DELETE | Services antecipam conflitos | — |
 | Owner igual entre transação, categoria, cartão e recorrência | Triggers em INSERT/UPDATE | Todas as queries usam `user_id` | — |
 | Owner igual entre pagamento e cartão | Trigger em INSERT | Não existe edição de pagamento; criação é user-scoped | UPDATE direto não tem trigger específico |
 | `user_id` presente nos dados financeiros novos | Não: coluna é nullable por legado | Sim | Backfill depende de owner legado configurado |
@@ -22,9 +22,13 @@
 `PRAGMA foreign_keys = ON` é habilitado e verificado ao criar o client. Sem
 isso, SQLite aceitaria referências inválidas mesmo com cláusulas `REFERENCES`.
 
+O schema materializado possui **17 foreign keys**. Todas usam `ON UPDATE NO
+ACTION`. Em exclusão, **11** usam `ON DELETE CASCADE` e **6** usam `ON DELETE
+RESTRICT`.
+
 ### Cascata por usuário
 
-Todas as tabelas que possuem FK para `users` usam `ON DELETE CASCADE`:
+As 11 FKs que apontam para `users` usam `ON DELETE CASCADE`:
 sessões, settings, categorias, transações, cartões, pagamentos, recorrências e
 todas as tabelas user-scoped do Google Sheets. Isso torna uma eventual remoção
 do usuário estruturalmente completa, embora o produto atual não exponha
@@ -32,7 +36,7 @@ exclusão de conta.
 
 ### Preservação financeira
 
-As FKs abaixo usam `ON DELETE RESTRICT`:
+As 6 FKs abaixo usam `ON DELETE RESTRICT`:
 
 - `transactions.category_id → categories.id`;
 - `transactions.card_id → credit_cards.id`;
@@ -103,8 +107,10 @@ global; portanto ele já identifica univocamente o owner.
 ## Índices explícitos
 
 Índices marcados como “legado/global” nasceram antes do modelo user-scoped e
-continuam fisicamente presentes. Eles podem ajudar buscas por FK ou filtros
-isolados, mas se sobrepõem parcialmente aos compostos adicionados na 0015.
+continuam fisicamente presentes. A comparação de suas colunas com os compostos
+adicionados na 0015 revela possível sobreposição; isso não comprova redundância
+nem custo operacional. Qualquer conclusão de remoção exige observar as queries
+reais e seus planos com `EXPLAIN QUERY PLAN` no volume representativo.
 
 | Tabela | Índice | Colunas/filtro | Consulta favorecida |
 | --- | --- | --- | --- |
@@ -193,13 +199,22 @@ aplicação; não é garantido somente pelo schema.
 4. O banco não impõe `installment_current <= installment_total`, positividade
    das parcelas nem presença conjunta com `installment_group_id`.
 5. `updated_at` depende dos repositories; não existe trigger universal.
-6. A coluna textual `transactions.card` permanece fisicamente por legado,
-   embora o contrato atual use exclusivamente `card_id`.
-7. Índices simples antigos coexistem com índices user-scoped compostos. A
-   redundância deve ser avaliada por planos de consulta e volume antes de uma
-   eventual migration de remoção.
+6. A coluna textual `transactions.card` permanece fisicamente por legado. O
+   schema de entrada ainda aceita o campo e o repository ainda o persiste;
+   `card_id` é a identificação relacional usada para joins e para o objeto de
+   cartão devolvido pela API.
+7. Índices simples antigos coexistem com índices user-scoped compostos e há
+   possível sobreposição de prefixos/uso. Não há evidência suficiente para
+   classificá-los como redundantes ou custosos sem `EXPLAIN QUERY PLAN` e
+   medição em volume representativo.
 8. `generated_through` valida o formato por `GLOB`, mas não valida mês civil;
    os services geram o valor correto.
+9. As PKs textuais `sessions.token_hash`,
+   `oauth_login_attempts.state_hash` e
+   `google_sheets_oauth_attempts.state_hash` não foram declaradas `NOT NULL`.
+   SQLite/libSQL aceita `NULL` nessas colunas de PK textual; os fluxos normais
+   da aplicação sempre gravam hashes não nulos, mas o enforcement estrutural é
+   mais fraco do que a regra da aplicação.
 
 Esses pontos são documentação do estado atual, não mudanças propostas nesta
 etapa.

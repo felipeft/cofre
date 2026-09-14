@@ -95,7 +95,7 @@ erDiagram
     GOOGLE_SHEETS_SYNC_RUNS {
         int id PK
         int user_id FK
-        string idempotency_key UK
+        string idempotency_key
         string status
         string started_at
     }
@@ -106,12 +106,12 @@ erDiagram
     }
 
     USERS ||--o{ SESSIONS : possui
-    USERS ||--|| USER_SETTINGS : configura
-    USERS ||--o{ CATEGORIES : possui
-    USERS ||--o{ TRANSACTIONS : possui
-    USERS ||--o{ CREDIT_CARDS : possui
-    USERS ||--o{ CREDIT_CARD_PAYMENTS : possui
-    USERS ||--o{ RECURRING_EXPENSES : possui
+    USERS ||--o| USER_SETTINGS : configura
+    USERS o|--o{ CATEGORIES : possui
+    USERS o|--o{ TRANSACTIONS : possui
+    USERS o|--o{ CREDIT_CARDS : possui
+    USERS o|--o{ CREDIT_CARD_PAYMENTS : possui
+    USERS o|--o{ RECURRING_EXPENSES : possui
     USERS ||--o| GOOGLE_SHEETS_INTEGRATIONS : conecta
     USERS ||--o{ GOOGLE_SHEETS_OAUTH_ATTEMPTS : autoriza
     USERS ||--o{ GOOGLE_SHEETS_IMPORTS : registra
@@ -124,10 +124,16 @@ erDiagram
     RECURRING_EXPENSES o|--o{ TRANSACTIONS : materializa
 ```
 
-`USERS ||--|| USER_SETTINGS` representa o estado esperado após migrations e o
-trigger `users_create_settings`. Estruturalmente, a FK sozinha permitiria que
-um usuário perdesse sua linha de settings; o repository usa `INSERT OR IGNORE`
-como defesa adicional.
+`USERS ||--o| USER_SETTINGS` representa a cardinalidade imposta pelo banco: uma
+linha de settings pertence a exatamente um usuário, mas um usuário pode ter
+zero ou uma linha. O estado esperado pela aplicação é 1:1 após o trigger
+`users_create_settings`; o repository usa `INSERT OR IGNORE` como defesa
+adicional caso a linha esteja ausente.
+
+Nas cinco relações financeiras iniciadas por `USERS o|--o{`, o marcador `o|`
+reflete o `user_id` nullable preservado para compatibilidade com dados legados.
+Os fluxos normais da aplicação sempre fornecem o owner, mas essa presença não
+é obrigatória no schema.
 
 ## Identidade, sessão e preferências
 
@@ -152,7 +158,7 @@ somente seu hash.
 
 | Campo | Tipo/restrição | Papel |
 | --- | --- | --- |
-| `token_hash` | TEXT PK | Identificador não reversível da sessão |
+| `token_hash` | TEXT PK, sem NOT NULL explícito | Identificador não reversível da sessão |
 | `user_id` | INTEGER NOT NULL FK → `users`, CASCADE | Usuário autenticado |
 | `created_at` | TEXT NOT NULL | Início da sessão |
 | `expires_at` | TEXT NOT NULL | Expiração absoluta/renovada |
@@ -165,13 +171,15 @@ não possui `user_id`.
 
 | Campo | Tipo/restrição | Papel |
 | --- | --- | --- |
-| `state_hash` | TEXT PK | Correlação segura do callback |
+| `state_hash` | TEXT PK, sem NOT NULL explícito | Correlação segura do callback |
 | `nonce`, `code_verifier` | TEXT NOT NULL | Proteções OIDC/PKCE |
 | `created_at`, `expires_at` | TEXT NOT NULL | Janela de validade |
 
 ### `user_settings`
 
-Relação 1:1 de preferências extensíveis sem inflar `users`.
+Preferências extensíveis sem inflar `users`. A aplicação mantém uma linha
+por usuário; estruturalmente, a cardinalidade é 0..1 porque a FK não obriga a
+existência da linha filha.
 
 | Campo | Tipo/restrição | Papel |
 | --- | --- | --- |
@@ -210,7 +218,7 @@ ocorrências recorrentes também são fatos nesta tabela.
 | Temporal | `date`, `competence_month`, `competence_year` | data textual; mês CHECK 1–12; competência usada em resumos |
 | Conteúdo | `notes`, `source`, `tags` | defaults `''`, `manual`, `'[]'`; tags é JSON textual |
 | Flags/estado | `is_recurring`, `is_fixed`, `status` | booleanos CHECK 0/1; status pending/confirmed/cancelled |
-| Cartão | `card_id`, `card` | FK nullable → cartão, RESTRICT; `card` é texto legado descontinuado |
+| Cartão | `card_id`, `card` | `card_id` é FK nullable → cartão, RESTRICT; `card` é texto legado ainda aceito na entrada e persistido |
 | Parcelamento | `installment_current`, `installment_total`, `installment_group_id` | metadados nullable; grupo não é FK nem entidade própria |
 | Recorrência | `recurring_expense_id` | FK nullable → definição, RESTRICT |
 | Auditoria | `created_at`, `updated_at` | TEXT NOT NULL |
@@ -289,6 +297,9 @@ Tentativas efêmeras de autorização Drive/Sheets, associadas ao usuário já
 autenticado: `state_hash` PK, `user_id` FK CASCADE, `nonce`, `code_verifier`,
 `created_at` e `expires_at`.
 
+Assim como nas tentativas de login, `state_hash` é uma PK textual sem
+`NOT NULL` explícito no DDL.
+
 ### `google_sheets_imports`
 
 Ledger mínimo de idempotência de importação. A PK composta
@@ -308,6 +319,8 @@ Histórico auditável de sincronizações.
 | Tempo | `started_at`, `completed_at`, `created_at` | início/criação obrigatórios; conclusão nullable |
 
 Um índice único parcial permite somente uma execução `running` por usuário.
+A chave de idempotência não é única isoladamente: a constraint é composta por
+`(user_id, idempotency_key)`.
 A estratégia completa está no
 [ADR-0008](../decisions/0008-sincronizacao-manual-idempotente.md).
 

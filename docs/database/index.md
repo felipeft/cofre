@@ -30,12 +30,16 @@ resumos financeiros são calculados por consultas e regras de domínio.
 
 ## Ambientes de persistência
 
-O backend usa `@libsql/client` atrás de uma fachada única:
+O backend usa `@libsql/client` atrás de uma fachada única. A escolha do
+provider é determinada pela configuração, e não diretamente pelo nome do
+ambiente:
 
-- **produção:** URL remota e token apontam para Turso/libSQL;
-- **desenvolvimento:** arquivo local `file:` no caminho configurado;
-- **testes:** arquivos locais temporários; a configuração ignora Turso quando
-  `NODE_ENV=test` para impedir acesso acidental ao banco real.
+- **fora de testes, com `TURSO_DATABASE_URL`:** usa o banco remoto Turso/libSQL
+  e o respectivo token;
+- **fora de testes, sem `TURSO_DATABASE_URL`:** usa um arquivo local `file:` no
+  caminho configurado por `DATABASE_PATH`;
+- **testes:** sempre usam arquivos locais temporários; a configuração ignora
+  Turso quando `NODE_ENV=test` para impedir acesso acidental ao banco real.
 
 A conexão habilita e verifica `PRAGMA foreign_keys = ON`, usa inteiros como
 `number` e limita a concorrência do client a uma fila. A API de repositories é
@@ -62,4 +66,3 @@ a mesma nos dois ambientes. Essa escolha está registrada no
 - [Domínio financeiro](../domain/index.md)
 - [ADRs](../decisions/index.md)
 - [Contrato HTTP](../api/index.md)
-

@@ -62,4 +62,3 @@ linhas financeiras sem owner, embora os fluxos normais sempre gravem owner.
   operacional do banco.
 - Migrations antigas preservam comentários e colunas que existiram no passado;
   somente o schema após `0015` representa o produto atual.
-
