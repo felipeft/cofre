@@ -12,6 +12,7 @@ A superfície HTTP executável está descrita na [documentação OpenAPI](../api
 - [C4 Nível 3 — Frontend](frontend.md)
 - [C4 Nível 3 — Backend](backend.md)
 - [Banco de dados na arquitetura](database.md)
+- [Modelo relacional completo](../database/index.md)
 - [Integrações externas e fluxos](integrations.md)
 - [Fonte Structurizr DSL](structurizr/workspace.dsl)
 

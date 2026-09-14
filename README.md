@@ -4,7 +4,7 @@
 
 [Live Demo](https://cofre-demo.vercel.app/) · [Arquitetura](docs/architecture/index.md) · [Domínio](docs/domain/index.md) · [ADRs](docs/decisions/index.md) · [Swagger / API](#visão-geral-da-api) · [Executar localmente](#quickstart)
 
-> **Status:** aplicação em uso real, Fases 1–5 concluídas e ambiente público de demonstração disponível. A Fase 6 — Documentação e Engenharia de Software está em andamento, com as Etapas 14 a 18 concluídas.
+> **Status:** aplicação em uso real, Fases 1–5 concluídas e ambiente público de demonstração disponível. A Fase 6 — Documentação e Engenharia de Software está em andamento, com as Etapas 14 a 19 concluídas.
 
 ## Por que o Cofre existe
 
@@ -199,7 +199,7 @@ GitHub
 
 ## Documentação
 
-A [documentação arquitetural](docs/architecture/index.md) usa C4 Model, Structurizr DSL e fluxos Mermaid. A [documentação do domínio](docs/domain/index.md) registra as regras financeiras, seus motivos, exemplos e débitos conhecidos. Os [Architecture Decision Records](docs/decisions/index.md) preservam contexto, alternativas e consequências das escolhas relevantes. A [documentação da API](docs/api/index.md) explica o contrato OpenAPI e o uso da Swagger UI. As próximas etapas ampliarão `docs/` com banco de dados, estratégia de testes, operação e publicação com MkDocs Material.
+A [documentação arquitetural](docs/architecture/index.md) usa C4 Model, Structurizr DSL e fluxos Mermaid. A [documentação do domínio](docs/domain/index.md) registra as regras financeiras, seus motivos, exemplos e débitos conhecidos. Os [Architecture Decision Records](docs/decisions/index.md) preservam contexto, alternativas e consequências das escolhas relevantes. A [documentação da API](docs/api/index.md) explica o contrato OpenAPI e o uso da Swagger UI. A [documentação do banco](docs/database/index.md) registra o modelo relacional, migrations e garantias de integridade. As próximas etapas ampliarão `docs/` com estratégia de testes, operação e publicação com MkDocs Material.
 
 Enquanto essa documentação é preparada, existem guias específicos para o [`backend`](backend/README.md) e o [`frontend`](frontend/README.md).
 
@@ -216,7 +216,8 @@ Enquanto essa documentação é preparada, existem guias específicos para o [`b
   - [x] Etapa 16 — Documentação do Domínio.
   - [x] Etapa 17 — Architecture Decision Records.
   - [x] Etapa 18 — OpenAPI 3.1 e Swagger UI.
-  - [ ] Etapas 19–22 — banco, testes, operação e MkDocs.
+  - [x] Etapa 19 — Documentação de Banco de Dados.
+  - [ ] Etapas 20–22 — testes, operação e MkDocs.
 - [ ] Fase 7 — inteligência financeira, relatórios e metas.
 - [ ] Fase 8 — engenharia, qualidade, governança e observabilidade de dados.
 - [ ] Fase 9 — inteligência artificial, machine learning e MLOps.
@@ -228,4 +229,4 @@ Sincronização automática, documentação técnica completa, observabilidade, 
 
 - Aplicação Production funcional e utilizada no dia a dia em desktop e Safari no iPhone.
 - Demo pública funcional em [cofre-demo.vercel.app](https://cofre-demo.vercel.app/), sem acesso à infraestrutura pessoal.
-- Fases 1–5 concluídas; Etapas 14 a 18 da Fase 6 concluídas, sem antecipar a Etapa 19.
+- Fases 1–5 concluídas; Etapas 14 a 19 da Fase 6 concluídas, sem antecipar a Etapa 20.

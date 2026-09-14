@@ -163,6 +163,9 @@ a versão 2 e a regrava no formato atual, preservando a transição de produçã
 
 ## Migrations
 
+O modelo relacional, constraints, índices, diagrama ER e histórico completo
+estão documentados em [`docs/database/`](../docs/database/index.md).
+
 As migrations são sequenciais, forward-only e registradas em
 `schema_migrations`. Nunca edite uma migration já aplicada; toda evolução usa
 um novo arquivo numerado.

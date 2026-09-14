@@ -27,4 +27,6 @@ O backend serializa o acesso do client com `concurrency: 1`, habilita foreign ke
 
 Migrations SQL numeradas são forward-only e registradas em `schema_migrations`. O bootstrap aplica apenas arquivos ainda não registrados e envolve cada migration em sua própria transação.
 
-Esta página delimita a posição arquitetural do banco. Entidades, colunas, constraints, índices e diagrama relacional completos serão documentados na etapa específica de banco de dados.
+Esta página delimita a posição arquitetural do banco. Entidades, colunas,
+constraints, índices e diagrama relacional estão na
+[documentação do banco de dados](../database/index.md).
